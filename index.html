@@ -1,0 +1,1928 @@
+<!DOCTYPE html>
+<html lang="en" class="h-full bg-slate-50">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Job Application Command Center</title>
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Lucide Icons -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <!-- Chart.js -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <!-- PDF.js for parsing text from uploaded PDF job specs -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+  <script>
+    pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+  </script>
+
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+    body { font-family: 'Inter', sans-serif; }
+    
+    /* Custom scrollbars */
+    ::-webkit-scrollbar { width: 6px; height: 6px; }
+    ::-webkit-scrollbar-track { background: #f1f5f9; }
+    ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+    ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+
+    .kanban-column { min-height: 500px; }
+  </style>
+</head>
+<body class="h-full flex flex-col text-slate-800 bg-slate-50 antialiased">
+
+  <!-- Top Navigation Bar -->
+  <header class="bg-slate-900 text-white border-b border-slate-800 sticky top-0 z-30 shadow-md">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="flex items-center justify-between h-16">
+        <!-- Brand -->
+        <div class="flex items-center space-x-3">
+          <div class="p-2 bg-indigo-600 rounded-lg text-white font-bold flex items-center justify-center">
+            <i data-lucide="briefcase" class="w-5 h-5"></i>
+          </div>
+          <div>
+            <h1 class="text-lg font-bold tracking-tight text-white flex items-center gap-2">
+              Job Tracker <span class="text-xs font-semibold px-2 py-0.5 bg-indigo-500/30 text-indigo-300 border border-indigo-500/40 rounded-full">Pro</span>
+            </h1>
+            <p class="text-xs text-slate-400">Organized Career Application Center</p>
+          </div>
+        </div>
+
+        <!-- Navigation Tabs -->
+        <nav class="hidden md:flex space-x-1 bg-slate-800/80 p-1 rounded-xl border border-slate-700/60">
+          <button id="tab-btn-dashboard" onclick="switchTab('dashboard')" class="tab-link px-3 py-1.5 text-xs font-medium rounded-lg transition-all text-white bg-indigo-600 shadow">
+            <i data-lucide="layout-dashboard" class="w-4 h-4 inline-block mr-1"></i> Dashboard
+          </button>
+          <button id="tab-btn-applications" onclick="switchTab('applications')" class="tab-link px-3 py-1.5 text-xs font-medium rounded-lg transition-all text-slate-300 hover:text-white hover:bg-slate-700/50">
+            <i data-lucide="list-todo" class="w-4 h-4 inline-block mr-1"></i> Applications
+          </button>
+          <button id="tab-btn-industry" onclick="switchTab('industry')" class="tab-link px-3 py-1.5 text-xs font-medium rounded-lg transition-all text-slate-300 hover:text-white hover:bg-slate-700/50 flex items-center gap-1">
+            <i data-lucide="building-2" class="w-4 h-4 text-emerald-400"></i> Industry Checklist
+          </button>
+          <button id="tab-btn-ai-import" onclick="switchTab('ai-import')" class="tab-link px-3 py-1.5 text-xs font-medium rounded-lg transition-all text-slate-300 hover:text-white hover:bg-slate-700/50 flex items-center gap-1">
+            <i data-lucide="sparkles" class="w-4 h-4 text-amber-400"></i> AI Smart Extractor
+          </button>
+          <button id="tab-btn-documents" onclick="switchTab('documents')" class="tab-link px-3 py-1.5 text-xs font-medium rounded-lg transition-all text-slate-300 hover:text-white hover:bg-slate-700/50">
+            <i data-lucide="file-text" class="w-4 h-4 inline-block mr-1"></i> Doc Vault
+          </button>
+        </nav>
+
+        <!-- Right Quick Actions -->
+        <div class="flex items-center space-x-2">
+          <button onclick="exportDataJSON()" title="Export JSON Backup" class="p-1.5 text-slate-300 hover:text-white bg-slate-800 hover:bg-slate-700 rounded-lg border border-slate-700 text-xs flex items-center gap-1">
+            <i data-lucide="download" class="w-3.5 h-3.5"></i>
+          </button>
+          <button onclick="triggerImportJSON()" title="Import JSON Backup" class="p-1.5 text-slate-300 hover:text-white bg-slate-800 hover:bg-slate-700 rounded-lg border border-slate-700 text-xs flex items-center gap-1">
+            <i data-lucide="upload" class="w-3.5 h-3.5"></i>
+          </button>
+          <input type="file" id="json-file-input" accept=".json" class="hidden" onchange="importDataJSON(event)">
+          <button onclick="promptClearAllData()" title="Start Fresh / Clear Data" class="p-1.5 text-rose-400 hover:text-rose-200 bg-rose-500/10 hover:bg-rose-500/20 rounded-lg border border-rose-500/30 text-xs flex items-center gap-1">
+            <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
+          </button>
+          <button onclick="openJobModal()" class="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg transition shadow-sm">
+            <i data-lucide="plus" class="w-4 h-4"></i> Add Application
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Mobile Navigation Bar -->
+    <div class="md:hidden flex justify-around border-t border-slate-800 bg-slate-900/90 py-2 px-2 text-[11px]">
+      <button onclick="switchTab('dashboard')" class="text-slate-300 hover:text-white flex flex-col items-center">
+        <i data-lucide="layout-dashboard" class="w-4 h-4 mb-0.5"></i> Dashboard
+      </button>
+      <button onclick="switchTab('applications')" class="text-slate-300 hover:text-white flex flex-col items-center">
+        <i data-lucide="list-todo" class="w-4 h-4 mb-0.5"></i> Jobs
+      </button>
+      <button onclick="switchTab('industry')" class="text-slate-300 hover:text-white flex flex-col items-center">
+        <i data-lucide="building-2" class="w-4 h-4 text-emerald-400 mb-0.5"></i> Industry
+      </button>
+      <button onclick="switchTab('ai-import')" class="text-slate-300 hover:text-white flex flex-col items-center">
+        <i data-lucide="sparkles" class="w-4 h-4 text-amber-400 mb-0.5"></i> AI Parse
+      </button>
+      <button onclick="switchTab('documents')" class="text-slate-300 hover:text-white flex flex-col items-center">
+        <i data-lucide="file-text" class="w-4 h-4 mb-0.5"></i> Vault
+      </button>
+    </div>
+  </header>
+
+  <!-- Main Content Container -->
+  <main class="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6">
+
+    <!-- SECTION 1: DASHBOARD -->
+    <section id="view-dashboard" class="space-y-6">
+      
+      <!-- Top Overview Metrics -->
+      <div class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
+        <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
+          <div class="flex items-center justify-between text-slate-500 text-xs font-medium mb-1">
+            <span>Total Tracked</span>
+            <i data-lucide="briefcase" class="w-4 h-4 text-slate-400"></i>
+          </div>
+          <div id="stat-total" class="text-2xl font-bold text-slate-800">0</div>
+          <p class="text-[11px] text-slate-400 mt-0.5">All applications</p>
+        </div>
+
+        <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
+          <div class="flex items-center justify-between text-slate-500 text-xs font-medium mb-1">
+            <span>Applied</span>
+            <i data-lucide="send" class="w-4 h-4 text-amber-500"></i>
+          </div>
+          <div id="stat-applied" class="text-2xl font-bold text-amber-600">0</div>
+          <p class="text-[11px] text-slate-400 mt-0.5">Submitted / Sent</p>
+        </div>
+
+        <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
+          <div class="flex items-center justify-between text-slate-500 text-xs font-medium mb-1">
+            <span>In Review / Screening</span>
+            <i data-lucide="eye" class="w-4 h-4 text-blue-500"></i>
+          </div>
+          <div id="stat-review" class="text-2xl font-bold text-blue-600">0</div>
+          <p class="text-[11px] text-slate-400 mt-0.5">Recruiter reviewing</p>
+        </div>
+
+        <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
+          <div class="flex items-center justify-between text-slate-500 text-xs font-medium mb-1">
+            <span>Interview Stage</span>
+            <i data-lucide="message-square" class="w-4 h-4 text-purple-500"></i>
+          </div>
+          <div id="stat-interview" class="text-2xl font-bold text-purple-600">0</div>
+          <p class="text-[11px] text-purple-600/80 font-medium mt-0.5" id="stat-interview-rate">0% response rate</p>
+        </div>
+
+        <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
+          <div class="flex items-center justify-between text-slate-500 text-xs font-medium mb-1">
+            <span>Offer Received</span>
+            <i data-lucide="trophy" class="w-4 h-4 text-emerald-500"></i>
+          </div>
+          <div id="stat-offer" class="text-2xl font-bold text-emerald-600">0</div>
+          <p class="text-[11px] text-emerald-600 font-medium mt-0.5">Hired / Offered</p>
+        </div>
+
+        <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
+          <div class="flex items-center justify-between text-slate-500 text-xs font-medium mb-1">
+            <span>Rejected / Ghosted</span>
+            <i data-lucide="x-circle" class="w-4 h-4 text-rose-400"></i>
+          </div>
+          <div id="stat-closed" class="text-2xl font-bold text-slate-500">0</div>
+          <p class="text-[11px] text-slate-400 mt-0.5">Closed / Declined</p>
+        </div>
+      </div>
+
+      <!-- Charts & Next Actions Grid -->
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        
+        <!-- Status Breakdown Chart -->
+        <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm flex flex-col justify-between">
+          <div class="flex items-center justify-between mb-4">
+            <h3 class="text-sm font-semibold text-slate-800 flex items-center gap-2">
+              <i data-lucide="pie-chart" class="w-4 h-4 text-indigo-600"></i> Status Funnel Breakdown
+            </h3>
+            <span class="text-xs text-slate-400">Real-time</span>
+          </div>
+          <div class="relative flex items-center justify-center h-52">
+            <canvas id="statusChart"></canvas>
+          </div>
+        </div>
+
+        <!-- City Location Distribution -->
+        <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm flex flex-col justify-between">
+          <div class="flex items-center justify-between mb-4">
+            <h3 class="text-sm font-semibold text-slate-800 flex items-center gap-2">
+              <i data-lucide="map-pin" class="w-4 h-4 text-indigo-600"></i> Applications by Location
+            </h3>
+            <span class="text-xs text-slate-400">Top Cities</span>
+          </div>
+          <div class="relative flex items-center justify-center h-52">
+            <canvas id="cityChart"></canvas>
+          </div>
+        </div>
+
+        <!-- Action Items & Reminders Panel -->
+        <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm flex flex-col justify-between">
+          <div>
+            <div class="flex items-center justify-between mb-4">
+              <h3 class="text-sm font-semibold text-slate-800 flex items-center gap-2">
+                <i data-lucide="check-square" class="w-4 h-4 text-amber-500"></i> Pending Checklist Tasks
+              </h3>
+              <span id="pending-task-count" class="text-xs bg-amber-100 text-amber-800 font-semibold px-2 py-0.5 rounded-full">0 Pending</span>
+            </div>
+            <div id="dashboard-task-list" class="space-y-2.5 max-h-52 overflow-y-auto pr-1 text-xs">
+              <!-- Tasks rendered dynamically -->
+            </div>
+          </div>
+          <div class="mt-4 pt-3 border-t border-slate-100 text-center">
+            <button onclick="switchTab('applications')" class="text-xs font-semibold text-indigo-600 hover:text-indigo-800">
+              View All Applications &rarr;
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Recent Applications Quick Table -->
+      <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+        <div class="p-4 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
+          <h3 class="text-sm font-semibold text-slate-800 flex items-center gap-2">
+            <i data-lucide="clock" class="w-4 h-4 text-indigo-600"></i> Recent Applications
+          </h3>
+          <button onclick="switchTab('applications')" class="text-xs text-indigo-600 hover:underline font-medium">
+            View Full Sheet
+          </button>
+        </div>
+        <div class="overflow-x-auto">
+          <table class="w-full text-left text-xs">
+            <thead class="bg-slate-100/70 text-slate-600 font-semibold border-b border-slate-200 uppercase tracking-wider text-[11px]">
+              <tr>
+                <th class="py-2.5 px-4">Company</th>
+                <th class="py-2.5 px-4">Job Title</th>
+                <th class="py-2.5 px-4">City</th>
+                <th class="py-2.5 px-4">Lang</th>
+                <th class="py-2.5 px-4">Source</th>
+                <th class="py-2.5 px-4">Status</th>
+                <th class="py-2.5 px-4">Applied Date</th>
+                <th class="py-2.5 px-4 text-right">Action</th>
+              </tr>
+            </thead>
+            <tbody id="recent-jobs-tbody" class="divide-y divide-slate-100">
+              <!-- Rendered dynamically -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+    </section>
+
+    <!-- SECTION 2: APPLICATIONS LIST & KANBAN -->
+    <section id="view-applications" class="space-y-4 hidden">
+      
+      <!-- Toolbar Filter & View Switcher -->
+      <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm flex flex-col md:flex-row gap-3 items-center justify-between">
+        
+        <!-- Search Bar -->
+        <div class="relative w-full md:w-72">
+          <i data-lucide="search" class="w-4 h-4 absolute left-3 top-2.5 text-slate-400"></i>
+          <input type="text" id="search-input" oninput="renderApplications()" placeholder="Search company, position, city..." class="w-full pl-9 pr-3 py-1.5 text-xs bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500">
+        </div>
+
+        <!-- Filter Dropdowns -->
+        <div class="flex flex-wrap items-center gap-2 w-full md:w-auto">
+          
+          <!-- Status Filter -->
+          <select id="filter-status" onchange="renderApplications()" class="text-xs bg-slate-50 border border-slate-200 rounded-lg px-2.5 py-1.5 focus:outline-none focus:ring-2 focus:ring-indigo-500">
+            <option value="ALL">All Statuses</option>
+            <option value="Wishlist">Wishlist / To Apply</option>
+            <option value="Applied">Applied</option>
+            <option value="In Review">In Review</option>
+            <option value="Screening">Screening / HR Call</option>
+            <option value="Interview">Interview Stage</option>
+            <option value="Offer">Offer / Hired</option>
+            <option value="Rejected">Rejected / Not Selected</option>
+            <option value="Ghosted">Ghosted</option>
+            <option value="Withdrawn">Withdrawn</option>
+          </select>
+
+          <!-- Source Platform Filter -->
+          <select id="filter-source" onchange="renderApplications()" class="text-xs bg-slate-50 border border-slate-200 rounded-lg px-2.5 py-1.5 focus:outline-none focus:ring-2 focus:ring-indigo-500">
+            <option value="ALL">All Platforms</option>
+            <option value="Linkedin">LinkedIn</option>
+            <option value="Indeed">Indeed</option>
+            <option value="Glassdoor">Glassdoor</option>
+            <option value="Career Site">Career Site</option>
+            <option value="Referral">Referral / Other</option>
+          </select>
+
+          <!-- City Filter -->
+          <select id="filter-city" onchange="renderApplications()" class="text-xs bg-slate-50 border border-slate-200 rounded-lg px-2.5 py-1.5 focus:outline-none focus:ring-2 focus:ring-indigo-500">
+            <option value="ALL">All Cities</option>
+          </select>
+
+          <!-- Toggle View Mode (Table vs Kanban) -->
+          <div class="flex items-center bg-slate-100 p-0.5 rounded-lg border border-slate-200 ml-auto md:ml-0">
+            <button id="btn-view-table" onclick="setViewMode('table')" class="p-1.5 rounded text-xs font-semibold transition bg-white shadow text-slate-800" title="Table View">
+              <i data-lucide="table" class="w-4 h-4"></i>
+            </button>
+            <button id="btn-view-kanban" onclick="setViewMode('kanban')" class="p-1.5 rounded text-xs font-semibold transition text-slate-500 hover:text-slate-800" title="Kanban Board View">
+              <i data-lucide="kanban" class="w-4 h-4"></i>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- TABLE VIEW (Google Sheets style directly inspired by user screenshot) -->
+      <div id="container-table-view" class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+        <div class="overflow-x-auto">
+          <table class="w-full text-left text-xs whitespace-nowrap">
+            <thead class="bg-amber-900/90 text-white font-semibold uppercase tracking-wider text-[11px] border-b border-amber-950">
+              <tr>
+                <th class="py-3 px-3">LinkedIn Link</th>
+                <th class="py-3 px-3">Platform</th>
+                <th class="py-3 px-3">City</th>
+                <th class="py-3 px-3">EN/NL</th>
+                <th class="py-3 px-3">Company</th>
+                <th class="py-3 px-3">Career Site</th>
+                <th class="py-3 px-3">Job Title</th>
+                <th class="py-3 px-3">Recruiter Email</th>
+                <th class="py-3 px-3">Phone</th>
+                <th class="py-3 px-3">Status</th>
+                <th class="py-3 px-3">Applied Date</th>
+                <th class="py-3 px-3">Docs & Tasks</th>
+                <th class="py-3 px-3 text-center">Actions</th>
+              </tr>
+            </thead>
+            <tbody id="applications-tbody" class="divide-y divide-slate-100">
+              <!-- Applications rendered dynamically -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- KANBAN BOARD VIEW -->
+      <div id="container-kanban-view" class="hidden overflow-x-auto pb-4">
+        <div class="flex gap-4 min-w-[1200px]">
+          
+          <!-- Column 1: Wishlist -->
+          <div class="flex-1 bg-slate-100/70 p-3 rounded-xl border border-slate-200 flex flex-col">
+            <div class="flex items-center justify-between mb-3 font-semibold text-xs text-slate-700">
+              <span class="flex items-center gap-1.5"><i data-lucide="bookmark" class="w-3.5 h-3.5 text-slate-500"></i> Wishlist / Saved</span>
+              <span id="kb-count-Wishlist" class="bg-slate-200 text-slate-700 px-2 py-0.5 rounded-full text-[10px]">0</span>
+            </div>
+            <div id="kb-col-Wishlist" class="kanban-column space-y-2 flex-1"></div>
+          </div>
+
+          <!-- Column 2: Applied -->
+          <div class="flex-1 bg-amber-50/50 p-3 rounded-xl border border-amber-200/60 flex flex-col">
+            <div class="flex items-center justify-between mb-3 font-semibold text-xs text-amber-800">
+              <span class="flex items-center gap-1.5"><i data-lucide="send" class="w-3.5 h-3.5 text-amber-600"></i> Applied</span>
+              <span id="kb-count-Applied" class="bg-amber-200/80 text-amber-900 px-2 py-0.5 rounded-full text-[10px]">0</span>
+            </div>
+            <div id="kb-col-Applied" class="kanban-column space-y-2 flex-1"></div>
+          </div>
+
+          <!-- Column 3: In Review / Screening -->
+          <div class="flex-1 bg-blue-50/50 p-3 rounded-xl border border-blue-200/60 flex flex-col">
+            <div class="flex items-center justify-between mb-3 font-semibold text-xs text-blue-800">
+              <span class="flex items-center gap-1.5"><i data-lucide="eye" class="w-3.5 h-3.5 text-blue-600"></i> In Review / Screening</span>
+              <span id="kb-count-In Review" class="bg-blue-200/80 text-blue-900 px-2 py-0.5 rounded-full text-[10px]">0</span>
+            </div>
+            <div id="kb-col-In Review" class="kanban-column space-y-2 flex-1"></div>
+          </div>
+
+          <!-- Column 4: Interview -->
+          <div class="flex-1 bg-purple-50/50 p-3 rounded-xl border border-purple-200/60 flex flex-col">
+            <div class="flex items-center justify-between mb-3 font-semibold text-xs text-purple-800">
+              <span class="flex items-center gap-1.5"><i data-lucide="message-square" class="w-3.5 h-3.5 text-purple-600"></i> Interview Stage</span>
+              <span id="kb-count-Interview" class="bg-purple-200/80 text-purple-900 px-2 py-0.5 rounded-full text-[10px]">0</span>
+            </div>
+            <div id="kb-col-Interview" class="kanban-column space-y-2 flex-1"></div>
+          </div>
+
+          <!-- Column 5: Offer / Hired -->
+          <div class="flex-1 bg-emerald-50/50 p-3 rounded-xl border border-emerald-200/60 flex flex-col">
+            <div class="flex items-center justify-between mb-3 font-semibold text-xs text-emerald-800">
+              <span class="flex items-center gap-1.5"><i data-lucide="trophy" class="w-3.5 h-3.5 text-emerald-600"></i> Offer / Hired</span>
+              <span id="kb-count-Offer" class="bg-emerald-200/80 text-emerald-900 px-2 py-0.5 rounded-full text-[10px]">0</span>
+            </div>
+            <div id="kb-col-Offer" class="kanban-column space-y-2 flex-1"></div>
+          </div>
+
+          <!-- Column 6: Rejected / Closed -->
+          <div class="flex-1 bg-rose-50/30 p-3 rounded-xl border border-slate-200 flex flex-col">
+            <div class="flex items-center justify-between mb-3 font-semibold text-xs text-slate-600">
+              <span class="flex items-center gap-1.5"><i data-lucide="x-circle" class="w-3.5 h-3.5 text-slate-400"></i> Rejected / Closed</span>
+              <span id="kb-count-Rejected" class="bg-slate-200 text-slate-700 px-2 py-0.5 rounded-full text-[10px]">0</span>
+            </div>
+            <div id="kb-col-Rejected" class="kanban-column space-y-2 flex-1"></div>
+          </div>
+
+        </div>
+      </div>
+
+    </section>
+
+    <!-- SECTION 3: INDUSTRY TARGET DIRECTORY & CHECKLIST HUB -->
+    <section id="view-industry" class="space-y-6 hidden">
+      <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm space-y-6">
+        
+        <!-- Header -->
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-slate-100">
+          <div>
+            <h2 class="text-lg font-bold text-slate-900 flex items-center gap-2">
+              <i data-lucide="building-2" class="w-5 h-5 text-emerald-600"></i> Industry Target Directory & Personal Checklist
+            </h2>
+            <p class="text-xs text-slate-500 mt-0.5">Organize target companies by industry tabs. Checklists automatically cross off when all jobs for a company are applied!</p>
+          </div>
+          <div class="flex items-center gap-2">
+            <button onclick="promptAddIndustry()" class="px-3 py-1.5 text-xs font-semibold bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-300 rounded-lg flex items-center gap-1.5">
+              <i data-lucide="folder-plus" class="w-3.5 h-3.5 text-indigo-600"></i> + New Industry Tab
+            </button>
+            <button onclick="promptAddTargetCompany()" class="px-3.5 py-1.5 text-xs font-semibold bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg flex items-center gap-1.5 shadow-sm">
+              <i data-lucide="plus" class="w-3.5 h-3.5"></i> Add Target Company
+            </button>
+          </div>
+        </div>
+
+        <!-- Industry Tabs (OneNote Style Layout) -->
+        <div class="flex flex-col md:flex-row gap-6">
+          
+          <!-- Vertical Industry Tab Navigation -->
+          <div class="w-full md:w-64 flex-shrink-0 space-y-1 bg-slate-50 p-2.5 rounded-xl border border-slate-200 h-fit" id="industry-tab-container">
+            <!-- Rendered dynamically -->
+          </div>
+
+          <!-- Industry Content Area -->
+          <div class="flex-1 space-y-4">
+            
+            <div class="flex items-center justify-between bg-slate-100/70 p-3 rounded-xl border border-slate-200">
+              <div class="flex items-center gap-2">
+                <span id="active-industry-title" class="font-bold text-sm text-slate-800">Consulting</span>
+                <span id="active-industry-badge" class="text-[11px] font-semibold bg-indigo-100 text-indigo-800 px-2.5 py-0.5 rounded-full">0 Companies</span>
+              </div>
+              <button onclick="deleteCurrentIndustry()" class="text-xs text-rose-500 hover:text-rose-700 font-medium flex items-center gap-1">
+                <i data-lucide="trash-2" class="w-3.5 h-3.5"></i> Delete Tab
+              </button>
+            </div>
+
+            <!-- Target Companies Grid / Checklist -->
+            <div id="target-company-list" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 gap-3">
+              <!-- Rendered dynamically -->
+            </div>
+
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- SECTION 4: AI SMART EXTRACTOR -->
+    <section id="view-ai-import" class="space-y-6 hidden">
+      <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden p-6 max-w-4xl mx-auto">
+        <div class="flex items-center justify-between border-b border-slate-100 pb-4 mb-4">
+          <div class="flex items-center gap-3">
+            <div class="p-2.5 bg-amber-500/10 text-amber-600 rounded-xl">
+              <i data-lucide="sparkles" class="w-6 h-6"></i>
+            </div>
+            <div>
+              <h2 class="text-base font-bold text-slate-900">AI Job Spec Extractor (Gemini)</h2>
+              <p class="text-xs text-slate-500">Extracts Company, Position, City, Language (EN/NL), Email, and Salary automatically.</p>
+            </div>
+          </div>
+          <span id="ai-status-badge" class="text-[10px] bg-slate-100 text-slate-600 px-2.5 py-1 rounded-full font-semibold">Ready</span>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+          
+          <!-- Left: Input & Upload -->
+          <div class="space-y-4">
+            <div>
+              <label class="block text-xs font-semibold text-slate-700 mb-1">Method 1: Paste Raw Job Description Text</label>
+              <textarea id="ai-input-text" rows="10" placeholder="Copy-paste job posting text from LinkedIn, Indeed, Glassdoor, or company website here..." class="w-full p-3 text-xs bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 font-mono"></textarea>
+            </div>
+
+            <div>
+              <label class="block text-xs font-semibold text-slate-700 mb-1">Method 2: Upload PDF / Saved HTML File</label>
+              <div class="flex items-center justify-center w-full">
+                <label class="flex flex-col items-center justify-center w-full h-24 border-2 border-slate-300 border-dashed rounded-xl cursor-pointer bg-slate-50 hover:bg-slate-100 transition">
+                  <div class="flex flex-col items-center justify-center pt-2 pb-2">
+                    <i data-lucide="upload-cloud" class="w-6 h-6 text-slate-400 mb-1"></i>
+                    <p class="text-xs text-slate-500"><span class="font-semibold text-indigo-600">Click to upload</span> or drag and drop</p>
+                    <p class="text-[10px] text-slate-400">PDF or HTML (No size limit)</p>
+                  </div>
+                  <input type="file" id="ai-file-upload" accept=".pdf,.html,.htm,.txt" class="hidden" onchange="handleAIFileUpload(event)">
+                </label>
+              </div>
+              <p id="ai-file-name" class="text-[11px] text-indigo-600 font-medium mt-1"></p>
+            </div>
+
+            <button id="btn-run-ai" onclick="runAIExtraction()" class="w-full py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-semibold text-xs transition shadow-md flex items-center justify-center gap-2">
+              <i data-lucide="wand2" class="w-4 h-4"></i> Parse Job Posting with Gemini AI
+            </button>
+          </div>
+
+          <!-- Right: Output Structure Preview -->
+          <div class="bg-slate-50 p-4 rounded-xl border border-slate-200 flex flex-col justify-between">
+            <div>
+              <h3 class="text-xs font-bold text-slate-800 mb-3 flex items-center gap-1.5">
+                <i data-lucide="file-json" class="w-4 h-4 text-emerald-600"></i> Extracted Structured Data
+              </h3>
+              
+              <div id="ai-extracted-fields" class="space-y-3 text-xs text-slate-600">
+                <p class="text-slate-400 italic text-center py-12">No data extracted yet. Paste job text or upload a file on the left and click parse.</p>
+              </div>
+            </div>
+
+            <div id="ai-actions-container" class="hidden pt-4 border-t border-slate-200">
+              <button onclick="saveAIExtractedJob()" class="w-full py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold text-xs rounded-lg transition shadow flex items-center justify-center gap-1.5">
+                <i data-lucide="check" class="w-4 h-4"></i> Auto-Fill Application Form
+              </button>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </section>
+
+    <!-- SECTION 5: DOCUMENT VAULT -->
+    <section id="view-documents" class="space-y-6 hidden">
+      <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm space-y-6">
+        
+        <div class="flex items-center justify-between border-b border-slate-100 pb-4">
+          <div>
+            <h2 class="text-base font-bold text-slate-900 flex items-center gap-2">
+              <i data-lucide="folder-git-2" class="w-5 h-5 text-indigo-600"></i> Document Version Vault
+            </h2>
+            <p class="text-xs text-slate-500 mt-0.5">Keep track of your tailored CVs and Cover Letters for quick access when applying.</p>
+          </div>
+          <button onclick="openDocModal()" class="px-3.5 py-1.5 text-xs font-semibold bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg flex items-center gap-1.5 shadow-sm">
+            <i data-lucide="plus" class="w-4 h-4"></i> Add Document Link
+          </button>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+          
+          <!-- Column 1: CV Versions -->
+          <div class="space-y-3">
+            <div class="flex items-center justify-between bg-slate-100 p-2.5 rounded-xl">
+              <span class="text-xs font-bold text-slate-700 flex items-center gap-1.5">
+                <i data-lucide="file-text" class="w-4 h-4 text-blue-600"></i> CV / Resumes
+              </span>
+              <span id="count-docs-cv" class="text-[10px] font-semibold bg-white px-2 py-0.5 rounded-full border border-slate-200">0 files</span>
+            </div>
+            <div id="list-docs-cv" class="space-y-2"></div>
+          </div>
+
+          <!-- Column 2: Cover Letters -->
+          <div class="space-y-3">
+            <div class="flex items-center justify-between bg-slate-100 p-2.5 rounded-xl">
+              <span class="text-xs font-bold text-slate-700 flex items-center gap-1.5">
+                <i data-lucide="mail-open" class="w-4 h-4 text-emerald-600"></i> Cover Letters
+              </span>
+              <span id="count-docs-cl" class="text-[10px] font-semibold bg-white px-2 py-0.5 rounded-full border border-slate-200">0 files</span>
+            </div>
+            <div id="list-docs-cl" class="space-y-2"></div>
+          </div>
+
+          <!-- Column 3: Portfolios & Other -->
+          <div class="space-y-3">
+            <div class="flex items-center justify-between bg-slate-100 p-2.5 rounded-xl">
+              <span class="text-xs font-bold text-slate-700 flex items-center gap-1.5">
+                <i data-lucide="folder" class="w-4 h-4 text-amber-600"></i> Portfolios & References
+              </span>
+              <span id="count-docs-other" class="text-[10px] font-semibold bg-white px-2 py-0.5 rounded-full border border-slate-200">0 files</span>
+            </div>
+            <div id="list-docs-other" class="space-y-2"></div>
+          </div>
+
+        </div>
+
+      </div>
+    </section>
+
+  </main>
+
+  <!-- MODAL 1: ADD / EDIT JOB APPLICATION -->
+  <div id="modal-job" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+    <div class="bg-white rounded-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto shadow-2xl border border-slate-100">
+      
+      <div class="bg-slate-900 text-white px-6 py-4 flex items-center justify-between sticky top-0 z-10">
+        <h3 id="modal-job-title" class="text-sm font-bold flex items-center gap-2">
+          <i data-lucide="plus-circle" class="w-4 h-4 text-indigo-400"></i> Add New Job Application
+        </h3>
+        <button onclick="closeJobModal()" class="text-slate-400 hover:text-white">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+      </div>
+
+      <form id="form-job" onsubmit="handleJobFormSubmit(event)" class="p-6 space-y-4 text-xs">
+        <input type="hidden" id="job-id">
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div>
+            <label class="block font-semibold text-slate-700 mb-1">Company Name *</label>
+            <input type="text" id="job-company-input" required placeholder="e.g. Accenture, Booking.com" class="w-full p-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-indigo-500">
+          </div>
+          <div>
+            <label class="block font-semibold text-slate-700 mb-1">Job Title *</label>
+            <input type="text" id="job-title-input" required placeholder="e.g. Data Scientist, Consultant" class="w-full p-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-indigo-500">
+          </div>
+        </div>
+
+        <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
+          <div>
+            <label class="block font-semibold text-slate-700 mb-1">City / Location</label>
+            <input type="text" id="job-city-input" placeholder="e.g. Amsterdam" class="w-full p-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-indigo-500">
+          </div>
+          <div>
+            <label class="block font-semibold text-slate-700 mb-1">Language</label>
+            <select id="job-lang-input" class="w-full p-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-indigo-500">
+              <option value="EN">EN (English)</option>
+              <option value="NL">NL (Dutch)</option>
+              <option value="ID">ID (Indonesian)</option>
+            </select>
+          </div>
+          <div>
+            <label class="block font-semibold text-slate-700 mb-1">Platform Source</label>
+            <select id="job-source-input" class="w-full p-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-indigo-500">
+              <option value="Linkedin">LinkedIn</option>
+              <option value="Indeed">Indeed</option>
+              <option value="Glassdoor">Glassdoor</option>
+              <option value="Career Site">Career Site</option>
+              <option value="Referral">Referral / Other</option>
+            </select>
+          </div>
+          <div>
+            <label class="block font-semibold text-slate-700 mb-1">Status</label>
+            <select id="job-status-input" class="w-full p-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-indigo-500">
+              <option value="Wishlist">Wishlist / Saved</option>
+              <option value="Applied">Applied</option>
+              <option value="In Review">In Review</option>
+              <option value="Screening">Screening</option>
+              <option value="Interview">Interview Stage</option>
+              <option value="Offer">Offer / Hired</option>
+              <option value="Rejected">Rejected</option>
+              <option value="Ghosted">Ghosted</option>
+              <option value="Withdrawn">Withdrawn</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div>
+            <label class="block font-semibold text-slate-700 mb-1">LinkedIn Link</label>
+            <input type="url" id="job-linkedin-input" placeholder="https://www.linkedin.com/jobs/view/..." class="w-full p-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-indigo-500">
+          </div>
+          <div>
+            <label class="block font-semibold text-slate-700 mb-1">Company's Career Site Link</label>
+            <input type="url" id="job-careersite-input" placeholder="https://careers.company.com/..." class="w-full p-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-indigo-500">
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+          <div>
+            <label class="block font-semibold text-slate-700 mb-1">Applied Date</label>
+            <input type="date" id="job-date-input" class="w-full p-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-indigo-500">
+          </div>
+          <div>
+            <label class="block font-semibold text-slate-700 mb-1">Recruiter Email</label>
+            <input type="email" id="job-email-input" placeholder="recruiter@company.com" class="w-full p-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-indigo-500">
+          </div>
+          <div>
+            <label class="block font-semibold text-slate-700 mb-1">Recruiter Phone / Contact</label>
+            <input type="text" id="job-phone-input" placeholder="+31 6 12345678" class="w-full p-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-indigo-500">
+          </div>
+        </div>
+
+        <div>
+          <label class="block font-semibold text-slate-700 mb-1">Salary Range (Optional)</label>
+          <input type="text" id="job-salary-input" placeholder="e.g. €60,000 - €70,000 / year" class="w-full p-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-indigo-500">
+        </div>
+
+        <!-- Checklist tasks -->
+        <div class="p-3 bg-slate-50 rounded-xl border border-slate-200 space-y-2">
+          <label class="block font-semibold text-slate-800">Application Tasks Checklist</label>
+          <div class="grid grid-cols-2 sm:grid-cols-4 gap-2">
+            <label class="flex items-center gap-1.5 cursor-pointer">
+              <input type="checkbox" id="job-task-cv" class="rounded text-indigo-600">
+              <span>CV Sent</span>
+            </label>
+            <label class="flex items-center gap-1.5 cursor-pointer">
+              <input type="checkbox" id="job-task-cl" class="rounded text-indigo-600">
+              <span>Cover Letter</span>
+            </label>
+            <label class="flex items-center gap-1.5 cursor-pointer">
+              <input type="checkbox" id="job-task-prep" class="rounded text-indigo-600">
+              <span>Interview Prep</span>
+            </label>
+            <label class="flex items-center gap-1.5 cursor-pointer">
+              <input type="checkbox" id="job-task-followup" class="rounded text-indigo-600">
+              <span>Follow-up Sent</span>
+            </label>
+          </div>
+        </div>
+
+        <div>
+          <label class="block font-semibold text-slate-700 mb-1">Linked Document Version</label>
+          <select id="job-doc-input" class="w-full p-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-indigo-500">
+            <option value="">-- None / Default CV --</option>
+          </select>
+        </div>
+
+        <div>
+          <label class="block font-semibold text-slate-700 mb-1">Notes & Interview Details</label>
+          <textarea id="job-notes-input" rows="3" placeholder="Notes about interviewer names, questions asked, or follow-up dates..." class="w-full p-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-indigo-500"></textarea>
+        </div>
+
+        <div class="pt-3 border-t border-slate-100 flex justify-end space-x-2">
+          <button type="button" onclick="closeJobModal()" class="px-4 py-2 border border-slate-200 text-slate-600 rounded-lg hover:bg-slate-100">Cancel</button>
+          <button type="submit" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg font-semibold shadow">Save Application</button>
+        </div>
+      </form>
+
+    </div>
+  </div>
+
+  <!-- MODAL 2: ADD DOCUMENT VAULT ITEM -->
+  <div id="modal-doc" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+    <div class="bg-white rounded-2xl max-w-md w-full shadow-2xl border border-slate-100 overflow-hidden">
+      <div class="bg-slate-900 text-white px-6 py-4 flex items-center justify-between">
+        <h3 class="text-sm font-bold flex items-center gap-2">
+          <i data-lucide="file-plus" class="w-4 h-4 text-indigo-400"></i> Add Document Version
+        </h3>
+        <button onclick="closeDocModal()" class="text-slate-400 hover:text-white">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+      </div>
+      <form onsubmit="handleDocFormSubmit(event)" class="p-6 space-y-4 text-xs">
+        <div>
+          <label class="block font-semibold text-slate-700 mb-1">Document Title *</label>
+          <input type="text" id="doc-title-input" required placeholder="e.g. CV Data Analyst (NL Focus)" class="w-full p-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-indigo-500">
+        </div>
+        <div>
+          <label class="block font-semibold text-slate-700 mb-1">Type *</label>
+          <select id="doc-type-input" class="w-full p-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-indigo-500">
+            <option value="CV">CV / Resume</option>
+            <option value="CL">Cover Letter</option>
+            <option value="Other">Portfolio / Reference</option>
+          </select>
+        </div>
+        <div>
+          <label class="block font-semibold text-slate-700 mb-1">File Link (Google Drive / OneDrive / Dropbox)</label>
+          <input type="url" id="doc-url-input" placeholder="https://drive.google.com/..." class="w-full p-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-indigo-500">
+        </div>
+        <div>
+          <label class="block font-semibold text-slate-700 mb-1">Tags / Keywords</label>
+          <input type="text" id="doc-tags-input" placeholder="e.g. Python, Tech, Management" class="w-full p-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-indigo-500">
+        </div>
+        <div class="pt-3 border-t border-slate-100 flex justify-end space-x-2">
+          <button type="button" onclick="closeDocModal()" class="px-4 py-2 border border-slate-200 text-slate-600 rounded-lg hover:bg-slate-100">Cancel</button>
+          <button type="submit" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg font-semibold shadow">Save Document</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- MODAL 3: CUSTOM CONFIRM MODAL -->
+  <div id="modal-confirm" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+    <div class="bg-white rounded-2xl max-w-sm w-full p-6 shadow-2xl border border-slate-100 space-y-4 text-center">
+      <div id="confirm-icon" class="w-12 h-12 bg-rose-100 text-rose-600 rounded-full flex items-center justify-center mx-auto">
+        <i data-lucide="alert-triangle" class="w-6 h-6"></i>
+      </div>
+      <h3 id="confirm-title" class="text-base font-bold text-slate-900">Are you sure?</h3>
+      <p id="confirm-message" class="text-xs text-slate-500 leading-relaxed">This action cannot be undone.</p>
+      <div class="flex items-center justify-center gap-2 pt-2">
+        <button id="btn-confirm-cancel" onclick="closeConfirmModal()" class="w-1/2 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold rounded-lg text-xs">Cancel</button>
+        <button id="btn-confirm-action" class="w-1/2 py-2 bg-rose-600 hover:bg-rose-700 text-white font-semibold rounded-lg text-xs shadow">Confirm</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL 4: ADD TARGET COMPANY MODAL -->
+  <div id="modal-add-target" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+    <div class="bg-white rounded-2xl max-w-md w-full shadow-2xl border border-slate-100 overflow-hidden">
+      <div class="bg-slate-900 text-white px-6 py-4 flex items-center justify-between">
+        <h3 class="text-sm font-bold flex items-center gap-2">
+          <i data-lucide="building-2" class="w-4 h-4 text-emerald-400"></i> Add Target Company
+        </h3>
+        <button onclick="closeTargetModal()" class="text-slate-400 hover:text-white">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+      </div>
+      <form onsubmit="handleTargetCompanySubmit(event)" class="p-6 space-y-4 text-xs">
+        <div>
+          <label class="block font-semibold text-slate-700 mb-1">Company Name *</label>
+          <input type="text" id="target-name-input" required placeholder="e.g. McKinsey, KPMG, Google, ASML" class="w-full p-2.5 border border-slate-200 rounded-lg focus:ring-2 focus:ring-indigo-500">
+        </div>
+        <div>
+          <label class="block font-semibold text-slate-700 mb-1">Industry Tab *</label>
+          <select id="target-industry-select" class="w-full p-2.5 border border-slate-200 rounded-lg focus:ring-2 focus:ring-indigo-500">
+            <!-- Dynamic industry options -->
+          </select>
+        </div>
+        <div class="pt-3 border-t border-slate-100 flex justify-end gap-2">
+          <button type="button" onclick="closeTargetModal()" class="px-4 py-2 border border-slate-200 text-slate-600 rounded-lg hover:bg-slate-100">Cancel</button>
+          <button type="submit" class="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg font-semibold shadow">Add to Directory</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <script>
+    // Default Industry Target Directories
+    const DEFAULT_INDUSTRIES = [
+      { id: "ind-1", name: "Consulting", companies: ["Accenture", "McKinsey", "BCG", "Bain", "EY", "KPMG", "PwC", "Deloitte"] },
+      { id: "ind-2", name: "Tech & Big Tech", companies: ["Uber", "Booking.com", "Google", "ASML", "Adyen", "Miro"] },
+      { id: "ind-3", name: "Finance & Banking", companies: ["ING", "ABN AMRO", "Rabobank", "Mollie"] },
+      { id: "ind-4", name: "FMCG & Energy", companies: ["Unilever", "Heineken", "Shell"] }
+    ];
+
+    // Helper: Safely retrieve state from LocalStorage
+    function getSavedState(key, fallback) {
+      try {
+        const item = localStorage.getItem(key);
+        return item ? JSON.parse(item) : fallback;
+      } catch (e) {
+        console.warn("LocalStorage access restricted or empty:", e);
+        return fallback;
+      }
+    }
+
+    // Main App State
+    let state = {
+      applications: getSavedState("job_tracker_apps", []),
+      documents: getSavedState("job_tracker_docs", []),
+      industries: getSavedState("job_tracker_industries", DEFAULT_INDUSTRIES),
+      activeIndustryId: getSavedState("job_tracker_active_ind", "ind-1"),
+      currentViewMode: "table",
+      aiExtractedData: null,
+      uploadedFileText: ""
+    };
+
+    function saveState() {
+      try {
+        localStorage.setItem("job_tracker_apps", JSON.stringify(state.applications));
+        localStorage.setItem("job_tracker_docs", JSON.stringify(state.documents));
+        localStorage.setItem("job_tracker_industries", JSON.stringify(state.industries));
+        localStorage.setItem("job_tracker_active_ind", state.activeIndustryId);
+      } catch (e) {
+        console.warn("Could not save to LocalStorage:", e);
+      }
+    }
+
+    /* ==========================================================================
+       1. TAB SWITCHING NAVIGATION
+       ========================================================================== */
+    function switchTab(tabName) {
+      const views = ["dashboard", "applications", "industry", "ai-import", "documents"];
+      views.forEach(v => {
+        const viewEl = document.getElementById(`view-${v}`);
+        if (viewEl) viewEl.classList.add("hidden");
+        const btn = document.getElementById(`tab-btn-${v}`);
+        if (btn) {
+          btn.classList.remove("bg-indigo-600", "text-white", "shadow");
+          btn.classList.add("text-slate-300", "hover:text-white");
+        }
+      });
+
+      const targetView = document.getElementById(`view-${tabName}`);
+      if (targetView) targetView.classList.remove("hidden");
+
+      const activeBtn = document.getElementById(`tab-btn-${tabName}`);
+      if (activeBtn) {
+        activeBtn.classList.add("bg-indigo-600", "text-white", "shadow");
+        activeBtn.classList.remove("text-slate-300");
+      }
+
+      if (tabName === 'dashboard') renderDashboard();
+      if (tabName === 'applications') renderApplications();
+      if (tabName === 'industry') renderIndustryHub();
+      if (tabName === 'documents') renderDocuments();
+    }
+
+    /* ==========================================================================
+       2. INDUSTRY TARGET DIRECTORY & CHECKLIST LOGIC
+       ========================================================================== */
+    function renderIndustryHub() {
+      const tabContainer = document.getElementById("industry-tab-container");
+      tabContainer.innerHTML = "";
+
+      if (!state.industries || state.industries.length === 0) {
+        state.industries = DEFAULT_INDUSTRIES;
+      }
+
+      if (!state.industries.find(i => i.id === state.activeIndustryId)) {
+        state.activeIndustryId = state.industries[0].id;
+      }
+
+      state.industries.forEach(ind => {
+        const isActive = ind.id === state.activeIndustryId;
+        const btn = document.createElement("button");
+        btn.onclick = () => {
+          state.activeIndustryId = ind.id;
+          saveState();
+          renderIndustryHub();
+        };
+        btn.className = `w-full text-left px-3.5 py-2.5 rounded-lg text-xs font-semibold transition flex items-center justify-between ${
+          isActive ? "bg-indigo-600 text-white shadow-sm" : "bg-white hover:bg-slate-200/70 text-slate-700 border border-slate-200/60"
+        }`;
+        btn.innerHTML = `
+          <span class="truncate">${ind.name}</span>
+          <span class="text-[10px] px-2 py-0.5 rounded-full ${isActive ? 'bg-indigo-800 text-indigo-100' : 'bg-slate-100 text-slate-500'}">${ind.companies.length}</span>
+        `;
+        tabContainer.appendChild(btn);
+      });
+
+      // Render Active Industry Content
+      const activeInd = state.industries.find(i => i.id === state.activeIndustryId);
+      document.getElementById("active-industry-title").innerText = activeInd ? activeInd.name : "Industry";
+      document.getElementById("active-industry-badge").innerText = `${activeInd ? activeInd.companies.length : 0} Target Companies`;
+
+      const compList = document.getElementById("target-company-list");
+      compList.innerHTML = "";
+
+      if (!activeInd || activeInd.companies.length === 0) {
+        compList.innerHTML = `<div class="col-span-2 text-center py-8 text-slate-400 italic text-xs">No target companies added to this industry yet. Click "+ Add Target Company" above.</div>`;
+        return;
+      }
+
+      activeInd.companies.forEach(companyName => {
+        // Calculate dynamic job application stats for this company
+        const matchedJobs = state.applications.filter(a => a.company && a.company.toLowerCase().trim() === companyName.toLowerCase().trim());
+        const totalJobs = matchedJobs.length;
+        
+        // Status counts
+        const appliedCount = matchedJobs.filter(a => a.status !== 'Wishlist').length;
+        const pendingCount = matchedJobs.filter(a => a.status === 'Wishlist').length;
+        const interviewCount = matchedJobs.filter(a => a.status === 'Interview' || a.status === 'Screening').length;
+
+        /* DYNAMIC STRIKETHROUGH LOGIC:
+           - If totalJobs > 0 AND pendingCount === 0 (ALL logged jobs have been applied): Checked (✓) AND Strikethrough!
+        */
+        const isFullyApplied = totalJobs > 0 && pendingCount === 0;
+
+        const card = document.createElement("div");
+        card.className = `p-3.5 rounded-xl border transition flex flex-col justify-between ${
+          isFullyApplied ? 'bg-emerald-50/50 border-emerald-200' : 'bg-white border-slate-200 hover:border-indigo-300 shadow-sm'
+        }`;
+
+        card.innerHTML = `
+          <div class="space-y-2">
+            <div class="flex items-center justify-between">
+              <label class="flex items-center gap-2 cursor-pointer font-bold text-xs">
+                <input type="checkbox" ${isFullyApplied ? 'checked' : ''} class="w-4 h-4 rounded text-emerald-600 focus:ring-emerald-500" disabled>
+                <span class="${isFullyApplied ? 'line-through text-slate-400 font-normal' : 'text-slate-800 font-bold'}">${companyName}</span>
+              </label>
+              <button onclick="removeTargetCompany('${companyName}')" class="text-slate-300 hover:text-rose-600 p-1" title="Remove Company">
+                <i data-lucide="x-circle" class="w-3.5 h-3.5"></i>
+              </button>
+            </div>
+
+            <!-- Dynamic Badges -->
+            <div class="text-[11px] space-y-1">
+              ${totalJobs === 0 
+                ? `<span class="text-slate-400 italic">No job postings added yet</span>` 
+                : `<div class="flex flex-wrap items-center gap-1.5">
+                    <span class="bg-indigo-50 text-indigo-700 px-2 py-0.5 rounded font-semibold border border-indigo-100">${totalJobs} Logged</span>
+                    ${appliedCount > 0 ? `<span class="bg-amber-100 text-amber-800 px-2 py-0.5 rounded font-medium">${appliedCount} Applied</span>` : ''}
+                    ${pendingCount > 0 ? `<span class="bg-slate-100 text-slate-600 px-2 py-0.5 rounded font-medium">${pendingCount} Not Applied</span>` : ''}
+                    ${interviewCount > 0 ? `<span class="bg-purple-100 text-purple-800 px-2 py-0.5 rounded font-medium">${interviewCount} Interview</span>` : ''}
+                   </div>`
+              }
+            </div>
+          </div>
+
+          <div class="pt-3 mt-3 border-t border-slate-100 flex items-center justify-between text-[11px]">
+            <button onclick="filterByCompany('${companyName}')" class="text-indigo-600 hover:underline font-semibold flex items-center gap-1">
+              <i data-lucide="list" class="w-3 h-3"></i> View Jobs
+            </button>
+            <button onclick="quickAddJobForCompany('${companyName}')" class="text-emerald-600 hover:underline font-semibold flex items-center gap-1">
+              <i data-lucide="plus" class="w-3 h-3"></i> + Add Job
+            </button>
+          </div>
+        `;
+        compList.appendChild(card);
+      });
+
+      lucide.createIcons();
+    }
+
+    function promptAddIndustry() {
+      const name = prompt("Enter new Industry Category Name (e.g. Healthcare, Energy, Startup):");
+      if (name && name.trim()) {
+        const newInd = {
+          id: "ind-" + Date.now(),
+          name: name.trim(),
+          companies: []
+        };
+        state.industries.push(newInd);
+        state.activeIndustryId = newInd.id;
+        saveState();
+        renderIndustryHub();
+      }
+    }
+
+    function deleteCurrentIndustry() {
+      const activeInd = state.industries.find(i => i.id === state.activeIndustryId);
+      if (!activeInd) return;
+
+      openConfirmModal(
+        `Delete "${activeInd.name}" tab?`,
+        "This will remove this industry category and its company checklist from your hub.",
+        () => {
+          state.industries = state.industries.filter(i => i.id !== state.activeIndustryId);
+          if (state.industries.length > 0) state.activeIndustryId = state.industries[0].id;
+          saveState();
+          renderIndustryHub();
+        }
+      );
+    }
+
+    function promptAddTargetCompany() {
+      const select = document.getElementById("target-industry-select");
+      select.innerHTML = "";
+      state.industries.forEach(ind => {
+        const opt = document.createElement("option");
+        opt.value = ind.id;
+        opt.textContent = ind.name;
+        if (ind.id === state.activeIndustryId) opt.selected = true;
+        select.appendChild(opt);
+      });
+
+      document.getElementById("target-name-input").value = "";
+      document.getElementById("modal-add-target").classList.remove("hidden");
+    }
+
+    function closeTargetModal() {
+      document.getElementById("modal-add-target").classList.add("hidden");
+    }
+
+    function handleTargetCompanySubmit(e) {
+      e.preventDefault();
+      const compName = document.getElementById("target-name-input").value.trim();
+      const indId = document.getElementById("target-industry-select").value;
+
+      if (!compName) return;
+
+      const ind = state.industries.find(i => i.id === indId);
+      if (ind) {
+        if (!ind.companies.includes(compName)) {
+          ind.companies.push(compName);
+          saveState();
+        }
+      }
+
+      closeTargetModal();
+      renderIndustryHub();
+    }
+
+    function removeTargetCompany(companyName) {
+      const ind = state.industries.find(i => i.id === state.activeIndustryId);
+      if (ind) {
+        ind.companies = ind.companies.filter(c => c !== companyName);
+        saveState();
+        renderIndustryHub();
+      }
+    }
+
+    function filterByCompany(companyName) {
+      switchTab('applications');
+      document.getElementById("search-input").value = companyName;
+      renderApplications();
+    }
+
+    function quickAddJobForCompany(companyName) {
+      openJobModal();
+      document.getElementById("job-company-input").value = companyName;
+    }
+
+    /* ==========================================================================
+       3. DASHBOARD METRICS & CHARTS
+       ========================================================================== */
+    let statusChartInstance = null;
+    let cityChartInstance = null;
+
+    function renderDashboard() {
+      const apps = state.applications;
+      const total = apps.length;
+
+      const countByStatus = {
+        Wishlist: apps.filter(a => a.status === 'Wishlist').length,
+        Applied: apps.filter(a => a.status === 'Applied').length,
+        Review: apps.filter(a => a.status === 'In Review' || a.status === 'Screening').length,
+        Interview: apps.filter(a => a.status === 'Interview').length,
+        Offer: apps.filter(a => a.status === 'Offer').length,
+        Closed: apps.filter(a => ['Rejected', 'Ghosted', 'Withdrawn'].includes(a.status)).length
+      };
+
+      document.getElementById("stat-total").innerText = total;
+      document.getElementById("stat-applied").innerText = countByStatus.Applied;
+      document.getElementById("stat-review").innerText = countByStatus.Review;
+      document.getElementById("stat-interview").innerText = countByStatus.Interview;
+      document.getElementById("stat-offer").innerText = countByStatus.Offer;
+      document.getElementById("stat-closed").innerText = countByStatus.Closed;
+
+      const interviewRate = total > 0 ? Math.round(((countByStatus.Interview + countByStatus.Offer) / total) * 100) : 0;
+      document.getElementById("stat-interview-rate").innerText = `${interviewRate}% response rate`;
+
+      // Render Charts
+      renderStatusChart(countByStatus);
+      renderCityChart(apps);
+      renderPendingTasks(apps);
+      renderRecentJobsTable(apps);
+    }
+
+    function renderStatusChart(counts) {
+      const ctx = document.getElementById('statusChart').getContext('2d');
+      if (statusChartInstance) statusChartInstance.destroy();
+
+      statusChartInstance = new Chart(ctx, {
+        type: 'doughnut',
+        data: {
+          labels: ['Wishlist', 'Applied', 'In Review', 'Interview', 'Offer', 'Closed'],
+          datasets: [{
+            data: [counts.Wishlist, counts.Applied, counts.Review, counts.Interview, counts.Offer, counts.Closed],
+            backgroundColor: ['#94a3b8', '#f59e0b', '#3b82f6', '#a855f7', '#10b981', '#f43f5e'],
+            borderWidth: 2,
+            borderColor: '#ffffff'
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: { legend: { position: 'right', labels: { boxWidth: 12, font: { size: 10 } } } }
+        }
+      });
+    }
+
+    function renderCityChart(apps) {
+      const cityCounts = {};
+      apps.forEach(a => {
+        const city = a.city ? a.city.trim() : "Unspecified";
+        cityCounts[city] = (cityCounts[city] || 0) + 1;
+      });
+
+      const labels = Object.keys(cityCounts);
+      const data = Object.values(cityCounts);
+
+      const ctx = document.getElementById('cityChart').getContext('2d');
+      if (cityChartInstance) cityChartInstance.destroy();
+
+      cityChartInstance = new Chart(ctx, {
+        type: 'bar',
+        data: {
+          labels: labels.length > 0 ? labels : ["No data"],
+          datasets: [{
+            label: 'Applications',
+            data: data.length > 0 ? data : [0],
+            backgroundColor: '#6366f1',
+            borderRadius: 6
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          scales: { y: { beginAtZero: true, ticks: { precision: 0, font: { size: 10 } } }, x: { ticks: { font: { size: 10 } } } },
+          plugins: { legend: { display: false } }
+        }
+      });
+    }
+
+    function renderPendingTasks(apps) {
+      const taskList = document.getElementById("dashboard-task-list");
+      taskList.innerHTML = "";
+      let pendingCount = 0;
+
+      apps.forEach(app => {
+        const tasks = app.tasks || {};
+        if (!tasks.cv || !tasks.cl || !tasks.prep || !tasks.followup) {
+          pendingCount++;
+          let taskDesc = [];
+          if (!tasks.cv) taskDesc.push("Send Tailored CV");
+          if (!tasks.cl) taskDesc.push("Prepare Cover Letter");
+          if (!tasks.prep) taskDesc.push("Prep Interview Questions");
+
+          const item = document.createElement("div");
+          item.className = "bg-slate-50 p-2.5 rounded-lg border border-slate-200 flex items-center justify-between";
+          item.innerHTML = `
+            <div>
+              <span class="font-bold text-slate-800 block">${app.company} – ${app.title}</span>
+              <span class="text-slate-500 text-[11px]">${taskDesc.join(", ") || "Follow up pending"}</span>
+            </div>
+            <button onclick="openJobModal('${app.id}')" class="text-indigo-600 hover:text-indigo-800 font-semibold text-[11px]">Edit &rarr;</button>
+          `;
+          taskList.appendChild(item);
+        }
+      });
+
+      document.getElementById("pending-task-count").innerText = `${pendingCount} Pending`;
+      if (pendingCount === 0) {
+        taskList.innerHTML = `<p class="text-slate-400 italic text-center py-4">All application tasks completed! Great job 🎉</p>`;
+      }
+    }
+
+    function renderRecentJobsTable(apps) {
+      const tbody = document.getElementById("recent-jobs-tbody");
+      tbody.innerHTML = "";
+
+      if (apps.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="8" class="py-6 text-center text-slate-400 italic">No applications logged yet. Click "Add Application" above.</td></tr>`;
+        return;
+      }
+
+      const recent = [...apps].reverse().slice(0, 5);
+      recent.forEach(job => {
+        const tr = document.createElement("tr");
+        tr.className = "hover:bg-slate-50/80 transition";
+        tr.innerHTML = `
+          <td class="py-2.5 px-4 font-bold text-slate-800">${job.company}</td>
+          <td class="py-2.5 px-4 font-medium text-slate-700">${job.title}</td>
+          <td class="py-2.5 px-4">${renderCityBadge(job.city)}</td>
+          <td class="py-2.5 px-4">${renderLangBadge(job.lang)}</td>
+          <td class="py-2.5 px-4 text-slate-500">${job.source || 'LinkedIn'}</td>
+          <td class="py-2.5 px-4">${renderStatusBadge(job.status)}</td>
+          <td class="py-2.5 px-4 text-slate-500">${job.appliedDate || '-'}</td>
+          <td class="py-2.5 px-4 text-right">
+            <button onclick="openJobModal('${job.id}')" class="text-indigo-600 hover:text-indigo-800 font-semibold text-[11px]">View</button>
+          </td>
+        `;
+        tbody.appendChild(tr);
+      });
+    }
+
+    /* ==========================================================================
+       4. RENDER APPLICATIONS (TABLE & KANBAN)
+       ========================================================================== */
+    function setViewMode(mode) {
+      state.currentViewMode = mode;
+      const btnTable = document.getElementById("btn-view-table");
+      const btnKanban = document.getElementById("btn-view-kanban");
+      const tableCont = document.getElementById("container-table-view");
+      const kanbanCont = document.getElementById("container-kanban-view");
+
+      if (mode === 'table') {
+        tableCont.classList.remove("hidden");
+        kanbanCont.classList.add("hidden");
+        btnTable.className = "p-1.5 rounded text-xs font-semibold bg-white shadow text-slate-800";
+        btnKanban.className = "p-1.5 rounded text-xs font-semibold text-slate-500 hover:text-slate-800";
+      } else {
+        tableCont.classList.add("hidden");
+        kanbanCont.classList.remove("hidden");
+        btnKanban.className = "p-1.5 rounded text-xs font-semibold bg-white shadow text-slate-800";
+        btnTable.className = "p-1.5 rounded text-xs font-semibold text-slate-500 hover:text-slate-800";
+      }
+      renderApplications();
+    }
+
+    function renderApplications() {
+      const search = (document.getElementById("search-input").value || "").toLowerCase();
+      const statusFilter = document.getElementById("filter-status").value;
+      const sourceFilter = document.getElementById("filter-source").value;
+      const cityFilter = document.getElementById("filter-city").value;
+
+      populateCityFilterOptions();
+
+      const filtered = state.applications.filter(job => {
+        const matchesSearch = ((job.title || '') + " " + (job.company || '') + " " + (job.city || '')).toLowerCase().includes(search);
+        const matchesStatus = statusFilter === 'ALL' || job.status === statusFilter;
+        const matchesSource = sourceFilter === 'ALL' || job.source === sourceFilter;
+        const matchesCity = cityFilter === 'ALL' || job.city === cityFilter;
+        return matchesSearch && matchesStatus && matchesSource && matchesCity;
+      });
+
+      if (state.currentViewMode === 'table') {
+        renderTableView(filtered);
+      } else {
+        renderKanbanView(filtered);
+      }
+    }
+
+    function populateCityFilterOptions() {
+      const citySelect = document.getElementById("filter-city");
+      const currentVal = citySelect.value;
+      const cities = [...new Set(state.applications.map(a => a.city).filter(Boolean))];
+
+      citySelect.innerHTML = `<option value="ALL">All Cities</option>`;
+      cities.forEach(c => {
+        const opt = document.createElement("option");
+        opt.value = c;
+        opt.textContent = c;
+        if (c === currentVal) opt.selected = true;
+        citySelect.appendChild(opt);
+      });
+    }
+
+    function renderTableView(jobs) {
+      const tbody = document.getElementById("applications-tbody");
+      tbody.innerHTML = "";
+
+      if (jobs.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="13" class="py-8 text-center text-slate-400 italic">No job applications match your filter. Click "+ Add Application" to create one.</td></tr>`;
+        return;
+      }
+
+      jobs.forEach(job => {
+        const tr = document.createElement("tr");
+        tr.className = "hover:bg-slate-50 border-b border-slate-100 transition";
+        tr.innerHTML = `
+          <td class="py-2.5 px-3">
+            ${job.linkedinUrl ? `<a href="${job.linkedinUrl}" target="_blank" class="text-blue-600 hover:underline flex items-center gap-1 font-medium"><i data-lucide="linkedin" class="w-3.5 h-3.5"></i> LinkedIn</a>` : '<span class="text-slate-300">-</span>'}
+          </td>
+          <td class="py-2.5 px-3">
+            <span class="bg-blue-50 text-blue-700 px-2 py-0.5 rounded text-[11px] font-semibold border border-blue-200/50">${job.source || 'LinkedIn'}</span>
+          </td>
+          <td class="py-2.5 px-3">${renderCityBadge(job.city)}</td>
+          <td class="py-2.5 px-3">${renderLangBadge(job.lang)}</td>
+          <td class="py-2.5 px-3 font-bold text-slate-800">${job.company}</td>
+          <td class="py-2.5 px-3">
+            ${job.careerSiteUrl ? `<a href="${job.careerSiteUrl}" target="_blank" class="text-indigo-600 hover:underline flex items-center gap-1 text-[11px]"><i data-lucide="external-link" class="w-3 h-3"></i> Career Site</a>` : '<span class="text-slate-300">-</span>'}
+          </td>
+          <td class="py-2.5 px-3 font-semibold text-slate-800 max-w-xs truncate" title="${job.title}">${job.title}</td>
+          <td class="py-2.5 px-3 text-slate-600">${job.email ? `<a href="mailto:${job.email}" class="hover:underline">${job.email}</a>` : '<span class="text-slate-300">-</span>'}</td>
+          <td class="py-2.5 px-3 text-slate-600">${job.phone || '<span class="text-slate-300">-</span>'}</td>
+          <td class="py-2.5 px-3">${renderStatusSelectDropdown(job)}</td>
+          <td class="py-2.5 px-3 text-slate-500">${job.appliedDate || '<span class="text-slate-300">m/d/yyyy</span>'}</td>
+          <td class="py-2.5 px-3">
+            <div class="flex items-center space-x-1.5">
+              <span title="CV Sent" class="px-1.5 py-0.5 rounded text-[10px] font-semibold ${job.tasks?.cv ? 'bg-emerald-100 text-emerald-800' : 'bg-slate-100 text-slate-400'}">CV</span>
+              <span title="Cover Letter Ready" class="px-1.5 py-0.5 rounded text-[10px] font-semibold ${job.tasks?.cl ? 'bg-emerald-100 text-emerald-800' : 'bg-slate-100 text-slate-400'}">CL</span>
+              <span title="Interview Prepped" class="px-1.5 py-0.5 rounded text-[10px] font-semibold ${job.tasks?.prep ? 'bg-purple-100 text-purple-800' : 'bg-slate-100 text-slate-400'}">Prep</span>
+            </div>
+          </td>
+          <td class="py-2.5 px-3 text-center">
+            <div class="flex items-center justify-center space-x-2">
+              <button onclick="openJobModal('${job.id}')" class="p-1 text-slate-500 hover:text-indigo-600 rounded hover:bg-slate-200/60" title="Edit Application">
+                <i data-lucide="edit-3" class="w-4 h-4"></i>
+              </button>
+              <button onclick="deleteJob('${job.id}')" class="p-1 text-slate-400 hover:text-rose-600 rounded hover:bg-slate-200/60" title="Delete">
+                <i data-lucide="trash-2" class="w-4 h-4"></i>
+              </button>
+            </div>
+          </td>
+        `;
+        tbody.appendChild(tr);
+      });
+      lucide.createIcons();
+    }
+
+    function renderKanbanView(jobs) {
+      const cols = ["Wishlist", "Applied", "In Review", "Interview", "Offer", "Rejected"];
+      cols.forEach(c => {
+        const colEl = document.getElementById(`kb-col-${c}`);
+        if (colEl) colEl.innerHTML = "";
+      });
+
+      const counts = { Wishlist:0, Applied:0, "In Review":0, Interview:0, Offer:0, Rejected:0 };
+
+      jobs.forEach(job => {
+        let colName = job.status;
+        if (['Screening'].includes(colName)) colName = 'In Review';
+        if (['Ghosted', 'Withdrawn'].includes(colName)) colName = 'Rejected';
+        if (!cols.includes(colName)) colName = 'Applied';
+
+        counts[colName] = (counts[colName] || 0) + 1;
+        const colEl = document.getElementById(`kb-col-${colName}`);
+
+        if (colEl) {
+          const card = document.createElement("div");
+          card.className = "bg-white p-3 rounded-xl border border-slate-200 shadow-sm space-y-2 hover:shadow-md transition cursor-pointer";
+          card.onclick = () => openJobModal(job.id);
+          card.innerHTML = `
+            <div class="flex items-center justify-between">
+              <span class="font-bold text-slate-800 text-xs truncate max-w-[140px]">${job.company}</span>
+              ${renderCityBadge(job.city)}
+            </div>
+            <h4 class="font-semibold text-slate-900 text-xs leading-snug">${job.title}</h4>
+            <div class="flex items-center justify-between pt-2 border-t border-slate-100 text-[11px] text-slate-500">
+              <span>${job.appliedDate || 'Not applied'}</span>
+              <div class="flex items-center space-x-1">
+                ${renderLangBadge(job.lang)}
+              </div>
+            </div>
+          `;
+          colEl.appendChild(card);
+        }
+      });
+
+      Object.keys(counts).forEach(c => {
+        const cntEl = document.getElementById(`kb-count-${c}`);
+        if (cntEl) cntEl.innerText = counts[c];
+      });
+    }
+
+    /* Badge Helper Formatters */
+    function renderCityBadge(city) {
+      if (!city) return '<span class="text-slate-300">-</span>';
+      return `<span class="bg-rose-100/80 text-rose-800 border border-rose-200/60 px-2 py-0.5 rounded-full text-[11px] font-medium">${city}</span>`;
+    }
+
+    function renderLangBadge(lang) {
+      if (!lang) return '<span class="text-slate-300">-</span>';
+      const bg = lang === 'NL' ? 'bg-amber-100 text-amber-800 border-amber-200' : 'bg-emerald-100 text-emerald-800 border-emerald-200';
+      return `<span class="${bg} border px-1.5 py-0.5 rounded text-[10px] font-bold">${lang}</span>`;
+    }
+
+    function renderStatusBadge(status) {
+      const map = {
+        Applied: 'bg-amber-100 text-amber-900 border-amber-300',
+        'In Review': 'bg-blue-100 text-blue-900 border-blue-300',
+        Screening: 'bg-indigo-100 text-indigo-900 border-indigo-300',
+        Interview: 'bg-purple-100 text-purple-900 border-purple-300',
+        Offer: 'bg-emerald-100 text-emerald-900 border-emerald-300',
+        Rejected: 'bg-rose-100 text-rose-800 border-rose-200',
+        Ghosted: 'bg-slate-200 text-slate-700 border-slate-300',
+        Withdrawn: 'bg-slate-100 text-slate-600 border-slate-300',
+        Wishlist: 'bg-slate-100 text-slate-800 border-slate-300'
+      };
+      const cls = map[status] || 'bg-slate-100 text-slate-700';
+      return `<span class="${cls} border px-2 py-0.5 rounded-full text-[11px] font-semibold">${status}</span>`;
+    }
+
+    function renderStatusSelectDropdown(job) {
+      return `
+        <select onchange="updateJobStatus('${job.id}', this.value)" class="text-[11px] font-semibold bg-amber-50 border border-amber-200 rounded-lg px-2 py-1 focus:ring-1 focus:ring-amber-500">
+          <option value="Wishlist" ${job.status === 'Wishlist' ? 'selected' : ''}>Wishlist</option>
+          <option value="Applied" ${job.status === 'Applied' ? 'selected' : ''}>Applied</option>
+          <option value="In Review" ${job.status === 'In Review' ? 'selected' : ''}>In Review</option>
+          <option value="Screening" ${job.status === 'Screening' ? 'selected' : ''}>Screening</option>
+          <option value="Interview" ${job.status === 'Interview' ? 'selected' : ''}>Interview</option>
+          <option value="Offer" ${job.status === 'Offer' ? 'selected' : ''}>Offer / Hired</option>
+          <option value="Rejected" ${job.status === 'Rejected' ? 'selected' : ''}>Rejected</option>
+          <option value="Ghosted" ${job.status === 'Ghosted' ? 'selected' : ''}>Ghosted</option>
+          <option value="Withdrawn" ${job.status === 'Withdrawn' ? 'selected' : ''}>Withdrawn</option>
+        </select>
+      `;
+    }
+
+    function updateJobStatus(id, newStatus) {
+      const job = state.applications.find(a => a.id === id);
+      if (job) {
+        job.status = newStatus;
+        saveState();
+        renderApplications();
+        renderDashboard();
+        renderIndustryHub();
+      }
+    }
+
+    /* ==========================================================================
+       5. JOB APPLICATION FORM MODAL LOGIC
+       ========================================================================== */
+    function openJobModal(id = null) {
+      populateDocSelectOptions();
+      const modal = document.getElementById("modal-job");
+      const form = document.getElementById("form-job");
+      form.reset();
+
+      if (id) {
+        const job = state.applications.find(a => a.id === id);
+        if (job) {
+          document.getElementById("modal-job-title").innerHTML = `<i data-lucide="edit" class="w-4 h-4 text-indigo-400"></i> Edit Job Application`;
+          document.getElementById("job-id").value = job.id;
+          document.getElementById("job-title-input").value = job.title || '';
+          document.getElementById("job-company-input").value = job.company || '';
+          document.getElementById("job-city-input").value = job.city || '';
+          document.getElementById("job-lang-input").value = job.lang || 'EN';
+          document.getElementById("job-source-input").value = job.source || 'Linkedin';
+          document.getElementById("job-status-input").value = job.status || 'Applied';
+          document.getElementById("job-linkedin-input").value = job.linkedinUrl || '';
+          document.getElementById("job-careersite-input").value = job.careerSiteUrl || '';
+          document.getElementById("job-date-input").value = job.appliedDate || '';
+          document.getElementById("job-salary-input").value = job.salary || '';
+          document.getElementById("job-email-input").value = job.email || '';
+          document.getElementById("job-phone-input").value = job.phone || '';
+          document.getElementById("job-task-cv").checked = job.tasks?.cv || false;
+          document.getElementById("job-task-cl").checked = job.tasks?.cl || false;
+          document.getElementById("job-task-prep").checked = job.tasks?.prep || false;
+          document.getElementById("job-task-followup").checked = job.tasks?.followup || false;
+          document.getElementById("job-doc-input").value = job.docId || '';
+          document.getElementById("job-notes-input").value = job.notes || '';
+        }
+      } else {
+        document.getElementById("modal-job-title").innerHTML = `<i data-lucide="plus-circle" class="w-4 h-4 text-indigo-400"></i> Add New Job Application`;
+        document.getElementById("job-id").value = '';
+        document.getElementById("job-date-input").value = new Date().toISOString().split('T')[0];
+      }
+
+      modal.classList.remove("hidden");
+      lucide.createIcons();
+    }
+
+    function closeJobModal() {
+      document.getElementById("modal-job").classList.add("hidden");
+    }
+
+    function handleJobFormSubmit(e) {
+      e.preventDefault();
+      const id = document.getElementById("job-id").value;
+
+      const jobData = {
+        id: id || "job-" + Date.now(),
+        title: document.getElementById("job-title-input").value,
+        company: document.getElementById("job-company-input").value,
+        city: document.getElementById("job-city-input").value,
+        lang: document.getElementById("job-lang-input").value,
+        source: document.getElementById("job-source-input").value,
+        status: document.getElementById("job-status-input").value,
+        linkedinUrl: document.getElementById("job-linkedin-input").value,
+        careerSiteUrl: document.getElementById("job-careersite-input").value,
+        appliedDate: document.getElementById("job-date-input").value,
+        salary: document.getElementById("job-salary-input").value,
+        email: document.getElementById("job-email-input").value,
+        phone: document.getElementById("job-phone-input").value,
+        tasks: {
+          cv: document.getElementById("job-task-cv").checked,
+          cl: document.getElementById("job-task-cl").checked,
+          prep: document.getElementById("job-task-prep").checked,
+          followup: document.getElementById("job-task-followup").checked
+        },
+        docId: document.getElementById("job-doc-input").value,
+        notes: document.getElementById("job-notes-input").value
+      };
+
+      if (id) {
+        const index = state.applications.findIndex(a => a.id === id);
+        if (index !== -1) state.applications[index] = jobData;
+      } else {
+        state.applications.unshift(jobData);
+      }
+
+      saveState();
+      closeJobModal();
+      renderApplications();
+      renderDashboard();
+      renderIndustryHub();
+      showToast("Job application saved successfully!");
+    }
+
+    function deleteJob(id) {
+      openConfirmModal(
+        "Delete Application?",
+        "Are you sure you want to remove this job application from your tracker?",
+        () => {
+          state.applications = state.applications.filter(a => a.id !== id);
+          saveState();
+          renderApplications();
+          renderDashboard();
+          renderIndustryHub();
+          showToast("Application deleted.");
+        }
+      );
+    }
+
+    function populateDocSelectOptions() {
+      const select = document.getElementById("job-doc-input");
+      select.innerHTML = `<option value="">-- None / Default CV --</option>`;
+      state.documents.forEach(doc => {
+        const opt = document.createElement("option");
+        opt.value = doc.id;
+        opt.textContent = `${doc.title} (${doc.type})`;
+        select.appendChild(opt);
+      });
+    }
+
+    /* ==========================================================================
+       6. AI SMART EXTRACTOR (GEMINI API INTEGRATION)
+       ========================================================================== */
+    async function handleAIFileUpload(event) {
+      const file = event.target.files[0];
+      if (!file) return;
+
+      document.getElementById("ai-file-name").innerText = `Uploaded file: ${file.name}`;
+
+      if (file.type === "application/pdf") {
+        try {
+          const arrayBuffer = await file.arrayBuffer();
+          const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+          let extractedText = "";
+          for (let i = 1; i <= pdf.numPages; i++) {
+            const page = await pdf.getPage(i);
+            const textContent = await page.getTextContent();
+            extractedText += textContent.items.map(item => item.str).join(" ") + "\n";
+          }
+          state.uploadedFileText = extractedText;
+          document.getElementById("ai-input-text").value = extractedText;
+        } catch (err) {
+          console.error("PDF Parsing error:", err);
+          showToast("Could not parse PDF. Please paste text directly.");
+        }
+      } else {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+          state.uploadedFileText = e.target.result;
+          document.getElementById("ai-input-text").value = e.target.result;
+        };
+        reader.readAsText(file);
+      }
+    }
+
+    async function runAIExtraction() {
+      const textInput = document.getElementById("ai-input-text").value;
+      if (!textInput.trim()) {
+        showToast("Please paste job posting text or upload a document first.");
+        return;
+      }
+
+      const btn = document.getElementById("btn-run-ai");
+      const statusBadge = document.getElementById("ai-status-badge");
+      btn.disabled = true;
+      btn.innerHTML = `<i data-lucide="loader-2" class="w-4 h-4 animate-spin"></i> Extracting with Gemini AI...`;
+      statusBadge.innerText = "Processing...";
+      statusBadge.className = "text-[10px] bg-amber-100 text-amber-800 px-2 py-0.5 rounded-full font-semibold";
+
+      const systemPrompt = `You are a smart job application parser. Analyze the given job posting text and extract structured key fields.
+Return STRICT JSON format with keys:
+- company (string)
+- title (string)
+- city (string, e.g. Amsterdam, Den Haag, Remote, etc.)
+- lang (string, EN or NL or ID)
+- source (string: Linkedin, Indeed, Glassdoor, or Career Site)
+- salary (string, salary range if found, else empty string)
+- recruiterEmail (string, email if found, else empty)
+- recruiterPhone (string, phone if found, else empty)
+- summary (string, 1-2 sentence summary of requirements)
+`;
+
+      const apiKey = ""; 
+      const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent?key=${apiKey}`;
+
+      const payload = {
+        contents: [{ parts: [{ text: textInput }] }],
+        systemInstruction: { parts: [{ text: systemPrompt }] },
+        generationConfig: {
+          responseMimeType: "application/json",
+          responseSchema: {
+            type: "OBJECT",
+            properties: {
+              company: { type: "STRING" },
+              title: { type: "STRING" },
+              city: { type: "STRING" },
+              lang: { type: "STRING" },
+              source: { type: "STRING" },
+              salary: { type: "STRING" },
+              recruiterEmail: { type: "STRING" },
+              recruiterPhone: { type: "STRING" },
+              summary: { type: "STRING" }
+            },
+            required: ["company", "title", "city", "lang"]
+          }
+        }
+      };
+
+      try {
+        const response = await fetch(apiUrl, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload)
+        });
+
+        const data = await response.json();
+        const jsonText = data.candidates?.[0]?.content?.parts?.[0]?.text;
+
+        if (jsonText) {
+          const parsed = JSON.parse(jsonText);
+          state.aiExtractedData = parsed;
+          renderAIExtractedOutput(parsed);
+          statusBadge.innerText = "Successfully Extracted";
+          statusBadge.className = "text-[10px] bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded-full font-semibold";
+        } else {
+          throw new Error("Invalid response format from AI");
+        }
+      } catch (err) {
+        console.warn("AI API Fallback engaged:", err);
+        const fallback = fallbackRuleParser(textInput);
+        state.aiExtractedData = fallback;
+        renderAIExtractedOutput(fallback);
+        statusBadge.innerText = "Parsed (Rule Fallback)";
+        statusBadge.className = "text-[10px] bg-blue-100 text-blue-800 px-2 py-0.5 rounded-full font-semibold";
+      } finally {
+        btn.disabled = false;
+        btn.innerHTML = `<i data-lucide="wand2" class="w-4 h-4"></i> Parse Job Posting with Gemini AI`;
+        lucide.createIcons();
+      }
+    }
+
+    function fallbackRuleParser(text) {
+      let company = "Target Company";
+      let title = "Job Position";
+      let city = "Amsterdam";
+      let lang = text.toLowerCase().includes("dutch") || text.toLowerCase().includes("nederlands") ? "NL" : "EN";
+
+      const emailMatch = text.match(/[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/);
+      const email = emailMatch ? emailMatch[0] : "";
+
+      const phoneMatch = text.match(/[\+]?[(]?[0-9]{3}[)]?[-\s\.]?[0-9]{3}[-\s\.]?[0-9]{4,6}/);
+      const phone = phoneMatch ? phoneMatch[0] : "";
+
+      return {
+        company: company,
+        title: title,
+        city: city,
+        lang: lang,
+        source: "Linkedin",
+        salary: "",
+        recruiterEmail: email,
+        recruiterPhone: phone,
+        summary: text.substring(0, 180) + "..."
+      };
+    }
+
+    function renderAIExtractedOutput(parsed) {
+      const cont = document.getElementById("ai-extracted-fields");
+      cont.innerHTML = `
+        <div class="space-y-2 bg-white p-3 rounded-lg border border-slate-200">
+          <div><strong class="text-slate-500">Position:</strong> <span class="text-slate-900 font-bold">${parsed.title || '-'}</span></div>
+          <div><strong class="text-slate-500">Company:</strong> <span class="text-slate-900 font-bold">${parsed.company || '-'}</span></div>
+          <div class="flex gap-4">
+            <div><strong class="text-slate-500">City:</strong> ${renderCityBadge(parsed.city)}</div>
+            <div><strong class="text-slate-500">Lang:</strong> ${renderLangBadge(parsed.lang)}</div>
+          </div>
+          <div><strong class="text-slate-500">Salary:</strong> <span class="text-emerald-700 font-semibold">${parsed.salary || 'Not specified'}</span></div>
+          <div><strong class="text-slate-500">Email:</strong> ${parsed.recruiterEmail || '-'}</div>
+          <div><strong class="text-slate-500">Phone:</strong> ${parsed.recruiterPhone || '-'}</div>
+          <div><strong class="text-slate-500">Summary:</strong> <p class="text-slate-600 mt-0.5 text-[11px] leading-relaxed">${parsed.summary || ''}</p></div>
+        </div>
+      `;
+
+      document.getElementById("ai-actions-container").classList.remove("hidden");
+    }
+
+    function saveAIExtractedJob() {
+      if (!state.aiExtractedData) return;
+      const d = state.aiExtractedData;
+
+      openJobModal();
+      document.getElementById("job-title-input").value = d.title || '';
+      document.getElementById("job-company-input").value = d.company || '';
+      document.getElementById("job-city-input").value = d.city || '';
+      document.getElementById("job-lang-input").value = d.lang || 'EN';
+      document.getElementById("job-salary-input").value = d.salary || '';
+      document.getElementById("job-email-input").value = d.recruiterEmail || '';
+      document.getElementById("job-phone-input").value = d.recruiterPhone || '';
+      document.getElementById("job-notes-input").value = d.summary || '';
+    }
+
+    /* ==========================================================================
+       7. DOCUMENT VAULT MANAGEMENT LOGIC
+       ========================================================================== */
+    function renderDocuments() {
+      const listCv = document.getElementById("list-docs-cv");
+      const listCl = document.getElementById("list-docs-cl");
+      const listOther = document.getElementById("list-docs-other");
+
+      listCv.innerHTML = "";
+      listCl.innerHTML = "";
+      listOther.innerHTML = "";
+
+      let cvCount = 0, clCount = 0, otherCount = 0;
+
+      if (state.documents.length === 0) {
+        listCv.innerHTML = `<p class="text-slate-400 italic text-[11px]">No CVs added yet.</p>`;
+        listCl.innerHTML = `<p class="text-slate-400 italic text-[11px]">No Cover Letters added yet.</p>`;
+        listOther.innerHTML = `<p class="text-slate-400 italic text-[11px]">No Portfolios added yet.</p>`;
+      }
+
+      state.documents.forEach(doc => {
+        const item = document.createElement("div");
+        item.className = "bg-slate-50 p-3 rounded-xl border border-slate-200 flex flex-col justify-between space-y-2 hover:bg-slate-100/80 transition";
+        item.innerHTML = `
+          <div>
+            <span class="font-bold text-slate-800 text-xs block">${doc.title}</span>
+            <span class="text-[10px] text-slate-400 font-medium">${doc.tags || 'General'}</span>
+          </div>
+          <div class="flex items-center justify-between pt-2 border-t border-slate-200 text-[11px]">
+            ${doc.url ? `<a href="${doc.url}" target="_blank" class="text-indigo-600 hover:underline font-semibold flex items-center gap-1"><i data-lucide="external-link" class="w-3 h-3"></i> Open File</a>` : '<span class="text-slate-400 italic">No link</span>'}
+            <button onclick="deleteDoc('${doc.id}')" class="text-rose-500 hover:text-rose-700 font-semibold text-[10px]">Delete</button>
+          </div>
+        `;
+
+        if (doc.type === 'CV') {
+          listCv.appendChild(item);
+          cvCount++;
+        } else if (doc.type === 'CL') {
+          listCl.appendChild(item);
+          clCount++;
+        } else {
+          listOther.appendChild(item);
+          otherCount++;
+        }
+      });
+
+      document.getElementById("count-docs-cv").innerText = `${cvCount} files`;
+      document.getElementById("count-docs-cl").innerText = `${clCount} files`;
+      document.getElementById("count-docs-other").innerText = `${otherCount} files`;
+
+      lucide.createIcons();
+    }
+
+    function openDocModal() {
+      document.getElementById("modal-doc").classList.remove("hidden");
+    }
+
+    function closeDocModal() {
+      document.getElementById("modal-doc").classList.add("hidden");
+    }
+
+    function handleDocFormSubmit(e) {
+      e.preventDefault();
+      const newDoc = {
+        id: "doc-" + Date.now(),
+        title: document.getElementById("doc-title-input").value,
+        type: document.getElementById("doc-type-input").value,
+        url: document.getElementById("doc-url-input").value,
+        tags: document.getElementById("doc-tags-input").value
+      };
+
+      state.documents.push(newDoc);
+      saveState();
+      closeDocModal();
+      renderDocuments();
+      showToast("Document saved to vault!");
+    }
+
+    function deleteDoc(id) {
+      openConfirmModal(
+        "Delete Document Version?",
+        "Are you sure you want to delete this document from your vault?",
+        () => {
+          state.documents = state.documents.filter(d => d.id !== id);
+          saveState();
+          renderDocuments();
+          showToast("Document deleted.");
+        }
+      );
+    }
+
+    /* ==========================================================================
+       8. BACKUP, CUSTOM MODALS & UTILITIES
+       ========================================================================== */
+    let confirmCallback = null;
+
+    function openConfirmModal(title, message, onConfirm) {
+      document.getElementById("confirm-title").innerText = title;
+      document.getElementById("confirm-message").innerText = message;
+      confirmCallback = onConfirm;
+      document.getElementById("btn-confirm-action").onclick = () => {
+        if (confirmCallback) confirmCallback();
+        closeConfirmModal();
+      };
+      document.getElementById("modal-confirm").classList.remove("hidden");
+    }
+
+    function closeConfirmModal() {
+      document.getElementById("modal-confirm").classList.add("hidden");
+    }
+
+    function promptClearAllData() {
+      openConfirmModal(
+        "Start Fresh / Wipe All Data?",
+        "This will delete ALL job applications, document versions, and settings. Export a JSON backup first if needed!",
+        () => {
+          state.applications = [];
+          state.documents = [];
+          saveState();
+          renderApplications();
+          renderDashboard();
+          renderDocuments();
+          renderIndustryHub();
+          showToast("All data cleared! Fresh start ready.");
+        }
+      );
+    }
+
+    function exportDataJSON() {
+      const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(state, null, 2));
+      const downloadAnchor = document.createElement('a');
+      downloadAnchor.setAttribute("href", dataStr);
+      downloadAnchor.setAttribute("download", `job_tracker_backup_${new Date().toISOString().split('T')[0]}.json`);
+      document.body.appendChild(downloadAnchor);
+      downloadAnchor.click();
+      downloadAnchor.remove();
+      showToast("JSON Backup downloaded!");
+    }
+
+    function triggerImportJSON() {
+      document.getElementById("json-file-input").click();
+    }
+
+    function importDataJSON(event) {
+      const file = event.target.files[0];
+      if (!file) return;
+
+      const reader = new FileReader();
+      reader.onload = function(e) {
+        try {
+          const imported = JSON.parse(e.target.result);
+          if (imported.applications) state.applications = imported.applications;
+          if (imported.documents) state.documents = imported.documents;
+          if (imported.industries) state.industries = imported.industries;
+          saveState();
+          renderDashboard();
+          renderApplications();
+          renderDocuments();
+          renderIndustryHub();
+          showToast("Backup imported successfully!");
+        } catch (err) {
+          showToast("Failed to parse JSON backup file.");
+        }
+      };
+      reader.readAsText(file);
+    }
+
+    function showToast(msg) {
+      const toast = document.createElement("div");
+      toast.className = "fixed bottom-5 right-5 bg-slate-900 text-white px-4 py-2.5 rounded-xl shadow-xl text-xs z-50 flex items-center gap-2 border border-slate-700 animate-bounce";
+      toast.innerHTML = `<i data-lucide="check-circle-2" class="w-4 h-4 text-emerald-400"></i> ${msg}`;
+      document.body.appendChild(toast);
+      lucide.createIcons();
+      setTimeout(() => toast.remove(), 3000);
+    }
+
+    /* ==========================================================================
+       9. INITIALIZATION
+       ========================================================================== */
+    window.onload = function() {
+      lucide.createIcons();
+      renderDashboard();
+    };
+  </script>
+
+</body>
+</html>
