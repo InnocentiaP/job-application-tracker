@@ -1,0 +1,9 @@
+{
+  "name": "job-application-tracker",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Personal Job Application Tracker & Command Center",
+  "engines": {
+    "node": ">=18"
+  }
+}

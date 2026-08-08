@@ -485,7 +485,7 @@
                   <div class="flex flex-col items-center justify-center pt-2 pb-2">
                     <i data-lucide="upload-cloud" class="w-6 h-6 text-slate-400 mb-1"></i>
                     <p class="text-xs text-slate-500"><span class="font-semibold text-indigo-600">Click to upload</span> or drag and drop</p>
-                    <p class="text-[10px] text-slate-400">PDF or HTML (No size limit)</p>
+                    <p class="text-[10px] text-slate-400">PDF, HTML, or TXT (text is truncated to 15,000 characters)</p>
                   </div>
                   <input type="file" id="ai-file-upload" accept=".pdf,.html,.htm,.txt" class="hidden" onchange="handleAIFileUpload(event)">
                 </label>
@@ -1594,10 +1594,15 @@
     }
 
     async function runAIExtraction() {
-      const textInput = document.getElementById("ai-input-text").value;
+      const MAX_INPUT_CHARS = 15000;
+      let textInput = document.getElementById("ai-input-text").value;
       if (!textInput.trim()) {
         showToast("Please paste job posting text or upload a document first.");
         return;
+      }
+      if (textInput.length > MAX_INPUT_CHARS) {
+        textInput = textInput.substring(0, MAX_INPUT_CHARS);
+        showToast(`Text truncated to ${MAX_INPUT_CHARS} characters before sending.`);
       }
 
       const btn = document.getElementById("btn-run-ai");
@@ -1607,63 +1612,22 @@
       statusBadge.innerText = "Processing...";
       statusBadge.className = "text-[10px] bg-amber-100 text-amber-800 px-2 py-0.5 rounded-full font-semibold";
 
-      const systemPrompt = `You are a smart job application parser. Analyze the given job posting text and extract structured key fields.
-Return STRICT JSON format with keys:
-- company (string)
-- title (string)
-- city (string, e.g. Amsterdam, Den Haag, Remote, etc.)
-- lang (string, EN or NL or ID)
-- source (string: Linkedin, Indeed, Glassdoor, or Career Site)
-- salary (string, salary range if found, else empty string)
-- recruiterEmail (string, email if found, else empty)
-- recruiterPhone (string, phone if found, else empty)
-- summary (string, 1-2 sentence summary of requirements)
-`;
-
-      const apiKey = ""; 
-      const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent?key=${apiKey}`;
-
-      const payload = {
-        contents: [{ parts: [{ text: textInput }] }],
-        systemInstruction: { parts: [{ text: systemPrompt }] },
-        generationConfig: {
-          responseMimeType: "application/json",
-          responseSchema: {
-            type: "OBJECT",
-            properties: {
-              company: { type: "STRING" },
-              title: { type: "STRING" },
-              city: { type: "STRING" },
-              lang: { type: "STRING" },
-              source: { type: "STRING" },
-              salary: { type: "STRING" },
-              recruiterEmail: { type: "STRING" },
-              recruiterPhone: { type: "STRING" },
-              summary: { type: "STRING" }
-            },
-            required: ["company", "title", "city", "lang"]
-          }
-        }
-      };
-
       try {
-        const response = await fetch(apiUrl, {
+        const response = await fetch("/api/extract-job", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(payload)
+          body: JSON.stringify({ text: textInput })
         });
 
-        const data = await response.json();
-        const jsonText = data.candidates?.[0]?.content?.parts?.[0]?.text;
+        const parsed = await response.json();
 
-        if (jsonText) {
-          const parsed = JSON.parse(jsonText);
+        if (response.ok && parsed && !parsed.error) {
           state.aiExtractedData = parsed;
           renderAIExtractedOutput(parsed);
           statusBadge.innerText = "Successfully Extracted";
           statusBadge.className = "text-[10px] bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded-full font-semibold";
         } else {
-          throw new Error("Invalid response format from AI");
+          throw new Error(parsed?.error || "Invalid response format from AI");
         }
       } catch (err) {
         console.warn("AI API Fallback engaged:", err);
