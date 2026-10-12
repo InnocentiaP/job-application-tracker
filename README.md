@@ -75,7 +75,8 @@ This app currently stores **all data in your browser**:
 
 - `localStorage`: `job_tracker_apps` (applications, incl. pasted LaTeX), `job_tracker_industries`,
   `job_tracker_active_ind`, `job_tracker_loose_companies`, `job_tracker_templates` (LaTeX
-  templates), `job_tracker_planner` (planner groups and blocks)
+  templates), `job_tracker_planner` (planner groups and blocks), `job_tracker_docs` (old document
+  links), `job_tracker_scout_columns` + `job_tracker_company_meta` (Scouting board columns, notes, careers links)
 - IndexedDB database `job_tracker_files`: uploaded and compiled CV / cover letter PDFs per
   application (too large for `localStorage`)
 

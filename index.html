@@ -341,6 +341,7 @@
             <option value="Rejected">Rejected / Not Selected</option>
             <option value="Ghosted">Ghosted</option>
             <option value="Withdrawn">Withdrawn</option>
+            <option value="Closed">Closed (posting closed before applying)</option>
           </select>
 
           <!-- Apply Priority Filter -->
@@ -708,6 +709,7 @@
               <option value="Rejected">Rejected</option>
               <option value="Ghosted">Ghosted</option>
               <option value="Withdrawn">Withdrawn</option>
+              <option value="Closed">Closed (posting closed)</option>
             </select>
           </div>
         </div>
@@ -1010,7 +1012,7 @@
       </div>
       <form onsubmit="handleMoveCompanySubmit(event)" class="p-6 space-y-4 text-xs">
         <div>
-          <label class="block font-semibold text-slate-700 mb-1">Move to industry</label>
+          <label class="block font-semibold text-slate-700 mb-1">Move to</label>
           <select id="move-target-select" class="w-full p-2.5 border border-slate-200 rounded-lg focus:ring-2 focus:ring-indigo-500"></select>
         </div>
         <div class="pt-3 border-t border-slate-100 flex justify-end gap-2">
@@ -1327,6 +1329,15 @@
       { id: "ind-4", name: "FMCG & Energy", companies: ["Unilever", "Heineken", "Shell"] }
     ];
 
+    // Scouting board: target companies with no job logged yet, grouped by what you found when checking
+    const SCOUT_DEFAULT_COLUMN = "to-check";
+    const DEFAULT_SCOUT_COLUMNS = [
+      { id: SCOUT_DEFAULT_COLUMN, name: "To check" },
+      { id: "no-opening", name: "No openings right now" },
+      { id: "no-match", name: "No matching role" },
+      { id: "abroad", name: "No NL openings – look abroad" }
+    ];
+
     const DEFAULT_PLANNER = {
       categories: [
         { id: "cat-break", name: "Break", color: "#94a3b8" },
@@ -1383,6 +1394,8 @@
       looseCompanies: getSavedState("job_tracker_loose_companies", []),
       templates: getSavedState("job_tracker_templates", null) || buildDefaultTemplates(),
       legacyDocs: getSavedState("job_tracker_docs", []),
+      scoutColumns: getSavedState("job_tracker_scout_columns", DEFAULT_SCOUT_COLUMNS),
+      companyMeta: getSavedState("job_tracker_company_meta", {}),
       planner: getSavedState("job_tracker_planner", DEFAULT_PLANNER),
       plannerView: window.innerWidth < 768 ? "day" : "week",
       plannerDate: null,
@@ -1399,6 +1412,8 @@
         localStorage.setItem("job_tracker_loose_companies", JSON.stringify(state.looseCompanies));
         localStorage.setItem("job_tracker_templates", JSON.stringify(state.templates));
         localStorage.setItem("job_tracker_docs", JSON.stringify(state.legacyDocs));
+        localStorage.setItem("job_tracker_scout_columns", JSON.stringify(state.scoutColumns));
+        localStorage.setItem("job_tracker_company_meta", JSON.stringify(state.companyMeta));
         localStorage.setItem("job_tracker_planner", JSON.stringify(state.planner));
       } catch (e) {
         console.warn("Could not save to LocalStorage:", e);
@@ -1814,6 +1829,7 @@
        3. INDUSTRY TARGET DIRECTORY & CHECKLIST LOGIC
        ========================================================================== */
     const OVERVIEW_ID = "__overview";
+    const SCOUTING_ID = "__scouting";
     const UNASSIGNED_ID = "__unassigned";
 
     function normName(s) { return (s || "").trim().toLowerCase(); }
@@ -1827,10 +1843,11 @@
       return {
         total,
         pending,
-        applied: matchedJobs.filter(a => a.status !== 'Wishlist').length,
+        applied: matchedJobs.filter(a => a.status !== 'Wishlist' && a.status !== 'Closed').length,
+        closed: matchedJobs.filter(a => a.status === 'Closed').length,
         interview: matchedJobs.filter(a => a.status === 'Interview' || a.status === 'Screening').length,
         // All logged jobs applied → checked & struck through
-        fullyApplied: total > 0 && pending === 0
+        fullyApplied: total > 0 && pending === 0 && matchedJobs.some(a => a.status !== 'Closed')
       };
     }
 
@@ -1892,7 +1909,7 @@
 
     function renderIndustryHub() {
       if (!Array.isArray(state.industries)) state.industries = [];
-      if (state.activeIndustryId !== OVERVIEW_ID && !getIndustry(state.activeIndustryId)) {
+      if (![OVERVIEW_ID, SCOUTING_ID].includes(state.activeIndustryId) && !getIndustry(state.activeIndustryId)) {
         state.activeIndustryId = state.industries.length > 0 ? state.industries[0].id : OVERVIEW_ID;
       }
 
@@ -1905,11 +1922,16 @@
       const countClass = active => `text-[10px] px-2 py-0.5 rounded-full ${active ? "bg-indigo-800 text-indigo-100" : "bg-slate-100 text-slate-500"}`;
       const totalAssigned = state.industries.reduce((sum, ind) => sum + ind.companies.length, 0);
       const overviewActive = state.activeIndustryId === OVERVIEW_ID;
+      const scoutingActive = state.activeIndustryId === SCOUTING_ID;
 
       let tabs = `
         <button data-action="open-industry" data-id="${OVERVIEW_ID}" class="${tabClass(overviewActive)}">
           <span class="flex items-center gap-1.5 truncate"><i data-lucide="layout-grid" class="w-3.5 h-3.5"></i> Overview (all)</span>
           <span class="${countClass(overviewActive)}">${totalAssigned}</span>
+        </button>
+        <button data-action="open-industry" data-id="${SCOUTING_ID}" title="Companies in your industries with no job logged yet" class="${tabClass(scoutingActive)}">
+          <span class="flex items-center gap-1.5 truncate"><i data-lucide="telescope" class="w-3.5 h-3.5"></i> Scouting (no jobs yet)</span>
+          <span class="${countClass(scoutingActive)}">${getScoutCompanies().length}</span>
         </button>
         <div class="border-t border-slate-200 my-1.5"></div>`;
       state.industries.forEach(ind => {
@@ -1923,7 +1945,9 @@
       document.getElementById("industry-tab-container").innerHTML = tabs;
 
       const content = document.getElementById("industry-content");
-      content.innerHTML = overviewActive ? renderIndustryOverviewHTML() : renderIndustryDetailHTML(getIndustry(state.activeIndustryId));
+      content.innerHTML = overviewActive ? renderIndustryOverviewHTML()
+        : scoutingActive ? renderScoutingBoardHTML()
+        : renderIndustryDetailHTML(getIndustry(state.activeIndustryId));
       lucide.createIcons();
     }
 
@@ -2009,6 +2033,7 @@
                       ${s.applied > 0 ? `<span class="bg-amber-100 text-amber-800 px-2 py-0.5 rounded font-medium">${s.applied} Applied</span>` : ''}
                       ${s.pending > 0 ? `<span class="bg-slate-100 text-slate-600 px-2 py-0.5 rounded font-medium">${s.pending} Not Applied</span>` : ''}
                       ${s.interview > 0 ? `<span class="bg-purple-100 text-purple-800 px-2 py-0.5 rounded font-medium">${s.interview} Interview</span>` : ''}
+                      ${s.closed > 0 ? `<span class="bg-stone-100 text-stone-500 px-2 py-0.5 rounded font-medium">${s.closed} Closed</span>` : ''}
                      </div>`}
               </div>
             </div>
@@ -2029,6 +2054,196 @@
       return header + `<div data-drop="${esc(activeInd.id)}" class="grid grid-cols-1 sm:grid-cols-2 gap-3 rounded-xl transition">${cards}</div>`;
     }
 
+    /* ---- Scouting board: target companies with no job logged yet ---- */
+    function getCompanyMeta(name) {
+      return state.companyMeta[normName(name)] || {};
+    }
+
+    function updateCompanyMeta(name, patch) {
+      const key = normName(name);
+      state.companyMeta[key] = { ...(state.companyMeta[key] || {}), ...patch };
+      saveState();
+    }
+
+    // Companies listed in any industry that have no application logged yet
+    function getScoutCompanies() {
+      const withJobs = new Set(state.applications.map(a => normName(a.company)));
+      const found = new Map();
+      state.industries.forEach(ind => ind.companies.forEach(c => {
+        const n = normName(c);
+        if (!n || withJobs.has(n)) return;
+        if (!found.has(n)) found.set(n, { name: c, industries: [] });
+        found.get(n).industries.push(ind.name);
+      }));
+      return [...found.values()];
+    }
+
+    function scoutColumnOf(name) {
+      const col = getCompanyMeta(name).scoutColumn;
+      return state.scoutColumns.some(c => c.id === col) ? col : SCOUT_DEFAULT_COLUMN;
+    }
+
+    function daysSince(isoDate) {
+      if (!isoDate) return null;
+      return Math.round((parseISODate(todayISO()) - parseISODate(isoDate)) / 86400000);
+    }
+
+    function lastCheckedLabel(isoDate) {
+      const d = daysSince(isoDate);
+      if (d === null) return { text: "Never checked", cls: "text-amber-600" };
+      if (d === 0) return { text: "Checked today", cls: "text-emerald-600" };
+      return { text: `Checked ${d === 1 ? "yesterday" : `${d} days ago`}`, cls: d > 14 ? "text-amber-600" : "text-slate-400" };
+    }
+
+    function renderScoutingBoardHTML() {
+      const companies = getScoutCompanies();
+      const columns = state.scoutColumns.map(col => {
+        // Least recently checked first, so the top of each column is what to look at next
+        const items = companies
+          .filter(c => scoutColumnOf(c.name) === col.id)
+          .sort((a, b) => (getCompanyMeta(a.name).lastChecked || "").localeCompare(getCompanyMeta(b.name).lastChecked || "") || a.name.localeCompare(b.name));
+        const isDefault = col.id === SCOUT_DEFAULT_COLUMN;
+        const cards = items.map(c => {
+          const meta = getCompanyMeta(c.name);
+          const checked = lastCheckedLabel(meta.lastChecked);
+          const name = esc(c.name);
+          const q = encodeURIComponent(c.name);
+          return `
+            <div draggable="true" data-drag-company data-scout-card data-company="${name}" class="bg-white p-3 rounded-xl border border-slate-200 shadow-sm space-y-2 cursor-grab active:cursor-grabbing">
+              <div class="flex items-start justify-between gap-2">
+                <div class="min-w-0">
+                  <div class="font-bold text-xs text-slate-800 truncate">${name}</div>
+                  <div class="text-[10px] text-slate-400 truncate">${esc(c.industries.join(", "))}</div>
+                </div>
+                <button data-action="scout-move" data-company="${name}" class="p-0.5 text-slate-300 hover:text-indigo-600 flex-shrink-0" title="Move to another column"><i data-lucide="move" class="w-3.5 h-3.5"></i></button>
+              </div>
+              ${meta.note ? `<p class="text-[11px] text-slate-600 bg-slate-50 rounded-lg px-2 py-1">${esc(meta.note)}</p>` : ""}
+              <div class="flex items-center justify-between text-[10px]">
+                <span class="${checked.cls} font-semibold">${checked.text}</span>
+                <button data-action="scout-checked" data-company="${name}" class="text-emerald-600 hover:underline font-semibold flex items-center gap-0.5"><i data-lucide="check" class="w-3 h-3"></i> Checked</button>
+              </div>
+              <div class="flex flex-wrap items-center gap-x-2.5 gap-y-1 pt-2 border-t border-slate-100 text-[10px] font-semibold">
+                ${meta.careersUrl
+                  ? `<a href="${esc(meta.careersUrl)}" target="_blank" rel="noopener" class="text-indigo-600 hover:underline flex items-center gap-0.5"><i data-lucide="external-link" class="w-3 h-3"></i> Careers</a>`
+                  : `<button data-action="scout-link" data-company="${name}" class="text-slate-400 hover:text-indigo-600 flex items-center gap-0.5"><i data-lucide="link" class="w-3 h-3"></i> Add careers link</button>`}
+                <a href="https://www.linkedin.com/jobs/search/?keywords=${q}&location=Netherlands" target="_blank" rel="noopener" class="text-blue-600 hover:underline flex items-center gap-0.5"><i data-lucide="linkedin" class="w-3 h-3"></i> Jobs NL</a>
+                <button data-action="scout-note" data-company="${name}" class="text-slate-500 hover:text-indigo-600 flex items-center gap-0.5"><i data-lucide="sticky-note" class="w-3 h-3"></i> Note</button>
+                <button data-action="add-job" data-company="${name}" class="text-emerald-600 hover:underline flex items-center gap-0.5 ml-auto"><i data-lucide="plus" class="w-3 h-3"></i> Job</button>
+              </div>
+            </div>`;
+        }).join("");
+        return `
+          <div data-scout-drop="${esc(col.id)}" class="bg-slate-50 rounded-xl border border-slate-200 p-2.5 flex flex-col gap-2 min-h-[160px] transition">
+            <div class="flex items-center justify-between gap-1 px-1">
+              <span class="text-xs font-bold text-slate-700 leading-tight break-words min-w-0">${esc(col.name)}</span>
+              <div class="flex items-center gap-0.5 flex-shrink-0">
+                <span class="text-[10px] font-semibold bg-white border border-slate-200 px-1.5 py-0.5 rounded-full mr-1">${items.length}</span>
+                <button data-action="scout-rename-column" data-id="${esc(col.id)}" class="p-0.5 text-slate-400 hover:text-indigo-600" title="Rename column"><i data-lucide="pencil" class="w-3 h-3"></i></button>
+                ${isDefault ? "" : `<button data-action="scout-delete-column" data-id="${esc(col.id)}" class="p-0.5 text-slate-400 hover:text-rose-600" title="Delete column"><i data-lucide="trash-2" class="w-3 h-3"></i></button>`}
+              </div>
+            </div>
+            ${cards || `<p class="text-[11px] text-slate-400 italic text-center py-4">Drop companies here</p>`}
+          </div>`;
+      }).join("");
+
+      return `
+        <div class="flex flex-wrap items-center justify-between gap-2 bg-slate-100/70 p-3 rounded-xl border border-slate-200">
+          <div>
+            <div class="flex items-center gap-2">
+              <span class="font-bold text-sm text-slate-800">Scouting Board</span>
+              <span class="text-[11px] font-semibold bg-indigo-100 text-indigo-800 px-2.5 py-0.5 rounded-full">${companies.length} companies without jobs</span>
+            </div>
+            <p class="text-[11px] text-slate-500 mt-0.5">Target companies with no job logged yet. Drag between columns; once you add a job, the company leaves this board.</p>
+          </div>
+          <button data-action="scout-add-column" class="px-2.5 py-1 text-[11px] font-semibold bg-white border border-slate-300 rounded-lg hover:bg-slate-50 flex items-center gap-1"><i data-lucide="plus" class="w-3 h-3"></i> Column</button>
+        </div>
+        ${companies.length === 0
+          ? `<p class="text-xs text-slate-400 italic text-center py-10">Every company in your industries already has a job logged.</p>`
+          : `<div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-3 items-start">${columns}</div>`}`;
+    }
+
+    function setScoutColumn(name, columnId) {
+      if (!name || !state.scoutColumns.some(c => c.id === columnId) || scoutColumnOf(name) === columnId) return;
+      // Moving a company out of "To check" means you just looked, so it counts as checked today
+      const lastChecked = columnId === SCOUT_DEFAULT_COLUMN ? getCompanyMeta(name).lastChecked : todayISO();
+      updateCompanyMeta(name, { scoutColumn: columnId, lastChecked });
+      renderIndustryHub();
+    }
+
+    function markCompanyChecked(name) {
+      updateCompanyMeta(name, { lastChecked: todayISO() });
+      renderIndustryHub();
+    }
+
+    function openScoutMoveModal(name) {
+      document.getElementById("move-company-title").innerText = `"${name}": what did you find?`;
+      const select = document.getElementById("move-target-select");
+      select.innerHTML = state.scoutColumns.map(c => `<option value="${esc(c.id)}">${esc(c.name)}</option>`).join("");
+      select.value = scoutColumnOf(name);
+      moveCompanyContext = { name, scout: true };
+      document.getElementById("modal-move-company").classList.remove("hidden");
+    }
+
+    function promptCompanyNote(name) {
+      openPromptModal({
+        title: `Note for ${name}`,
+        label: "e.g. only hires in Germany, check again in March",
+        value: getCompanyMeta(name).note || "",
+        onSubmit: note => { updateCompanyMeta(name, { note }); renderIndustryHub(); }
+      });
+    }
+
+    function promptCompanyCareersUrl(name) {
+      openPromptModal({
+        title: `Careers page for ${name}`,
+        label: "Careers page URL",
+        placeholder: "https://careers.company.com",
+        value: getCompanyMeta(name).careersUrl || "",
+        onSubmit: url => {
+          updateCompanyMeta(name, { careersUrl: /^https?:\/\//i.test(url) ? url : `https://${url}` });
+          renderIndustryHub();
+        }
+      });
+    }
+
+    function promptAddScoutColumn() {
+      openPromptModal({
+        title: "New Scouting Column",
+        label: "Column name",
+        placeholder: "e.g. Check again next month",
+        confirmText: "Add",
+        onSubmit: name => {
+          state.scoutColumns.push({ id: "scout-" + Date.now(), name });
+          saveState();
+          renderIndustryHub();
+        }
+      });
+    }
+
+    function promptRenameScoutColumn(id) {
+      const col = state.scoutColumns.find(c => c.id === id);
+      if (!col) return;
+      openPromptModal({
+        title: "Rename Column",
+        label: "Column name",
+        value: col.name,
+        confirmText: "Rename",
+        onSubmit: name => { col.name = name; saveState(); renderIndustryHub(); }
+      });
+    }
+
+    function deleteScoutColumn(id) {
+      const col = state.scoutColumns.find(c => c.id === id);
+      if (!col || id === SCOUT_DEFAULT_COLUMN) return;
+      openConfirmModal(`Delete "${col.name}"?`, "Companies in this column move back to the first column.", () => {
+        state.scoutColumns = state.scoutColumns.filter(c => c.id !== id);
+        saveState();
+        renderIndustryHub();
+      });
+    }
+
+    let dragKind = null;
+
     function clearDropHighlights() {
       document.querySelectorAll(".drop-active").forEach(el => el.classList.remove("drop-active"));
     }
@@ -2040,6 +2255,7 @@
       root.addEventListener("dragstart", e => {
         const el = e.target.closest && e.target.closest("[data-drag-company]");
         if (!el) return;
+        dragKind = el.hasAttribute("data-scout-card") ? "scout" : "industry";
         e.dataTransfer.setData("text/plain", JSON.stringify({ name: el.dataset.company, from: el.dataset.from }));
         e.dataTransfer.effectAllowed = "move";
         setTimeout(() => el.classList.add("opacity-40"), 0);
@@ -2048,9 +2264,10 @@
         const el = e.target.closest && e.target.closest("[data-drag-company]");
         if (el) el.classList.remove("opacity-40");
         clearDropHighlights();
+        dragKind = null;
       });
       root.addEventListener("dragover", e => {
-        const target = e.target.closest && e.target.closest("[data-drop]");
+        const target = e.target.closest && e.target.closest(dragKind === "scout" ? "[data-scout-drop]" : "[data-drop]");
         if (!target) return;
         e.preventDefault();
         e.dataTransfer.dropEffect = "move";
@@ -2060,17 +2277,19 @@
         }
       });
       root.addEventListener("dragleave", e => {
-        const target = e.target.closest && e.target.closest("[data-drop]");
+        const target = e.target.closest && e.target.closest("[data-drop], [data-scout-drop]");
         if (target && !target.contains(e.relatedTarget)) target.classList.remove("drop-active");
       });
       root.addEventListener("drop", e => {
-        const target = e.target.closest && e.target.closest("[data-drop]");
+        const kind = dragKind;
+        const target = e.target.closest && e.target.closest(kind === "scout" ? "[data-scout-drop]" : "[data-drop]");
         if (!target) return;
         e.preventDefault();
         clearDropHighlights();
         let data;
         try { data = JSON.parse(e.dataTransfer.getData("text/plain")); } catch (err) { return; }
-        moveCompany(data.name, data.from, target.dataset.drop);
+        if (kind === "scout") setScoutColumn(data.name, target.dataset.scoutDrop);
+        else moveCompany(data.name, data.from, target.dataset.drop);
       });
 
       root.addEventListener("click", e => {
@@ -2093,12 +2312,26 @@
           filterByCompany(company);
         } else if (action === "add-job") {
           quickAddJobForCompany(company);
+        } else if (action === "scout-checked") {
+          markCompanyChecked(company);
+        } else if (action === "scout-move") {
+          openScoutMoveModal(company);
+        } else if (action === "scout-note") {
+          promptCompanyNote(company);
+        } else if (action === "scout-link") {
+          promptCompanyCareersUrl(company);
+        } else if (action === "scout-add-column") {
+          promptAddScoutColumn();
+        } else if (action === "scout-rename-column") {
+          promptRenameScoutColumn(id);
+        } else if (action === "scout-delete-column") {
+          deleteScoutColumn(id);
         }
       });
 
       root.addEventListener("dblclick", e => {
         const btn = e.target.closest("[data-action='open-industry']");
-        if (btn && btn.dataset.id !== OVERVIEW_ID) promptRenameIndustry(btn.dataset.id);
+        if (btn && getIndustry(btn.dataset.id)) promptRenameIndustry(btn.dataset.id);
       });
     }
 
@@ -2256,7 +2489,9 @@
       const ctx = moveCompanyContext;
       const target = document.getElementById("move-target-select").value;
       closeMoveCompanyModal();
-      if (ctx && target) moveCompany(ctx.name, ctx.fromId, target);
+      if (!ctx || !target) return;
+      if (ctx.scout) setScoutColumn(ctx.name, target);
+      else moveCompany(ctx.name, ctx.fromId, target);
     }
 
     function filterByCompany(companyName) {
@@ -2286,7 +2521,7 @@
         Review: apps.filter(a => a.status === 'In Review' || a.status === 'Screening').length,
         Interview: apps.filter(a => a.status === 'Interview').length,
         Offer: apps.filter(a => a.status === 'Offer').length,
-        Closed: apps.filter(a => ['Rejected', 'Ghosted', 'Withdrawn'].includes(a.status)).length
+        Closed: apps.filter(a => ['Rejected', 'Ghosted', 'Withdrawn', 'Closed'].includes(a.status)).length
       };
 
       document.getElementById("stat-total").innerText = total;
@@ -2554,7 +2789,7 @@
       jobs.forEach(job => {
         let colName = job.status;
         if (['Screening'].includes(colName)) colName = 'In Review';
-        if (['Ghosted', 'Withdrawn'].includes(colName)) colName = 'Rejected';
+        if (['Ghosted', 'Withdrawn', 'Closed'].includes(colName)) colName = 'Rejected';
         if (!cols.includes(colName)) colName = 'Applied';
 
         counts[colName] = (counts[colName] || 0) + 1;
@@ -2635,6 +2870,7 @@
         Rejected: 'bg-rose-100 text-rose-800 border-rose-200',
         Ghosted: 'bg-slate-200 text-slate-700 border-slate-300',
         Withdrawn: 'bg-slate-100 text-slate-600 border-slate-300',
+        Closed: 'bg-stone-100 text-stone-500 border-stone-300 line-through',
         Wishlist: 'bg-slate-100 text-slate-800 border-slate-300'
       };
       const cls = map[status] || 'bg-slate-100 text-slate-700';
@@ -2653,6 +2889,7 @@
           <option value="Rejected" ${job.status === 'Rejected' ? 'selected' : ''}>Rejected</option>
           <option value="Ghosted" ${job.status === 'Ghosted' ? 'selected' : ''}>Ghosted</option>
           <option value="Withdrawn" ${job.status === 'Withdrawn' ? 'selected' : ''}>Withdrawn</option>
+          <option value="Closed" ${job.status === 'Closed' ? 'selected' : ''}>Closed</option>
         </select>
       `;
     }
@@ -3494,6 +3731,8 @@
         looseCompanies: state.looseCompanies,
         templates: state.templates,
         documents: state.legacyDocs,
+        scoutColumns: state.scoutColumns,
+        companyMeta: state.companyMeta,
         planner: state.planner,
         files
       };
@@ -3526,6 +3765,8 @@
           if (imported.looseCompanies) state.looseCompanies = imported.looseCompanies;
           if (imported.templates) state.templates = imported.templates;
           if (Array.isArray(imported.documents)) state.legacyDocs = imported.documents;
+          if (Array.isArray(imported.scoutColumns)) state.scoutColumns = imported.scoutColumns;
+          if (imported.companyMeta) state.companyMeta = imported.companyMeta;
           if (imported.planner) state.planner = imported.planner;
           if (imported.files) {
             for (const [key, record] of Object.entries(imported.files)) {
