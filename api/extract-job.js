@@ -12,8 +12,6 @@ Return STRICT JSON format with keys:
 - lang (string, EN or NL or ID)
 - source (string: Linkedin, Indeed, Glassdoor, or Career Site)
 - salary (string, salary range if found, else empty string)
-- recruiterEmail (string, email if found, else empty)
-- recruiterPhone (string, phone if found, else empty)
 - summary (string, 1-2 sentence summary of requirements)
 `;
 
@@ -26,8 +24,6 @@ const RESPONSE_SCHEMA = {
     lang: { type: "STRING" },
     source: { type: "STRING" },
     salary: { type: "STRING" },
-    recruiterEmail: { type: "STRING" },
-    recruiterPhone: { type: "STRING" },
     summary: { type: "STRING" }
   },
   required: ["company", "title", "city", "lang"]
@@ -107,8 +103,6 @@ module.exports = async function handler(req, res) {
     lang: parsed.lang || "",
     source: parsed.source || "",
     salary: parsed.salary || "",
-    recruiterEmail: parsed.recruiterEmail || "",
-    recruiterPhone: parsed.recruiterPhone || "",
     summary: parsed.summary || ""
   });
 };

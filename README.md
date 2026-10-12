@@ -1,21 +1,24 @@
 # Job Application Tracker
 
-A personal Job Application Tracker & Command Center: dashboard, table/Kanban application views,
-status tracking with a task checklist, an Industry Target Directory, a Document Vault (links to
-CVs/cover letters/portfolios), and an AI Smart Extractor that pulls structured fields out of a
-pasted or uploaded job posting.
+A personal Job Application Tracker & Command Center: a daily planner with colour-coded groups,
+dashboard, table/Kanban application views (priority, LinkedIn match, task checklist), an Industry
+Target Directory with drag & drop, a Document Vault with Overleaf-style LaTeX templates, and an AI
+Smart Extractor that pulls structured fields out of a pasted or uploaded job posting.
 
-The app is a single static page ([index.html](index.html)) with one small server-side API route
-([api/extract-job.js](api/extract-job.js)) that proxies requests to the Gemini API so the API key
-never reaches the browser.
+The app is a single static page ([index.html](index.html)) with two small server-side API routes:
+
+- [api/extract-job.js](api/extract-job.js) proxies requests to the Gemini API so the API key never
+  reaches the browser.
+- [api/compile-latex.js](api/compile-latex.js) compiles an application's CV / cover letter LaTeX to
+  PDF via the free public TeX Live service at [texlive.net](https://texlive.net) (it has no CORS, so
+  the browser can't call it directly). No API key needed.
 
 ## Architecture
 
 - **Frontend**: `index.html` — vanilla JS, Tailwind CSS, Chart.js, Lucide icons, and PDF.js, all
   loaded from CDNs. No build step, no framework.
-- **Backend**: `api/extract-job.js` — a single Vercel serverless function. It's the only piece of
-  server-side code in the project.
-- **Persistence**: browser `localStorage` only (see below). There is no database in this phase.
+- **Backend**: `api/extract-job.js` and `api/compile-latex.js` — Vercel serverless functions.
+- **Persistence**: browser `localStorage` + IndexedDB only (see below). There is no database in this phase.
 
 ## Local development
 
@@ -68,12 +71,13 @@ placeholder variable names.
 
 ## Data persistence (important)
 
-This app currently stores **all data in your browser's `localStorage`** under these keys:
+This app currently stores **all data in your browser**:
 
-- `job_tracker_apps`
-- `job_tracker_docs`
-- `job_tracker_industries`
-- `job_tracker_active_ind`
+- `localStorage`: `job_tracker_apps` (applications, incl. pasted LaTeX), `job_tracker_industries`,
+  `job_tracker_active_ind`, `job_tracker_loose_companies`, `job_tracker_templates` (LaTeX
+  templates), `job_tracker_planner` (planner groups and blocks)
+- IndexedDB database `job_tracker_files`: uploaded and compiled CV / cover letter PDFs per
+  application (too large for `localStorage`)
 
 This means:
 
@@ -83,11 +87,21 @@ This means:
 - Vercel redeploys do **not** affect your data — it never leaves your browser.
 
 **Back up regularly** using the Export JSON button (top-right download icon) and keep the file
-somewhere safe. Use the Import JSON button to restore a backup or move your data to another
+somewhere safe. The export includes the stored PDFs. Use the Import JSON button to restore a backup or move your data to another
 browser/device.
+
+## LaTeX templates (Doc Vault)
+
+Each template is a set of files whose paths match your Overleaf `\input{...}` lines (e.g.
+`shared/preamble.tex`, `shared/personal.tex`, `shared/commands.tex`), plus a main-file skeleton.
+Per application you paste either the full `main.tex` or only the body; the browser inlines the
+template files and `/api/compile-latex` returns the PDF. Saving the application keeps that
+compiled PDF, so you can always see exactly what was sent even if the template changes later.
 
 ## Planned Phase 2
 
-A future phase will migrate persistence from `localStorage` to a real database (e.g. Postgres via
-Vercel, Supabase, or similar) so data can sync across devices and survive browser data clearing.
-This is intentionally out of scope for the current deployment.
+A future phase will migrate persistence to a real database so data syncs across devices and
+survives browser data clearing. Suggested free setup for this Vercel app: **Neon** Postgres (via
+the Vercel Marketplace; compute sleeps when idle but wakes automatically on the next query) for the
+records, and **Vercel Blob** or **Cloudflare R2** for the PDFs. Supabase's free tier also works but
+pauses the whole project after a week of inactivity until you restore it manually.

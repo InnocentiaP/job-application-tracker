@@ -19,7 +19,7 @@
   <style>
     @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
     body { font-family: 'Inter', sans-serif; }
-    
+
     /* Custom scrollbars */
     ::-webkit-scrollbar { width: 6px; height: 6px; }
     ::-webkit-scrollbar-track { background: #f1f5f9; }
@@ -27,6 +27,10 @@
     ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
 
     .kanban-column { min-height: 500px; }
+    .drop-active { outline: 2px dashed #6366f1; outline-offset: 2px; background-color: rgba(99, 102, 241, 0.06); }
+    details > summary { list-style: none; }
+    details > summary::-webkit-details-marker { display: none; }
+    details[open] .details-chevron { transform: rotate(90deg); }
   </style>
 </head>
 <body class="h-full flex flex-col text-slate-800 bg-slate-50 antialiased">
@@ -44,25 +48,28 @@
             <h1 class="text-lg font-bold tracking-tight text-white flex items-center gap-2">
               Job Tracker <span class="text-xs font-semibold px-2 py-0.5 bg-indigo-500/30 text-indigo-300 border border-indigo-500/40 rounded-full">Pro</span>
             </h1>
-            <p class="text-xs text-slate-400">Organized Career Application Center</p>
+            <p class="text-xs text-slate-400 hidden xl:block">Organized Career Application Center</p>
           </div>
         </div>
 
         <!-- Navigation Tabs -->
         <nav class="hidden md:flex space-x-1 bg-slate-800/80 p-1 rounded-xl border border-slate-700/60">
-          <button id="tab-btn-dashboard" onclick="switchTab('dashboard')" class="tab-link px-3 py-1.5 text-xs font-medium rounded-lg transition-all text-white bg-indigo-600 shadow">
+          <button id="tab-btn-planner" onclick="switchTab('planner')" class="tab-link whitespace-nowrap px-3 py-1.5 text-xs font-medium rounded-lg transition-all text-slate-300 hover:text-white hover:bg-slate-700/50 flex items-center gap-1">
+            <i data-lucide="calendar-days" class="w-4 h-4 text-sky-400"></i> Planner
+          </button>
+          <button id="tab-btn-dashboard" onclick="switchTab('dashboard')" class="tab-link whitespace-nowrap px-3 py-1.5 text-xs font-medium rounded-lg transition-all text-slate-300 hover:text-white hover:bg-slate-700/50">
             <i data-lucide="layout-dashboard" class="w-4 h-4 inline-block mr-1"></i> Dashboard
           </button>
-          <button id="tab-btn-applications" onclick="switchTab('applications')" class="tab-link px-3 py-1.5 text-xs font-medium rounded-lg transition-all text-slate-300 hover:text-white hover:bg-slate-700/50">
+          <button id="tab-btn-applications" onclick="switchTab('applications')" class="tab-link whitespace-nowrap px-3 py-1.5 text-xs font-medium rounded-lg transition-all text-slate-300 hover:text-white hover:bg-slate-700/50">
             <i data-lucide="list-todo" class="w-4 h-4 inline-block mr-1"></i> Applications
           </button>
-          <button id="tab-btn-industry" onclick="switchTab('industry')" class="tab-link px-3 py-1.5 text-xs font-medium rounded-lg transition-all text-slate-300 hover:text-white hover:bg-slate-700/50 flex items-center gap-1">
-            <i data-lucide="building-2" class="w-4 h-4 text-emerald-400"></i> Industry Checklist
+          <button id="tab-btn-industry" onclick="switchTab('industry')" class="tab-link whitespace-nowrap px-3 py-1.5 text-xs font-medium rounded-lg transition-all text-slate-300 hover:text-white hover:bg-slate-700/50 flex items-center gap-1">
+            <i data-lucide="building-2" class="w-4 h-4 text-emerald-400"></i> Industries
           </button>
-          <button id="tab-btn-ai-import" onclick="switchTab('ai-import')" class="tab-link px-3 py-1.5 text-xs font-medium rounded-lg transition-all text-slate-300 hover:text-white hover:bg-slate-700/50 flex items-center gap-1">
-            <i data-lucide="sparkles" class="w-4 h-4 text-amber-400"></i> AI Smart Extractor
+          <button id="tab-btn-ai-import" onclick="switchTab('ai-import')" class="tab-link whitespace-nowrap px-3 py-1.5 text-xs font-medium rounded-lg transition-all text-slate-300 hover:text-white hover:bg-slate-700/50 flex items-center gap-1">
+            <i data-lucide="sparkles" class="w-4 h-4 text-amber-400"></i> AI Extractor
           </button>
-          <button id="tab-btn-documents" onclick="switchTab('documents')" class="tab-link px-3 py-1.5 text-xs font-medium rounded-lg transition-all text-slate-300 hover:text-white hover:bg-slate-700/50">
+          <button id="tab-btn-documents" onclick="switchTab('documents')" class="tab-link whitespace-nowrap px-3 py-1.5 text-xs font-medium rounded-lg transition-all text-slate-300 hover:text-white hover:bg-slate-700/50">
             <i data-lucide="file-text" class="w-4 h-4 inline-block mr-1"></i> Doc Vault
           </button>
         </nav>
@@ -79,7 +86,7 @@
           <button onclick="promptClearAllData()" title="Start Fresh / Clear Data" class="p-1.5 text-rose-400 hover:text-rose-200 bg-rose-500/10 hover:bg-rose-500/20 rounded-lg border border-rose-500/30 text-xs flex items-center gap-1">
             <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
           </button>
-          <button onclick="openJobModal()" class="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg transition shadow-sm">
+          <button onclick="openJobModal()" class="whitespace-nowrap flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg transition shadow-sm">
             <i data-lucide="plus" class="w-4 h-4"></i> Add Application
           </button>
         </div>
@@ -88,11 +95,14 @@
 
     <!-- Mobile Navigation Bar -->
     <div class="md:hidden flex justify-around border-t border-slate-800 bg-slate-900/90 py-2 px-2 text-[11px]">
+      <button onclick="switchTab('planner')" class="text-slate-300 hover:text-white flex flex-col items-center">
+        <i data-lucide="calendar-days" class="w-4 h-4 text-sky-400 mb-0.5"></i> Planner
+      </button>
       <button onclick="switchTab('dashboard')" class="text-slate-300 hover:text-white flex flex-col items-center">
         <i data-lucide="layout-dashboard" class="w-4 h-4 mb-0.5"></i> Dashboard
       </button>
       <button onclick="switchTab('applications')" class="text-slate-300 hover:text-white flex flex-col items-center">
-        <i data-lucide="list-todo" class="w-4 h-4 mb-0.5"></i> Jobs
+        <i data-lucide="list-todo" class="w-4 h-4 mb-0.5"></i> Applications
       </button>
       <button onclick="switchTab('industry')" class="text-slate-300 hover:text-white flex flex-col items-center">
         <i data-lucide="building-2" class="w-4 h-4 text-emerald-400 mb-0.5"></i> Industry
@@ -109,9 +119,61 @@
   <!-- Main Content Container -->
   <main class="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6">
 
+    <!-- SECTION 0: DAILY PLANNER -->
+    <section id="view-planner" class="space-y-4">
+      <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm flex flex-wrap items-center justify-between gap-3">
+        <div class="flex items-center gap-2">
+          <button onclick="plannerShift(-1)" class="p-1.5 rounded-lg border border-slate-200 hover:bg-slate-100" title="Previous">
+            <i data-lucide="chevron-left" class="w-4 h-4"></i>
+          </button>
+          <button onclick="plannerGoToday()" class="px-3 py-1.5 text-xs font-semibold rounded-lg border border-slate-200 hover:bg-slate-100">Today</button>
+          <button onclick="plannerShift(1)" class="p-1.5 rounded-lg border border-slate-200 hover:bg-slate-100" title="Next">
+            <i data-lucide="chevron-right" class="w-4 h-4"></i>
+          </button>
+          <h2 id="planner-range-label" class="text-sm font-bold text-slate-800 ml-1"></h2>
+        </div>
+        <div class="flex items-center gap-2">
+          <div class="flex items-center bg-slate-100 p-0.5 rounded-lg border border-slate-200">
+            <button id="btn-planner-day" onclick="setPlannerView('day')" class="px-2.5 py-1 rounded text-xs font-semibold">Day</button>
+            <button id="btn-planner-week" onclick="setPlannerView('week')" class="px-2.5 py-1 rounded text-xs font-semibold">Week</button>
+          </div>
+          <button onclick="openCategoryModal()" class="px-3 py-1.5 text-xs font-semibold bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-300 rounded-lg flex items-center gap-1.5">
+            <i data-lucide="palette" class="w-3.5 h-3.5 text-indigo-600"></i> Groups
+          </button>
+          <button onclick="openEventModal()" class="px-3 py-1.5 text-xs font-semibold bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg flex items-center gap-1.5 shadow-sm">
+            <i data-lucide="plus" class="w-3.5 h-3.5"></i> Add Block
+          </button>
+        </div>
+      </div>
+
+      <div class="grid grid-cols-1 lg:grid-cols-4 gap-4">
+        <aside class="space-y-4">
+          <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
+            <div class="flex items-center justify-between mb-3">
+              <h3 class="text-xs font-bold text-slate-800 flex items-center gap-1.5">
+                <i data-lucide="tags" class="w-4 h-4 text-indigo-600"></i> Groups
+              </h3>
+              <span id="planner-legend-caption" class="text-[10px] text-slate-400">Planned hours</span>
+            </div>
+            <div id="planner-legend" class="space-y-1.5 text-xs"></div>
+          </div>
+          <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
+            <h3 id="planner-agenda-title" class="text-xs font-bold text-slate-800 mb-3 flex items-center gap-1.5"></h3>
+            <div id="planner-agenda" class="space-y-1.5 text-xs"></div>
+          </div>
+        </aside>
+
+        <div class="lg:col-span-3 bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+          <div id="planner-scroll" class="overflow-auto max-h-[72vh]">
+            <div id="planner-grid"></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
     <!-- SECTION 1: DASHBOARD -->
-    <section id="view-dashboard" class="space-y-6">
-      
+    <section id="view-dashboard" class="space-y-6 hidden">
+
       <!-- Top Overview Metrics -->
       <div class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
         <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
@@ -171,7 +233,7 @@
 
       <!-- Charts & Next Actions Grid -->
       <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        
+
         <!-- Status Breakdown Chart -->
         <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm flex flex-col justify-between">
           <div class="flex items-center justify-between mb-4">
@@ -254,10 +316,10 @@
 
     <!-- SECTION 2: APPLICATIONS LIST & KANBAN -->
     <section id="view-applications" class="space-y-4 hidden">
-      
+
       <!-- Toolbar Filter & View Switcher -->
       <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm flex flex-col md:flex-row gap-3 items-center justify-between">
-        
+
         <!-- Search Bar -->
         <div class="relative w-full md:w-72">
           <i data-lucide="search" class="w-4 h-4 absolute left-3 top-2.5 text-slate-400"></i>
@@ -266,7 +328,7 @@
 
         <!-- Filter Dropdowns -->
         <div class="flex flex-wrap items-center gap-2 w-full md:w-auto">
-          
+
           <!-- Status Filter -->
           <select id="filter-status" onchange="renderApplications()" class="text-xs bg-slate-50 border border-slate-200 rounded-lg px-2.5 py-1.5 focus:outline-none focus:ring-2 focus:ring-indigo-500">
             <option value="ALL">All Statuses</option>
@@ -279,6 +341,14 @@
             <option value="Rejected">Rejected / Not Selected</option>
             <option value="Ghosted">Ghosted</option>
             <option value="Withdrawn">Withdrawn</option>
+          </select>
+
+          <!-- Apply Priority Filter -->
+          <select id="filter-priority" onchange="renderApplications()" class="text-xs bg-slate-50 border border-slate-200 rounded-lg px-2.5 py-1.5 focus:outline-none focus:ring-2 focus:ring-indigo-500">
+            <option value="ALL">All Priorities</option>
+            <option value="High">High Priority</option>
+            <option value="Medium">Medium Priority</option>
+            <option value="Low">Low Priority</option>
           </select>
 
           <!-- Source Platform Filter -->
@@ -311,22 +381,22 @@
       <!-- TABLE VIEW (Google Sheets style directly inspired by user screenshot) -->
       <div id="container-table-view" class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
         <div class="overflow-x-auto">
-          <table class="w-full text-left text-xs whitespace-nowrap">
+          <table class="w-full text-left text-xs">
             <thead class="bg-amber-900/90 text-white font-semibold uppercase tracking-wider text-[11px] border-b border-amber-950">
               <tr>
-                <th class="py-3 px-3">LinkedIn Link</th>
-                <th class="py-3 px-3">Platform</th>
-                <th class="py-3 px-3">City</th>
-                <th class="py-3 px-3">EN/NL</th>
-                <th class="py-3 px-3">Company</th>
-                <th class="py-3 px-3">Career Site</th>
-                <th class="py-3 px-3">Job Title</th>
-                <th class="py-3 px-3">Recruiter Email</th>
-                <th class="py-3 px-3">Phone</th>
-                <th class="py-3 px-3">Status</th>
-                <th class="py-3 px-3">Applied Date</th>
-                <th class="py-3 px-3">Docs & Tasks</th>
-                <th class="py-3 px-3 text-center">Actions</th>
+                <th class="py-3 px-3 sticky left-0 z-20 bg-amber-900 border-r border-amber-950 text-center whitespace-nowrap">Actions</th>
+                <th class="py-3 px-3 whitespace-nowrap">Company</th>
+                <th class="py-3 px-3 whitespace-nowrap">Job Title</th>
+                <th class="py-3 px-3 whitespace-nowrap">Status</th>
+                <th class="py-3 px-3 whitespace-nowrap">Priority</th>
+                <th class="py-3 px-3 whitespace-nowrap">LinkedIn Match</th>
+                <th class="py-3 px-3 whitespace-nowrap">City</th>
+                <th class="py-3 px-3 whitespace-nowrap">EN/NL</th>
+                <th class="py-3 px-3 whitespace-nowrap">Platform</th>
+                <th class="py-3 px-3 whitespace-nowrap">Applied Date</th>
+                <th class="py-3 px-3 whitespace-nowrap">LinkedIn Link</th>
+                <th class="py-3 px-3 whitespace-nowrap">Career Site</th>
+                <th class="py-3 px-3 whitespace-nowrap">Docs & Tasks</th>
               </tr>
             </thead>
             <tbody id="applications-tbody" class="divide-y divide-slate-100">
@@ -339,7 +409,7 @@
       <!-- KANBAN BOARD VIEW -->
       <div id="container-kanban-view" class="hidden overflow-x-auto pb-4">
         <div class="flex gap-4 min-w-[1200px]">
-          
+
           <!-- Column 1: Wishlist -->
           <div class="flex-1 bg-slate-100/70 p-3 rounded-xl border border-slate-200 flex flex-col">
             <div class="flex items-center justify-between mb-3 font-semibold text-xs text-slate-700">
@@ -400,20 +470,33 @@
     </section>
 
     <!-- SECTION 3: INDUSTRY TARGET DIRECTORY & CHECKLIST HUB -->
-    <section id="view-industry" class="space-y-6 hidden">
+    <section id="view-industry" class="space-y-4 hidden">
+
+      <!-- Unassigned companies (from applications, not yet in any industry) -->
+      <div id="unassigned-panel" data-drop="__unassigned" class="bg-amber-50/70 border border-dashed border-amber-300 rounded-2xl p-4 transition">
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-1 mb-2.5">
+          <h3 class="text-xs font-bold text-amber-900 flex items-center gap-1.5">
+            <i data-lucide="inbox" class="w-4 h-4 text-amber-600"></i> Unassigned Companies
+            <span id="unassigned-count" class="text-[10px] font-semibold bg-amber-200/80 text-amber-900 px-2 py-0.5 rounded-full">0</span>
+          </h3>
+          <p class="text-[11px] text-amber-800/80">Drag a company onto an industry (or click it to pick one). Drop a company here to unassign it.</p>
+        </div>
+        <div id="unassigned-list" class="flex flex-wrap gap-2"></div>
+      </div>
+
       <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm space-y-6">
-        
+
         <!-- Header -->
         <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-slate-100">
           <div>
             <h2 class="text-lg font-bold text-slate-900 flex items-center gap-2">
               <i data-lucide="building-2" class="w-5 h-5 text-emerald-600"></i> Industry Target Directory & Personal Checklist
             </h2>
-            <p class="text-xs text-slate-500 mt-0.5">Organize target companies by industry tabs. Checklists automatically cross off when all jobs for a company are applied!</p>
+            <p class="text-xs text-slate-500 mt-0.5">Organize target companies by industry. Drag companies between industries. Checklists cross off when all jobs for a company are applied!</p>
           </div>
           <div class="flex items-center gap-2">
             <button onclick="promptAddIndustry()" class="px-3 py-1.5 text-xs font-semibold bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-300 rounded-lg flex items-center gap-1.5">
-              <i data-lucide="folder-plus" class="w-3.5 h-3.5 text-indigo-600"></i> + New Industry Tab
+              <i data-lucide="folder-plus" class="w-3.5 h-3.5 text-indigo-600"></i> + New Industry
             </button>
             <button onclick="promptAddTargetCompany()" class="px-3.5 py-1.5 text-xs font-semibold bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg flex items-center gap-1.5 shadow-sm">
               <i data-lucide="plus" class="w-3.5 h-3.5"></i> Add Target Company
@@ -423,30 +506,15 @@
 
         <!-- Industry Tabs (OneNote Style Layout) -->
         <div class="flex flex-col md:flex-row gap-6">
-          
+
           <!-- Vertical Industry Tab Navigation -->
           <div class="w-full md:w-64 flex-shrink-0 space-y-1 bg-slate-50 p-2.5 rounded-xl border border-slate-200 h-fit" id="industry-tab-container">
             <!-- Rendered dynamically -->
           </div>
 
-          <!-- Industry Content Area -->
-          <div class="flex-1 space-y-4">
-            
-            <div class="flex items-center justify-between bg-slate-100/70 p-3 rounded-xl border border-slate-200">
-              <div class="flex items-center gap-2">
-                <span id="active-industry-title" class="font-bold text-sm text-slate-800">Consulting</span>
-                <span id="active-industry-badge" class="text-[11px] font-semibold bg-indigo-100 text-indigo-800 px-2.5 py-0.5 rounded-full">0 Companies</span>
-              </div>
-              <button onclick="deleteCurrentIndustry()" class="text-xs text-rose-500 hover:text-rose-700 font-medium flex items-center gap-1">
-                <i data-lucide="trash-2" class="w-3.5 h-3.5"></i> Delete Tab
-              </button>
-            </div>
-
-            <!-- Target Companies Grid / Checklist -->
-            <div id="target-company-list" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 gap-3">
-              <!-- Rendered dynamically -->
-            </div>
-
+          <!-- Industry Content Area (overview board or single industry checklist) -->
+          <div id="industry-content" class="flex-1 space-y-4 min-w-0">
+            <!-- Rendered dynamically -->
           </div>
         </div>
 
@@ -463,14 +531,14 @@
             </div>
             <div>
               <h2 class="text-base font-bold text-slate-900">AI Job Spec Extractor (Gemini)</h2>
-              <p class="text-xs text-slate-500">Extracts Company, Position, City, Language (EN/NL), Email, and Salary automatically.</p>
+              <p class="text-xs text-slate-500">Extracts Company, Position, City, Language (EN/NL), and Salary automatically.</p>
             </div>
           </div>
           <span id="ai-status-badge" class="text-[10px] bg-slate-100 text-slate-600 px-2.5 py-1 rounded-full font-semibold">Ready</span>
         </div>
 
         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-          
+
           <!-- Left: Input & Upload -->
           <div class="space-y-4">
             <div>
@@ -504,7 +572,7 @@
               <h3 class="text-xs font-bold text-slate-800 mb-3 flex items-center gap-1.5">
                 <i data-lucide="file-json" class="w-4 h-4 text-emerald-600"></i> Extracted Structured Data
               </h3>
-              
+
               <div id="ai-extracted-fields" class="space-y-3 text-xs text-slate-600">
                 <p class="text-slate-400 italic text-center py-12">No data extracted yet. Paste job text or upload a file on the left and click parse.</p>
               </div>
@@ -523,57 +591,56 @@
 
     <!-- SECTION 5: DOCUMENT VAULT -->
     <section id="view-documents" class="space-y-6 hidden">
-      <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm space-y-6">
-        
-        <div class="flex items-center justify-between border-b border-slate-100 pb-4">
+
+      <!-- LaTeX templates (Overleaf preamble / shared files) -->
+      <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm space-y-5">
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-100 pb-4">
           <div>
             <h2 class="text-base font-bold text-slate-900 flex items-center gap-2">
-              <i data-lucide="folder-git-2" class="w-5 h-5 text-indigo-600"></i> Document Version Vault
+              <i data-lucide="file-code-2" class="w-5 h-5 text-indigo-600"></i> LaTeX Templates
             </h2>
-            <p class="text-xs text-slate-500 mt-0.5">Keep track of your tailored CVs and Cover Letters for quick access when applying.</p>
+            <p class="text-xs text-slate-500 mt-0.5">Your Overleaf preamble and shared files (e.g. <code class="bg-slate-100 px-1 rounded">shared/preamble.tex</code>). Paste only the main text per application and it compiles against these.</p>
           </div>
-          <button onclick="openDocModal()" class="px-3.5 py-1.5 text-xs font-semibold bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg flex items-center gap-1.5 shadow-sm">
-            <i data-lucide="plus" class="w-4 h-4"></i> Add Document Link
+          <button onclick="openTemplateModal()" class="px-3.5 py-1.5 text-xs font-semibold bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg flex items-center gap-1.5 shadow-sm flex-shrink-0">
+            <i data-lucide="plus" class="w-4 h-4"></i> New Template
           </button>
         </div>
+        <div id="template-list" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"></div>
+      </div>
 
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-          
-          <!-- Column 1: CV Versions -->
-          <div class="space-y-3">
-            <div class="flex items-center justify-between bg-slate-100 p-2.5 rounded-xl">
-              <span class="text-xs font-bold text-slate-700 flex items-center gap-1.5">
-                <i data-lucide="file-text" class="w-4 h-4 text-blue-600"></i> CV / Resumes
-              </span>
-              <span id="count-docs-cv" class="text-[10px] font-semibold bg-white px-2 py-0.5 rounded-full border border-slate-200">0 files</span>
-            </div>
-            <div id="list-docs-cv" class="space-y-2"></div>
-          </div>
-
-          <!-- Column 2: Cover Letters -->
-          <div class="space-y-3">
-            <div class="flex items-center justify-between bg-slate-100 p-2.5 rounded-xl">
-              <span class="text-xs font-bold text-slate-700 flex items-center gap-1.5">
-                <i data-lucide="mail-open" class="w-4 h-4 text-emerald-600"></i> Cover Letters
-              </span>
-              <span id="count-docs-cl" class="text-[10px] font-semibold bg-white px-2 py-0.5 rounded-full border border-slate-200">0 files</span>
-            </div>
-            <div id="list-docs-cl" class="space-y-2"></div>
-          </div>
-
-          <!-- Column 3: Portfolios & Other -->
-          <div class="space-y-3">
-            <div class="flex items-center justify-between bg-slate-100 p-2.5 rounded-xl">
-              <span class="text-xs font-bold text-slate-700 flex items-center gap-1.5">
-                <i data-lucide="folder" class="w-4 h-4 text-amber-600"></i> Portfolios & References
-              </span>
-              <span id="count-docs-other" class="text-[10px] font-semibold bg-white px-2 py-0.5 rounded-full border border-slate-200">0 files</span>
-            </div>
-            <div id="list-docs-other" class="space-y-2"></div>
-          </div>
-
+      <!-- Links saved with the old "Add Document Link" feature (only shown if there are any) -->
+      <div id="legacy-docs-card" class="hidden bg-white p-6 rounded-2xl border border-slate-200 shadow-sm space-y-3">
+        <div>
+          <h2 class="text-base font-bold text-slate-900 flex items-center gap-2">
+            <i data-lucide="link" class="w-5 h-5 text-slate-500"></i> Saved Document Links
+          </h2>
+          <p class="text-xs text-slate-500 mt-0.5">Links you added before PDFs and LaTeX could be attached per application. Applications that used them still show the link.</p>
         </div>
+        <div id="legacy-docs-list" class="grid grid-cols-1 md:grid-cols-3 gap-3 text-xs"></div>
+      </div>
 
+      <!-- Archive of what was sent per application -->
+      <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+        <div class="p-5 border-b border-slate-100">
+          <h2 class="text-base font-bold text-slate-900 flex items-center gap-2">
+            <i data-lucide="archive" class="w-5 h-5 text-emerald-600"></i> Sent Documents Archive
+          </h2>
+          <p class="text-xs text-slate-500 mt-0.5">The CV and cover letter attached to each application: an uploaded PDF and/or the PDF compiled from its LaTeX.</p>
+        </div>
+        <div class="overflow-x-auto">
+          <table class="w-full text-left text-xs">
+            <thead class="bg-slate-100/70 text-slate-600 font-semibold border-b border-slate-200 uppercase tracking-wider text-[11px]">
+              <tr>
+                <th class="py-2.5 px-4">Company</th>
+                <th class="py-2.5 px-4">Job Title</th>
+                <th class="py-2.5 px-4">Applied</th>
+                <th class="py-2.5 px-4">CV</th>
+                <th class="py-2.5 px-4">Cover Letter</th>
+              </tr>
+            </thead>
+            <tbody id="sent-docs-tbody" class="divide-y divide-slate-100"></tbody>
+          </table>
+        </div>
       </div>
     </section>
 
@@ -581,11 +648,11 @@
 
   <!-- MODAL 1: ADD / EDIT JOB APPLICATION -->
   <div id="modal-job" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
-    <div class="bg-white rounded-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto shadow-2xl border border-slate-100">
-      
+    <div class="bg-white rounded-2xl max-w-3xl w-full max-h-[90vh] overflow-y-auto shadow-2xl border border-slate-100">
+
       <div class="bg-slate-900 text-white px-6 py-4 flex items-center justify-between sticky top-0 z-10">
         <h3 id="modal-job-title" class="text-sm font-bold flex items-center gap-2">
-          <i data-lucide="plus-circle" class="w-4 h-4 text-indigo-400"></i> Add New Job Application
+          <i data-lucide="plus-circle" class="w-4 h-4 text-indigo-400"></i> Add New Application
         </h3>
         <button onclick="closeJobModal()" class="text-slate-400 hover:text-white">
           <i data-lucide="x" class="w-5 h-5"></i>
@@ -645,6 +712,36 @@
           </div>
         </div>
 
+        <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
+          <div>
+            <label class="block font-semibold text-slate-700 mb-1">Apply Priority</label>
+            <select id="job-priority-input" class="w-full p-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-indigo-500">
+              <option value="">– Not set –</option>
+              <option value="High">High</option>
+              <option value="Medium">Medium</option>
+              <option value="Low">Low</option>
+            </select>
+          </div>
+          <div>
+            <label class="block font-semibold text-slate-700 mb-1">LinkedIn Job Match</label>
+            <select id="job-match-input" class="w-full p-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-indigo-500">
+              <option value="">– Not set –</option>
+              <option value="Top">Top</option>
+              <option value="High">High</option>
+              <option value="Medium">Medium</option>
+              <option value="Low">Low</option>
+            </select>
+          </div>
+          <div>
+            <label class="block font-semibold text-slate-700 mb-1">Applied Date</label>
+            <input type="date" id="job-date-input" class="w-full p-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-indigo-500">
+          </div>
+          <div>
+            <label class="block font-semibold text-slate-700 mb-1">Salary Range</label>
+            <input type="text" id="job-salary-input" placeholder="e.g. €60k - €70k" class="w-full p-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-indigo-500">
+          </div>
+        </div>
+
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div>
             <label class="block font-semibold text-slate-700 mb-1">LinkedIn Link</label>
@@ -654,26 +751,6 @@
             <label class="block font-semibold text-slate-700 mb-1">Company's Career Site Link</label>
             <input type="url" id="job-careersite-input" placeholder="https://careers.company.com/..." class="w-full p-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-indigo-500">
           </div>
-        </div>
-
-        <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
-          <div>
-            <label class="block font-semibold text-slate-700 mb-1">Applied Date</label>
-            <input type="date" id="job-date-input" class="w-full p-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-indigo-500">
-          </div>
-          <div>
-            <label class="block font-semibold text-slate-700 mb-1">Recruiter Email</label>
-            <input type="email" id="job-email-input" placeholder="recruiter@company.com" class="w-full p-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-indigo-500">
-          </div>
-          <div>
-            <label class="block font-semibold text-slate-700 mb-1">Recruiter Phone / Contact</label>
-            <input type="text" id="job-phone-input" placeholder="+31 6 12345678" class="w-full p-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-indigo-500">
-          </div>
-        </div>
-
-        <div>
-          <label class="block font-semibold text-slate-700 mb-1">Salary Range (Optional)</label>
-          <input type="text" id="job-salary-input" placeholder="e.g. €60,000 - €70,000 / year" class="w-full p-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-indigo-500">
         </div>
 
         <!-- Checklist tasks -->
@@ -699,11 +776,84 @@
           </div>
         </div>
 
-        <div>
-          <label class="block font-semibold text-slate-700 mb-1">Linked Document Version</label>
-          <select id="job-doc-input" class="w-full p-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-indigo-500">
-            <option value="">-- None / Default CV --</option>
-          </select>
+        <!-- Documents sent with this application -->
+        <div class="space-y-2">
+          <label class="block font-semibold text-slate-800">Documents Sent <span class="font-normal text-slate-400">(optional)</span></label>
+          <p id="job-legacy-doc" class="hidden text-slate-600 bg-slate-50 border border-slate-200 rounded-lg px-3 py-2"></p>
+
+          <!-- CV -->
+          <details id="job-cv-details" class="border border-slate-200 rounded-xl bg-white">
+            <summary class="px-3 py-2.5 cursor-pointer flex items-center justify-between gap-2">
+              <span class="font-semibold text-slate-800 flex items-center gap-1.5">
+                <i data-lucide="chevron-right" class="details-chevron w-3.5 h-3.5 text-slate-400 transition-transform"></i>
+                <i data-lucide="file-text" class="w-3.5 h-3.5 text-blue-600"></i> CV
+              </span>
+              <span id="job-cv-badges" class="flex items-center gap-1"></span>
+            </summary>
+            <div class="p-3 border-t border-slate-100 space-y-3">
+              <div class="flex flex-wrap items-center gap-2">
+                <span class="font-semibold text-slate-700">Uploaded PDF:</span>
+                <span id="job-cv-upload-label" class="text-slate-500">None</span>
+                <button type="button" id="job-cv-upload-view" onclick="viewJobDoc('cv-upload')" class="text-indigo-600 hover:underline font-semibold hidden">View</button>
+                <button type="button" id="job-cv-upload-remove" onclick="removeJobDoc('cv-upload')" class="text-rose-500 hover:underline font-semibold hidden">Remove</button>
+                <label class="ml-auto cursor-pointer px-2.5 py-1 border border-slate-200 rounded-lg hover:bg-slate-50 font-semibold text-slate-600 flex items-center gap-1">
+                  <i data-lucide="upload" class="w-3 h-3"></i> Upload PDF
+                  <input type="file" accept="application/pdf,.pdf" class="hidden" onchange="handleJobDocUpload('cv', event)">
+                </label>
+              </div>
+              <div>
+                <div class="flex items-center justify-between mb-1 gap-2">
+                  <span class="font-semibold text-slate-700">LaTeX main text</span>
+                  <select id="job-cv-template" class="p-1 border border-slate-200 rounded-lg text-[11px] max-w-[60%]"></select>
+                </div>
+                <textarea id="job-cv-latex" rows="10" spellcheck="false" placeholder="Paste your Overleaf main.tex here: either the full file or only the body between begin{document} and end{document}." class="w-full p-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-indigo-500 font-mono text-[11px] leading-relaxed"></textarea>
+              </div>
+              <div class="flex flex-wrap items-center gap-2">
+                <button type="button" id="job-cv-compile-btn" onclick="compileJobLatex('cv')" class="px-3 py-1.5 bg-slate-900 hover:bg-slate-700 text-white rounded-lg font-semibold flex items-center gap-1.5">
+                  <i data-lucide="play" class="w-3.5 h-3.5"></i> Compile &amp; Preview
+                </button>
+                <button type="button" id="job-cv-compiled-view" onclick="viewJobDoc('cv-compiled')" class="text-indigo-600 hover:underline font-semibold hidden">View last compiled PDF</button>
+                <span id="job-cv-compiled-label" class="text-slate-400"></span>
+              </div>
+            </div>
+          </details>
+
+          <!-- Cover Letter -->
+          <details id="job-cl-details" class="border border-slate-200 rounded-xl bg-white">
+            <summary class="px-3 py-2.5 cursor-pointer flex items-center justify-between gap-2">
+              <span class="font-semibold text-slate-800 flex items-center gap-1.5">
+                <i data-lucide="chevron-right" class="details-chevron w-3.5 h-3.5 text-slate-400 transition-transform"></i>
+                <i data-lucide="mail-open" class="w-3.5 h-3.5 text-emerald-600"></i> Cover Letter
+              </span>
+              <span id="job-cl-badges" class="flex items-center gap-1"></span>
+            </summary>
+            <div class="p-3 border-t border-slate-100 space-y-3">
+              <div class="flex flex-wrap items-center gap-2">
+                <span class="font-semibold text-slate-700">Uploaded PDF:</span>
+                <span id="job-cl-upload-label" class="text-slate-500">None</span>
+                <button type="button" id="job-cl-upload-view" onclick="viewJobDoc('cl-upload')" class="text-indigo-600 hover:underline font-semibold hidden">View</button>
+                <button type="button" id="job-cl-upload-remove" onclick="removeJobDoc('cl-upload')" class="text-rose-500 hover:underline font-semibold hidden">Remove</button>
+                <label class="ml-auto cursor-pointer px-2.5 py-1 border border-slate-200 rounded-lg hover:bg-slate-50 font-semibold text-slate-600 flex items-center gap-1">
+                  <i data-lucide="upload" class="w-3 h-3"></i> Upload PDF
+                  <input type="file" accept="application/pdf,.pdf" class="hidden" onchange="handleJobDocUpload('cl', event)">
+                </label>
+              </div>
+              <div>
+                <div class="flex items-center justify-between mb-1 gap-2">
+                  <span class="font-semibold text-slate-700">LaTeX main text</span>
+                  <select id="job-cl-template" class="p-1 border border-slate-200 rounded-lg text-[11px] max-w-[60%]"></select>
+                </div>
+                <textarea id="job-cl-latex" rows="10" spellcheck="false" placeholder="Paste your Overleaf main.tex here: either the full file or only the body between begin{document} and end{document}." class="w-full p-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-indigo-500 font-mono text-[11px] leading-relaxed"></textarea>
+              </div>
+              <div class="flex flex-wrap items-center gap-2">
+                <button type="button" id="job-cl-compile-btn" onclick="compileJobLatex('cl')" class="px-3 py-1.5 bg-slate-900 hover:bg-slate-700 text-white rounded-lg font-semibold flex items-center gap-1.5">
+                  <i data-lucide="play" class="w-3.5 h-3.5"></i> Compile &amp; Preview
+                </button>
+                <button type="button" id="job-cl-compiled-view" onclick="viewJobDoc('cl-compiled')" class="text-indigo-600 hover:underline font-semibold hidden">View last compiled PDF</button>
+                <span id="job-cl-compiled-label" class="text-slate-400"></span>
+              </div>
+            </div>
+          </details>
         </div>
 
         <div>
@@ -720,48 +870,70 @@
     </div>
   </div>
 
-  <!-- MODAL 2: ADD DOCUMENT VAULT ITEM -->
-  <div id="modal-doc" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
-    <div class="bg-white rounded-2xl max-w-md w-full shadow-2xl border border-slate-100 overflow-hidden">
-      <div class="bg-slate-900 text-white px-6 py-4 flex items-center justify-between">
-        <h3 class="text-sm font-bold flex items-center gap-2">
-          <i data-lucide="file-plus" class="w-4 h-4 text-indigo-400"></i> Add Document Version
+  <!-- MODAL 2: LATEX TEMPLATE EDITOR -->
+  <div id="modal-template" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+    <div class="bg-white rounded-2xl max-w-3xl w-full max-h-[90vh] overflow-y-auto shadow-2xl border border-slate-100">
+      <div class="bg-slate-900 text-white px-6 py-4 flex items-center justify-between sticky top-0 z-10">
+        <h3 id="modal-template-title" class="text-sm font-bold flex items-center gap-2">
+          <i data-lucide="file-code-2" class="w-4 h-4 text-indigo-400"></i> LaTeX Template
         </h3>
-        <button onclick="closeDocModal()" class="text-slate-400 hover:text-white">
+        <button onclick="closeTemplateModal()" class="text-slate-400 hover:text-white">
           <i data-lucide="x" class="w-5 h-5"></i>
         </button>
       </div>
-      <form onsubmit="handleDocFormSubmit(event)" class="p-6 space-y-4 text-xs">
-        <div>
-          <label class="block font-semibold text-slate-700 mb-1">Document Title *</label>
-          <input type="text" id="doc-title-input" required placeholder="e.g. CV Data Analyst (NL Focus)" class="w-full p-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-indigo-500">
+      <form onsubmit="handleTemplateFormSubmit(event)" class="p-6 space-y-4 text-xs">
+        <input type="hidden" id="tpl-id">
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+          <div class="sm:col-span-1">
+            <label class="block font-semibold text-slate-700 mb-1">Template Name *</label>
+            <input type="text" id="tpl-name" required placeholder="e.g. Overleaf CV" class="w-full p-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-indigo-500">
+          </div>
+          <div>
+            <label class="block font-semibold text-slate-700 mb-1">Used For</label>
+            <select id="tpl-type" class="w-full p-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-indigo-500">
+              <option value="CV">CV / Resume</option>
+              <option value="CL">Cover Letter</option>
+            </select>
+          </div>
+          <div>
+            <label class="block font-semibold text-slate-700 mb-1">Compiler</label>
+            <select id="tpl-engine" class="w-full p-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-indigo-500">
+              <option value="pdflatex">pdfLaTeX (Overleaf default)</option>
+              <option value="xelatex">XeLaTeX</option>
+              <option value="lualatex">LuaLaTeX</option>
+            </select>
+          </div>
         </div>
         <div>
-          <label class="block font-semibold text-slate-700 mb-1">Type *</label>
-          <select id="doc-type-input" class="w-full p-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-indigo-500">
-            <option value="CV">CV / Resume</option>
-            <option value="CL">Cover Letter</option>
-            <option value="Other">Portfolio / Reference</option>
-          </select>
+          <label class="block font-semibold text-slate-700 mb-1">Main file skeleton</label>
+          <p class="text-[11px] text-slate-400 mb-1">Only used when the pasted text has no <code>\documentclass</code>. The pasted body replaces <code>%BODY%</code>.</p>
+          <textarea id="tpl-skeleton" rows="5" spellcheck="false" class="w-full p-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-indigo-500 font-mono text-[11px]"></textarea>
         </div>
-        <div>
-          <label class="block font-semibold text-slate-700 mb-1">File Link (Google Drive / OneDrive / Dropbox)</label>
-          <input type="url" id="doc-url-input" placeholder="https://drive.google.com/..." class="w-full p-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-indigo-500">
+        <div class="space-y-2">
+          <div class="flex items-center justify-between">
+            <label class="font-semibold text-slate-700">Files <span class="font-normal text-slate-400">(path must match your <code>\input{...}</code>)</span></label>
+            <div class="flex items-center gap-2">
+              <label class="cursor-pointer px-2.5 py-1 border border-slate-200 rounded-lg hover:bg-slate-50 font-semibold text-slate-600 flex items-center gap-1">
+                <i data-lucide="upload" class="w-3 h-3"></i> Upload .tex
+                <input type="file" accept=".tex,.sty,.cls,.bib,text/plain" multiple class="hidden" onchange="handleTemplateFileUpload(event)">
+              </label>
+              <button type="button" onclick="addTemplateFileRow()" class="px-2.5 py-1 border border-slate-200 rounded-lg hover:bg-slate-50 font-semibold text-slate-600 flex items-center gap-1">
+                <i data-lucide="plus" class="w-3 h-3"></i> Add File
+              </button>
+            </div>
+          </div>
+          <div id="tpl-files" class="space-y-3"></div>
         </div>
-        <div>
-          <label class="block font-semibold text-slate-700 mb-1">Tags / Keywords</label>
-          <input type="text" id="doc-tags-input" placeholder="e.g. Python, Tech, Management" class="w-full p-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-indigo-500">
-        </div>
-        <div class="pt-3 border-t border-slate-100 flex justify-end space-x-2">
-          <button type="button" onclick="closeDocModal()" class="px-4 py-2 border border-slate-200 text-slate-600 rounded-lg hover:bg-slate-100">Cancel</button>
-          <button type="submit" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg font-semibold shadow">Save Document</button>
+        <div class="pt-3 border-t border-slate-100 flex justify-end gap-2">
+          <button type="button" onclick="closeTemplateModal()" class="px-4 py-2 border border-slate-200 text-slate-600 rounded-lg hover:bg-slate-100">Cancel</button>
+          <button type="submit" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg font-semibold shadow">Save Template</button>
         </div>
       </form>
     </div>
   </div>
 
   <!-- MODAL 3: CUSTOM CONFIRM MODAL -->
-  <div id="modal-confirm" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+  <div id="modal-confirm" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[60] flex items-center justify-center p-4 hidden">
     <div class="bg-white rounded-2xl max-w-sm w-full p-6 shadow-2xl border border-slate-100 space-y-4 text-center">
       <div id="confirm-icon" class="w-12 h-12 bg-rose-100 text-rose-600 rounded-full flex items-center justify-center mx-auto">
         <i data-lucide="alert-triangle" class="w-6 h-6"></i>
@@ -792,7 +964,7 @@
           <input type="text" id="target-name-input" required placeholder="e.g. McKinsey, KPMG, Google, ASML" class="w-full p-2.5 border border-slate-200 rounded-lg focus:ring-2 focus:ring-indigo-500">
         </div>
         <div>
-          <label class="block font-semibold text-slate-700 mb-1">Industry Tab *</label>
+          <label class="block font-semibold text-slate-700 mb-1">Industry *</label>
           <select id="target-industry-select" class="w-full p-2.5 border border-slate-200 rounded-lg focus:ring-2 focus:ring-indigo-500">
             <!-- Dynamic industry options -->
           </select>
@@ -805,6 +977,347 @@
     </div>
   </div>
 
+  <!-- MODAL 5: TEXT PROMPT (new / rename industry) -->
+  <div id="modal-prompt" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+    <div class="bg-white rounded-2xl max-w-sm w-full shadow-2xl border border-slate-100 overflow-hidden">
+      <div class="bg-slate-900 text-white px-6 py-4 flex items-center justify-between">
+        <h3 id="prompt-title" class="text-sm font-bold">Enter a name</h3>
+        <button onclick="closePromptModal()" class="text-slate-400 hover:text-white">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+      </div>
+      <form onsubmit="handlePromptSubmit(event)" class="p-6 space-y-4 text-xs">
+        <div>
+          <label id="prompt-label" class="block font-semibold text-slate-700 mb-1">Name</label>
+          <input type="text" id="prompt-input" required class="w-full p-2.5 border border-slate-200 rounded-lg focus:ring-2 focus:ring-indigo-500">
+        </div>
+        <div class="pt-3 border-t border-slate-100 flex justify-end gap-2">
+          <button type="button" onclick="closePromptModal()" class="px-4 py-2 border border-slate-200 text-slate-600 rounded-lg hover:bg-slate-100">Cancel</button>
+          <button type="submit" id="prompt-submit" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg font-semibold shadow">Save</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- MODAL 6: MOVE COMPANY TO INDUSTRY (click alternative to drag & drop) -->
+  <div id="modal-move-company" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+    <div class="bg-white rounded-2xl max-w-sm w-full shadow-2xl border border-slate-100 overflow-hidden">
+      <div class="bg-slate-900 text-white px-6 py-4 flex items-center justify-between">
+        <h3 id="move-company-title" class="text-sm font-bold">Move company</h3>
+        <button onclick="closeMoveCompanyModal()" class="text-slate-400 hover:text-white">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+      </div>
+      <form onsubmit="handleMoveCompanySubmit(event)" class="p-6 space-y-4 text-xs">
+        <div>
+          <label class="block font-semibold text-slate-700 mb-1">Move to industry</label>
+          <select id="move-target-select" class="w-full p-2.5 border border-slate-200 rounded-lg focus:ring-2 focus:ring-indigo-500"></select>
+        </div>
+        <div class="pt-3 border-t border-slate-100 flex justify-end gap-2">
+          <button type="button" onclick="closeMoveCompanyModal()" class="px-4 py-2 border border-slate-200 text-slate-600 rounded-lg hover:bg-slate-100">Cancel</button>
+          <button type="submit" class="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg font-semibold shadow">Move</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- MODAL 7: PLANNER BLOCK -->
+  <div id="modal-event" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+    <div class="bg-white rounded-2xl max-w-md w-full shadow-2xl border border-slate-100 overflow-hidden">
+      <div class="bg-slate-900 text-white px-6 py-4 flex items-center justify-between">
+        <h3 id="modal-event-title" class="text-sm font-bold flex items-center gap-2">
+          <i data-lucide="calendar-plus" class="w-4 h-4 text-sky-400"></i> Add Block
+        </h3>
+        <button onclick="closeEventModal()" class="text-slate-400 hover:text-white">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+      </div>
+      <form onsubmit="handleEventFormSubmit(event)" class="p-6 space-y-4 text-xs">
+        <input type="hidden" id="event-id">
+        <div>
+          <label class="block font-semibold text-slate-700 mb-1">Task *</label>
+          <input type="text" id="event-title" required placeholder="e.g. Apply to 3 consulting roles" class="w-full p-2.5 border border-slate-200 rounded-lg focus:ring-2 focus:ring-indigo-500">
+        </div>
+        <div>
+          <label class="block font-semibold text-slate-700 mb-1">Group</label>
+          <div id="event-cat-picker" class="flex flex-wrap gap-1.5"></div>
+          <input type="hidden" id="event-cat">
+        </div>
+        <div class="grid grid-cols-3 gap-3">
+          <div>
+            <label class="block font-semibold text-slate-700 mb-1">Date</label>
+            <input type="date" id="event-date" required class="w-full p-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-indigo-500">
+          </div>
+          <div>
+            <label class="block font-semibold text-slate-700 mb-1">Start</label>
+            <input type="time" id="event-start" required step="900" class="w-full p-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-indigo-500">
+          </div>
+          <div>
+            <label class="block font-semibold text-slate-700 mb-1">End</label>
+            <input type="time" id="event-end" required step="900" class="w-full p-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-indigo-500">
+          </div>
+        </div>
+        <div>
+          <label class="block font-semibold text-slate-700 mb-1">Notes</label>
+          <textarea id="event-notes" rows="2" class="w-full p-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-indigo-500"></textarea>
+        </div>
+        <div class="pt-3 border-t border-slate-100 flex items-center justify-between gap-2">
+          <button type="button" id="btn-event-delete" onclick="deleteEventFromModal()" class="px-3 py-2 text-rose-600 hover:bg-rose-50 rounded-lg font-semibold">Delete</button>
+          <div class="flex gap-2 ml-auto">
+            <button type="button" onclick="closeEventModal()" class="px-4 py-2 border border-slate-200 text-slate-600 rounded-lg hover:bg-slate-100">Cancel</button>
+            <button type="submit" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg font-semibold shadow">Save</button>
+          </div>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- MODAL 8: PLANNER GROUPS (name + colour) -->
+  <div id="modal-categories" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+    <div class="bg-white rounded-2xl max-w-md w-full max-h-[90vh] overflow-y-auto shadow-2xl border border-slate-100">
+      <div class="bg-slate-900 text-white px-6 py-4 flex items-center justify-between sticky top-0 z-10">
+        <h3 class="text-sm font-bold flex items-center gap-2">
+          <i data-lucide="palette" class="w-4 h-4 text-sky-400"></i> Planner Groups
+        </h3>
+        <button onclick="closeCategoryModal()" class="text-slate-400 hover:text-white">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+      </div>
+      <form onsubmit="handleCategoryFormSubmit(event)" class="p-6 space-y-4 text-xs">
+        <p class="text-slate-500">Pick a colour and name for each group. Blocks in a deleted group turn grey.</p>
+        <div id="category-rows" class="space-y-2"></div>
+        <button type="button" onclick="addCategoryRow()" class="px-2.5 py-1.5 border border-slate-200 rounded-lg hover:bg-slate-50 font-semibold text-slate-600 flex items-center gap-1">
+          <i data-lucide="plus" class="w-3 h-3"></i> Add Group
+        </button>
+        <div class="pt-3 border-t border-slate-100 flex justify-end gap-2">
+          <button type="button" onclick="closeCategoryModal()" class="px-4 py-2 border border-slate-200 text-slate-600 rounded-lg hover:bg-slate-100">Cancel</button>
+          <button type="submit" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg font-semibold shadow">Save Groups</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- MODAL 9: PDF PREVIEW / COMPILE LOG -->
+  <div id="modal-pdf" class="fixed inset-0 bg-slate-900/70 backdrop-blur-sm z-[55] flex items-center justify-center p-4 hidden">
+    <div class="bg-white rounded-2xl max-w-4xl w-full max-h-[94vh] flex flex-col shadow-2xl border border-slate-100 overflow-hidden">
+      <div class="bg-slate-900 text-white px-5 py-3 flex items-center justify-between gap-3">
+        <h3 id="pdf-modal-title" class="text-sm font-bold truncate">Preview</h3>
+        <div class="flex items-center gap-3 flex-shrink-0">
+          <a id="pdf-modal-open" href="#" target="_blank" rel="noopener" class="text-xs text-slate-300 hover:text-white flex items-center gap-1">
+            <i data-lucide="external-link" class="w-3.5 h-3.5"></i> Open in new tab
+          </a>
+          <button onclick="closePdfModal()" class="text-slate-400 hover:text-white">
+            <i data-lucide="x" class="w-5 h-5"></i>
+          </button>
+        </div>
+      </div>
+      <iframe id="pdf-modal-frame" class="w-full flex-1 min-h-[75vh] bg-slate-100" title="PDF preview"></iframe>
+      <div id="pdf-modal-error" class="hidden p-5 space-y-3 text-xs overflow-y-auto">
+        <div class="flex items-start gap-2 text-rose-700">
+          <i data-lucide="alert-triangle" class="w-4 h-4 flex-shrink-0 mt-0.5"></i>
+          <p id="pdf-modal-error-msg" class="font-semibold"></p>
+        </div>
+        <pre id="pdf-modal-error-summary" class="bg-rose-50 border border-rose-200 text-rose-900 rounded-lg p-3 whitespace-pre-wrap font-mono text-[11px]"></pre>
+        <details>
+          <summary class="cursor-pointer font-semibold text-slate-600">Full LaTeX log</summary>
+          <pre id="pdf-modal-error-log" class="mt-2 bg-slate-50 border border-slate-200 rounded-lg p-3 whitespace-pre-wrap font-mono text-[10px] max-h-[50vh] overflow-y-auto"></pre>
+        </details>
+      </div>
+    </div>
+  </div>
+
+  <!-- Starter LaTeX template files (seeded into the Doc Vault on first run; edit them there) -->
+  <script type="text/x-latex" id="seed-skeleton">
+\documentclass[11pt,a4paper]{article}
+\input{shared/preamble.tex}
+
+\begin{document}
+%BODY%
+\end{document}
+  </script>
+  <script type="text/x-latex" id="seed-cv-preamble">
+% ==============================
+% SHARED PREAMBLE
+% ==============================
+\usepackage[
+  top=1cm,
+  bottom=1cm,
+  left=1.35cm,
+  right=1.35cm
+]{geometry}
+
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage{tgtermes}
+\usepackage{enumitem}
+\usepackage{titlesec}
+\usepackage[hidelinks]{hyperref}
+\usepackage{xcolor}
+\usepackage{fancyhdr}
+\usepackage[none]{hyphenat}
+\usepackage{microtype}
+\usepackage{lastpage}
+
+\definecolor{subtle}{HTML}{666666}
+\definecolor{rulegray}{HTML}{8A8A8A}
+
+\setlength{\parindent}{0pt}
+\setlength{\parskip}{0pt}
+\setlength{\emergencystretch}{2em}
+\sloppy
+
+\titleformat{\section}
+  {\large\bfseries}
+  {}{0pt}{}
+  [\vspace{-3pt}\color{rulegray}\titlerule]
+\titlespacing*{\section}{0pt}{9pt}{5pt}
+
+\setlist[itemize]{
+  leftmargin=1.25em,
+  itemsep=1.8pt,
+  topsep=2.5pt,
+  parsep=0pt,
+  partopsep=0pt
+}
+
+\pagestyle{fancy}
+\fancyhf{}
+\renewcommand{\headrulewidth}{0pt}
+\fancyfoot[L]{\footnotesize\color{subtle} \FullName}
+\fancyfoot[R]{\footnotesize\color{subtle} Page \thepage\ of \pageref{LastPage}}
+\setlength{\footskip}{18pt}
+
+\input{shared/personal.tex}
+\input{shared/commands.tex}
+  </script>
+  <script type="text/x-latex" id="seed-cv-personal">
+% ==============================
+% PERSONAL DETAILS
+% Edit this file once; all CV versions update automatically.
+% ==============================
+\newcommand{\FullName}{PERSON}
+\newcommand{\Location}{Rotterdam, The Netherlands}
+\newcommand{\Email}{PERSON@gmail.com}
+\newcommand{\Phone}{+31 6 1234 1234}
+\newcommand{\LinkedInURL}{https://www.linkedin.com/in/PERSON/}
+\newcommand{\LinkedInText}{linkedin.com/in/PERSON/}
+  </script>
+  <script type="text/x-latex" id="seed-cv-commands">
+% ==============================
+% SHARED COMMANDS
+% ==============================
+\newcommand{\CVHeader}{%
+  \begin{center}
+    {\LARGE\bfseries \FullName}\\[3pt]
+    {\small \Location\quad\textbar\quad
+    \href{mailto:\Email}{\Email}\quad\textbar\quad
+    \Phone\quad\textbar\quad
+    \href{\LinkedInURL}{\LinkedInText}}
+  \end{center}
+  \vspace{4pt}
+}
+
+\newcommand{\entry}[4]{%
+  \noindent\textbf{#1}\hfill #2\\[-1pt]
+  \textit{#3}\hfill \textit{#4}\par
+}
+
+\newcommand{\eduentry}[4]{%
+  \noindent\textbf{#1}\hfill #2\\[-1pt]
+  \textit{#3}\hfill \textit{#4}\par
+}
+  </script>
+  <script type="text/x-latex" id="seed-cl-preamble">
+% =================================================
+% PACKAGES
+% =================================================
+
+\usepackage[a4paper,
+    top=1cm,
+    bottom=1cm,
+    left=2cm,
+    right=2cm
+]{geometry}
+
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage{lmodern}
+\usepackage{microtype}
+\usepackage{parskip}
+\usepackage[hidelinks]{hyperref}
+\usepackage{xcolor}
+\usepackage{enumitem}
+
+% =================================================
+% GENERAL DOCUMENT SETUP
+% =================================================
+
+\pagestyle{empty}
+\setlength{\parindent}{0pt}
+\setlength{\parskip}{0.9em}
+
+\renewcommand{\familydefault}{\sfdefault}
+
+\definecolor{TextColor}{HTML}{1F1F1F}
+\color{TextColor}
+
+% =================================================
+% SHARED DATA + COMMANDS
+% =================================================
+
+\input{shared/personal.tex}
+\input{shared/commands.tex}
+  </script>
+  <script type="text/x-latex" id="seed-cl-personal">
+% =================================================
+% PERSONAL INFORMATION
+% =================================================
+
+\newcommand{\MyName}{PERSON}
+%\newcommand{\MyLocation}{Rotterdam, the Netherlands}
+\newcommand{\MyPhone}{(+31) 6 1234 1234}
+\newcommand{\MyEmail}{PERSON@gmail.com}
+\newcommand{\MyLinkedIn}{linkedin.com/in/PERSON/}
+\newcommand{\MyLinkedInURL}{https://www.linkedin.com/in/PERSON/}
+  </script>
+  <script type="text/x-latex" id="seed-cl-commands">
+% =================================================
+% REUSABLE COVER LETTER COMMANDS
+% =================================================
+
+\newcommand{\CoverLetterHeader}{
+    {\Large\bfseries \MyName}
+
+    \vspace{0.5pt}
+
+    \MyPhone \\
+    \href{mailto:\MyEmail}{\MyEmail} \\
+    \href{\MyLinkedInURL}{\MyLinkedIn}
+
+    \vspace{0.5em}
+}
+
+\newcommand{\CompanyBlock}[2]{
+    \textbf{#1}\\
+    #2
+
+    \vspace{0.5em}
+}
+
+\newcommand{\CoverLetterTitle}[1]{
+    \textbf{Re: #1}
+
+}
+
+\newcommand{\Closing}{
+    \vspace{0.5em}
+
+    Kind regards,
+
+    \textbf{\MyName}
+}
+  </script>
+
   <script>
     // Default Industry Target Directories
     const DEFAULT_INDUSTRIES = [
@@ -813,6 +1326,17 @@
       { id: "ind-3", name: "Finance & Banking", companies: ["ING", "ABN AMRO", "Rabobank", "Mollie"] },
       { id: "ind-4", name: "FMCG & Energy", companies: ["Unilever", "Heineken", "Shell"] }
     ];
+
+    const DEFAULT_PLANNER = {
+      categories: [
+        { id: "cat-break", name: "Break", color: "#94a3b8" },
+        { id: "cat-app", name: "Work on app", color: "#22c55e" },
+        { id: "cat-jobs", name: "Look for job", color: "#ef4444" },
+        { id: "cat-upskill", name: "Upskilling", color: "#3b82f6" },
+        { id: "cat-interview", name: "Prepare for interview", color: "#a855f7" }
+      ],
+      events: []
+    };
 
     // Helper: Safely retrieve state from LocalStorage
     function getSavedState(key, fallback) {
@@ -825,12 +1349,43 @@
       }
     }
 
+    function seedText(id) {
+      return document.getElementById(id).textContent.replace(/^\s*\n/, "").replace(/\s+$/, "") + "\n";
+    }
+
+    function buildDefaultTemplates() {
+      const skeleton = seedText("seed-skeleton");
+      return [
+        {
+          id: "tpl-cv-default", name: "Overleaf CV", type: "CV", engine: "pdflatex", skeleton,
+          files: [
+            { path: "shared/preamble.tex", content: seedText("seed-cv-preamble") },
+            { path: "shared/personal.tex", content: seedText("seed-cv-personal") },
+            { path: "shared/commands.tex", content: seedText("seed-cv-commands") }
+          ]
+        },
+        {
+          id: "tpl-cl-default", name: "Overleaf Cover Letter", type: "CL", engine: "pdflatex", skeleton,
+          files: [
+            { path: "shared/preamble.tex", content: seedText("seed-cl-preamble") },
+            { path: "shared/personal.tex", content: seedText("seed-cl-personal") },
+            { path: "shared/commands.tex", content: seedText("seed-cl-commands") }
+          ]
+        }
+      ];
+    }
+
     // Main App State
     let state = {
       applications: getSavedState("job_tracker_apps", []),
-      documents: getSavedState("job_tracker_docs", []),
       industries: getSavedState("job_tracker_industries", DEFAULT_INDUSTRIES),
       activeIndustryId: getSavedState("job_tracker_active_ind", "ind-1"),
+      looseCompanies: getSavedState("job_tracker_loose_companies", []),
+      templates: getSavedState("job_tracker_templates", null) || buildDefaultTemplates(),
+      legacyDocs: getSavedState("job_tracker_docs", []),
+      planner: getSavedState("job_tracker_planner", DEFAULT_PLANNER),
+      plannerView: window.innerWidth < 768 ? "day" : "week",
+      plannerDate: null,
       currentViewMode: "table",
       aiExtractedData: null,
       uploadedFileText: ""
@@ -839,11 +1394,66 @@
     function saveState() {
       try {
         localStorage.setItem("job_tracker_apps", JSON.stringify(state.applications));
-        localStorage.setItem("job_tracker_docs", JSON.stringify(state.documents));
         localStorage.setItem("job_tracker_industries", JSON.stringify(state.industries));
-        localStorage.setItem("job_tracker_active_ind", state.activeIndustryId);
+        localStorage.setItem("job_tracker_active_ind", JSON.stringify(state.activeIndustryId));
+        localStorage.setItem("job_tracker_loose_companies", JSON.stringify(state.looseCompanies));
+        localStorage.setItem("job_tracker_templates", JSON.stringify(state.templates));
+        localStorage.setItem("job_tracker_docs", JSON.stringify(state.legacyDocs));
+        localStorage.setItem("job_tracker_planner", JSON.stringify(state.planner));
       } catch (e) {
         console.warn("Could not save to LocalStorage:", e);
+      }
+    }
+
+    // Escape user-entered text before putting it into innerHTML
+    function esc(value) {
+      return String(value ?? "")
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#39;");
+    }
+
+    /* ==========================================================================
+       FILE STORE (IndexedDB) — uploaded & compiled PDFs per application.
+       localStorage is limited to ~5 MB of text, so binary files live here instead.
+       Keys: "<jobId>:cv-upload", "<jobId>:cv-compiled", "<jobId>:cl-upload", "<jobId>:cl-compiled"
+       ========================================================================== */
+    const FileStore = {
+      _db: null,
+      open() {
+        if (this._db) return Promise.resolve(this._db);
+        return new Promise((resolve, reject) => {
+          const req = indexedDB.open("job_tracker_files", 1);
+          req.onupgradeneeded = () => req.result.createObjectStore("files");
+          req.onsuccess = () => { this._db = req.result; resolve(req.result); };
+          req.onerror = () => reject(req.error);
+        });
+      },
+      async _run(mode, fn) {
+        const db = await this.open();
+        return new Promise((resolve, reject) => {
+          const tx = db.transaction("files", mode);
+          const result = fn(tx.objectStore("files"));
+          tx.oncomplete = () => resolve(result && "result" in result ? result.result : undefined);
+          tx.onerror = () => reject(tx.error);
+        });
+      },
+      get(key) { return this._run("readonly", s => s.get(key)); },
+      put(key, value) { return this._run("readwrite", s => s.put(value, key)); },
+      del(key) { return this._run("readwrite", s => s.delete(key)); },
+      keys() { return this._run("readonly", s => s.getAllKeys()); },
+      clear() { return this._run("readwrite", s => s.clear()); }
+    };
+
+    const DOC_SLOTS = ["cv-upload", "cv-compiled", "cl-upload", "cl-compiled"];
+
+    async function deleteJobFiles(jobId) {
+      try {
+        await Promise.all(DOC_SLOTS.map(slot => FileStore.del(`${jobId}:${slot}`)));
+      } catch (e) {
+        console.warn("Could not delete stored files:", e);
       }
     }
 
@@ -851,7 +1461,7 @@
        1. TAB SWITCHING NAVIGATION
        ========================================================================== */
     function switchTab(tabName) {
-      const views = ["dashboard", "applications", "industry", "ai-import", "documents"];
+      const views = ["planner", "dashboard", "applications", "industry", "ai-import", "documents"];
       views.forEach(v => {
         const viewEl = document.getElementById(`view-${v}`);
         if (viewEl) viewEl.classList.add("hidden");
@@ -871,6 +1481,7 @@
         activeBtn.classList.remove("text-slate-300");
       }
 
+      if (tabName === 'planner') renderPlanner(true);
       if (tabName === 'dashboard') renderDashboard();
       if (tabName === 'applications') renderApplications();
       if (tabName === 'industry') renderIndustryHub();
@@ -878,137 +1489,690 @@
     }
 
     /* ==========================================================================
-       2. INDUSTRY TARGET DIRECTORY & CHECKLIST LOGIC
+       2. DAILY PLANNER (calendar with editable colour groups)
        ========================================================================== */
-    function renderIndustryHub() {
-      const tabContainer = document.getElementById("industry-tab-container");
-      tabContainer.innerHTML = "";
+    const PLANNER_START_HOUR = 6;
+    const PLANNER_END_HOUR = 24;
+    const HOUR_PX = 44;
+    const NO_GROUP_COLOR = "#cbd5e1";
 
-      if (!state.industries || state.industries.length === 0) {
-        state.industries = DEFAULT_INDUSTRIES;
-      }
+    function pad2(n) { return String(n).padStart(2, "0"); }
+    function toISODate(d) { return `${d.getFullYear()}-${pad2(d.getMonth() + 1)}-${pad2(d.getDate())}`; }
+    function parseISODate(s) { const [y, m, d] = s.split("-").map(Number); return new Date(y, m - 1, d); }
+    function todayISO() { return toISODate(new Date()); }
+    function addDays(s, n) { const d = parseISODate(s); d.setDate(d.getDate() + n); return toISODate(d); }
+    function startOfWeek(s) { const d = parseISODate(s); d.setDate(d.getDate() - ((d.getDay() + 6) % 7)); return toISODate(d); }
+    function timeToMin(t) { const [h, m] = (t || "0:0").split(":").map(Number); return h * 60 + m; }
+    function minToTime(min) { const m = Math.max(0, Math.min(23 * 60 + 59, min)); return `${pad2(Math.floor(m / 60))}:${pad2(m % 60)}`; }
+    function hexToRgba(hex, alpha) {
+      const h = (hex || NO_GROUP_COLOR).replace("#", "");
+      const n = parseInt(h.length === 3 ? h.split("").map(c => c + c).join("") : h, 16);
+      return `rgba(${(n >> 16) & 255}, ${(n >> 8) & 255}, ${n & 255}, ${alpha})`;
+    }
+    function formatHours(min) { const h = min / 60; return `${Number.isInteger(h) ? h : h.toFixed(1)}h`; }
 
-      if (!state.industries.find(i => i.id === state.activeIndustryId)) {
-        state.activeIndustryId = state.industries[0].id;
-      }
+    function getCategory(id) { return state.planner.categories.find(c => c.id === id) || null; }
 
-      state.industries.forEach(ind => {
-        const isActive = ind.id === state.activeIndustryId;
-        const btn = document.createElement("button");
-        btn.onclick = () => {
-          state.activeIndustryId = ind.id;
-          saveState();
-          renderIndustryHub();
-        };
-        btn.className = `w-full text-left px-3.5 py-2.5 rounded-lg text-xs font-semibold transition flex items-center justify-between ${
-          isActive ? "bg-indigo-600 text-white shadow-sm" : "bg-white hover:bg-slate-200/70 text-slate-700 border border-slate-200/60"
-        }`;
-        btn.innerHTML = `
-          <span class="truncate">${ind.name}</span>
-          <span class="text-[10px] px-2 py-0.5 rounded-full ${isActive ? 'bg-indigo-800 text-indigo-100' : 'bg-slate-100 text-slate-500'}">${ind.companies.length}</span>
-        `;
-        tabContainer.appendChild(btn);
+    function plannerVisibleDays() {
+      if (state.plannerView === "day") return [state.plannerDate];
+      const start = startOfWeek(state.plannerDate);
+      return Array.from({ length: 7 }, (_, i) => addDays(start, i));
+    }
+
+    function setPlannerView(view) {
+      state.plannerView = view;
+      renderPlanner();
+    }
+
+    function plannerShift(direction) {
+      state.plannerDate = addDays(state.plannerDate, direction * (state.plannerView === "week" ? 7 : 1));
+      renderPlanner();
+    }
+
+    function plannerGoToday() {
+      state.plannerDate = todayISO();
+      renderPlanner(true);
+    }
+
+    // Assign overlapping blocks to side-by-side lanes
+    function layoutDayEvents(events) {
+      const items = events
+        .map(e => ({ e, s: timeToMin(e.start), en: Math.max(timeToMin(e.end), timeToMin(e.start) + 15) }))
+        .sort((a, b) => a.s - b.s || b.en - a.en);
+      const out = [];
+      let cluster = [];
+      let clusterEnd = -1;
+      const flush = () => {
+        const lanes = [];
+        cluster.forEach(item => {
+          let lane = lanes.findIndex(end => end <= item.s);
+          if (lane === -1) { lane = lanes.length; lanes.push(item.en); } else { lanes[lane] = item.en; }
+          item.lane = lane;
+        });
+        cluster.forEach(item => { item.lanes = lanes.length; out.push(item); });
+        cluster = [];
+      };
+      items.forEach(item => {
+        if (cluster.length && item.s >= clusterEnd) { flush(); clusterEnd = -1; }
+        cluster.push(item);
+        clusterEnd = Math.max(clusterEnd, item.en);
       });
+      if (cluster.length) flush();
+      return out;
+    }
 
-      // Render Active Industry Content
-      const activeInd = state.industries.find(i => i.id === state.activeIndustryId);
-      document.getElementById("active-industry-title").innerText = activeInd ? activeInd.name : "Industry";
-      document.getElementById("active-industry-badge").innerText = `${activeInd ? activeInd.companies.length : 0} Target Companies`;
+    function renderPlanner(scrollToNow = false) {
+      if (!state.plannerDate) state.plannerDate = todayISO();
+      const days = plannerVisibleDays();
+      const today = todayISO();
 
-      const compList = document.getElementById("target-company-list");
-      compList.innerHTML = "";
+      // Toolbar
+      const fmt = (s, opts) => parseISODate(s).toLocaleDateString("en-GB", opts);
+      document.getElementById("planner-range-label").innerText = state.plannerView === "day"
+        ? fmt(days[0], { weekday: "long", day: "numeric", month: "long", year: "numeric" })
+        : `${fmt(days[0], { day: "numeric", month: "short" })} – ${fmt(days[6], { day: "numeric", month: "short", year: "numeric" })}`;
+      const activeCls = "px-2.5 py-1 rounded text-xs font-semibold bg-white shadow text-slate-800";
+      const idleCls = "px-2.5 py-1 rounded text-xs font-semibold text-slate-500 hover:text-slate-800";
+      document.getElementById("btn-planner-day").className = state.plannerView === "day" ? activeCls : idleCls;
+      document.getElementById("btn-planner-week").className = state.plannerView === "week" ? activeCls : idleCls;
 
-      if (!activeInd || activeInd.companies.length === 0) {
-        compList.innerHTML = `<div class="col-span-2 text-center py-8 text-slate-400 italic text-xs">No target companies added to this industry yet. Click "+ Add Target Company" above.</div>`;
-        return;
-      }
+      const visibleEvents = state.planner.events.filter(e => days.includes(e.date));
 
-      activeInd.companies.forEach(companyName => {
-        // Calculate dynamic job application stats for this company
-        const matchedJobs = state.applications.filter(a => a.company && a.company.toLowerCase().trim() === companyName.toLowerCase().trim());
-        const totalJobs = matchedJobs.length;
-        
-        // Status counts
-        const appliedCount = matchedJobs.filter(a => a.status !== 'Wishlist').length;
-        const pendingCount = matchedJobs.filter(a => a.status === 'Wishlist').length;
-        const interviewCount = matchedJobs.filter(a => a.status === 'Interview' || a.status === 'Screening').length;
-
-        /* DYNAMIC STRIKETHROUGH LOGIC:
-           - If totalJobs > 0 AND pendingCount === 0 (ALL logged jobs have been applied): Checked (✓) AND Strikethrough!
-        */
-        const isFullyApplied = totalJobs > 0 && pendingCount === 0;
-
-        const card = document.createElement("div");
-        card.className = `p-3.5 rounded-xl border transition flex flex-col justify-between ${
-          isFullyApplied ? 'bg-emerald-50/50 border-emerald-200' : 'bg-white border-slate-200 hover:border-indigo-300 shadow-sm'
-        }`;
-
-        card.innerHTML = `
-          <div class="space-y-2">
-            <div class="flex items-center justify-between">
-              <label class="flex items-center gap-2 cursor-pointer font-bold text-xs">
-                <input type="checkbox" ${isFullyApplied ? 'checked' : ''} class="w-4 h-4 rounded text-emerald-600 focus:ring-emerald-500" disabled>
-                <span class="${isFullyApplied ? 'line-through text-slate-400 font-normal' : 'text-slate-800 font-bold'}">${companyName}</span>
-              </label>
-              <button onclick="removeTargetCompany('${companyName}')" class="text-slate-300 hover:text-rose-600 p-1" title="Remove Company">
-                <i data-lucide="x-circle" class="w-3.5 h-3.5"></i>
-              </button>
-            </div>
-
-            <!-- Dynamic Badges -->
-            <div class="text-[11px] space-y-1">
-              ${totalJobs === 0 
-                ? `<span class="text-slate-400 italic">No job postings added yet</span>` 
-                : `<div class="flex flex-wrap items-center gap-1.5">
-                    <span class="bg-indigo-50 text-indigo-700 px-2 py-0.5 rounded font-semibold border border-indigo-100">${totalJobs} Logged</span>
-                    ${appliedCount > 0 ? `<span class="bg-amber-100 text-amber-800 px-2 py-0.5 rounded font-medium">${appliedCount} Applied</span>` : ''}
-                    ${pendingCount > 0 ? `<span class="bg-slate-100 text-slate-600 px-2 py-0.5 rounded font-medium">${pendingCount} Not Applied</span>` : ''}
-                    ${interviewCount > 0 ? `<span class="bg-purple-100 text-purple-800 px-2 py-0.5 rounded font-medium">${interviewCount} Interview</span>` : ''}
-                   </div>`
-              }
-            </div>
-          </div>
-
-          <div class="pt-3 mt-3 border-t border-slate-100 flex items-center justify-between text-[11px]">
-            <button onclick="filterByCompany('${companyName}')" class="text-indigo-600 hover:underline font-semibold flex items-center gap-1">
-              <i data-lucide="list" class="w-3 h-3"></i> View Jobs
-            </button>
-            <button onclick="quickAddJobForCompany('${companyName}')" class="text-emerald-600 hover:underline font-semibold flex items-center gap-1">
-              <i data-lucide="plus" class="w-3 h-3"></i> + Add Job
-            </button>
-          </div>
-        `;
-        compList.appendChild(card);
+      // Legend with planned hours per group in the visible range
+      const minutesByCat = {};
+      visibleEvents.forEach(e => {
+        const key = getCategory(e.catId) ? e.catId : "__none";
+        minutesByCat[key] = (minutesByCat[key] || 0) + Math.max(0, timeToMin(e.end) - timeToMin(e.start));
       });
+      document.getElementById("planner-legend-caption").innerText = state.plannerView === "day" ? "Planned today" : "Planned this week";
+      const legendRows = state.planner.categories.map(c => `
+        <div class="flex items-center justify-between gap-2">
+          <span class="flex items-center gap-2 min-w-0">
+            <span class="w-3 h-3 rounded flex-shrink-0" style="background:${esc(c.color)}"></span>
+            <span class="truncate text-slate-700">${esc(c.name)}</span>
+          </span>
+          <span class="text-slate-400 font-medium">${minutesByCat[c.id] ? formatHours(minutesByCat[c.id]) : "–"}</span>
+        </div>`);
+      if (minutesByCat.__none) {
+        legendRows.push(`
+          <div class="flex items-center justify-between gap-2">
+            <span class="flex items-center gap-2"><span class="w-3 h-3 rounded" style="background:${NO_GROUP_COLOR}"></span><span class="text-slate-500 italic">No group</span></span>
+            <span class="text-slate-400 font-medium">${formatHours(minutesByCat.__none)}</span>
+          </div>`);
+      }
+      document.getElementById("planner-legend").innerHTML = legendRows.join("") || `<p class="text-slate-400 italic">No groups yet.</p>`;
 
+      // Agenda for the selected day
+      const selected = state.plannerDate;
+      document.getElementById("planner-agenda-title").innerHTML = `<i data-lucide="list-checks" class="w-4 h-4 text-indigo-600"></i> ${selected === today ? "Today" : esc(fmt(selected, { weekday: "long", day: "numeric", month: "short" }))}`;
+      const agenda = state.planner.events
+        .filter(e => e.date === selected)
+        .sort((a, b) => timeToMin(a.start) - timeToMin(b.start));
+      document.getElementById("planner-agenda").innerHTML = agenda.length === 0
+        ? `<p class="text-slate-400 italic">Nothing planned. Click the calendar to add a block.</p>`
+        : agenda.map(e => {
+            const cat = getCategory(e.catId);
+            return `
+              <button type="button" onclick="openEventModal('${e.id}')" class="w-full text-left flex items-start gap-2 p-2 rounded-lg hover:bg-slate-50 border border-transparent hover:border-slate-200">
+                <span class="w-1 self-stretch rounded" style="background:${esc(cat ? cat.color : NO_GROUP_COLOR)}"></span>
+                <span class="min-w-0">
+                  <span class="block font-semibold text-slate-800 truncate">${esc(e.title)}</span>
+                  <span class="block text-[11px] text-slate-500">${esc(e.start)}–${esc(e.end)} · ${esc(cat ? cat.name : "No group")}</span>
+                </span>
+              </button>`;
+          }).join("");
+
+      // Time grid
+      const totalHeight = (PLANNER_END_HOUR - PLANNER_START_HOUR) * HOUR_PX;
+      const rangeStart = PLANNER_START_HOUR * 60;
+      const rangeEnd = PLANNER_END_HOUR * 60;
+      let html = `<div class="${state.plannerView === "week" ? "min-w-[760px]" : ""}">`;
+
+      html += `<div class="flex sticky top-0 z-20 bg-white border-b border-slate-200"><div class="w-14 flex-shrink-0"></div>`;
+      days.forEach(d => {
+        const date = parseISODate(d);
+        const isToday = d === today;
+        const isSelected = d === selected && state.plannerView === "week";
+        html += `
+          <button type="button" data-dayhead="${d}" class="flex-1 py-2 text-center border-l border-slate-100 hover:bg-slate-50 ${isSelected ? "bg-indigo-50/60" : ""}">
+            <div class="text-[10px] uppercase tracking-wider font-semibold ${isToday ? "text-indigo-600" : "text-slate-400"}">${date.toLocaleDateString("en-GB", { weekday: "short" })}</div>
+            <div class="mx-auto mt-0.5 w-7 h-7 flex items-center justify-center rounded-full text-sm font-bold ${isToday ? "bg-indigo-600 text-white" : "text-slate-800"}">${date.getDate()}</div>
+          </button>`;
+      });
+      html += `</div>`;
+
+      html += `<div class="flex">`;
+      html += `<div class="w-14 flex-shrink-0 relative" style="height:${totalHeight}px">`;
+      for (let h = PLANNER_START_HOUR + 1; h < PLANNER_END_HOUR; h++) {
+        html += `<span class="absolute right-2 text-[10px] text-slate-400" style="top:${(h - PLANNER_START_HOUR) * HOUR_PX - 7}px">${pad2(h)}:00</span>`;
+      }
+      html += `</div>`;
+
+      days.forEach(d => {
+        html += `<div data-daycol="${d}" class="flex-1 relative border-l border-slate-100 cursor-pointer ${d === today ? "bg-indigo-50/20" : ""}" style="height:${totalHeight}px;background-image:linear-gradient(to bottom,#f1f5f9 1px,transparent 1px);background-size:100% ${HOUR_PX}px">`;
+
+        layoutDayEvents(visibleEvents.filter(e => e.date === d)).forEach(item => {
+          if (item.en <= rangeStart || item.s >= rangeEnd) return;
+          const visStart = Math.max(item.s, rangeStart);
+          const visEnd = Math.min(item.en, rangeEnd);
+          const top = (visStart - rangeStart) / 60 * HOUR_PX;
+          const height = Math.max(18, (visEnd - visStart) / 60 * HOUR_PX - 2);
+          const width = 100 / item.lanes;
+          const cat = getCategory(item.e.catId);
+          const color = cat ? cat.color : NO_GROUP_COLOR;
+          html += `
+            <div data-event="${item.e.id}" title="${esc(item.e.title)} (${esc(item.e.start)}–${esc(item.e.end)})" class="absolute rounded-md px-1.5 py-0.5 overflow-hidden text-[11px] leading-tight shadow-sm hover:shadow-md hover:z-10 transition"
+              style="top:${top}px;height:${height}px;left:calc(${item.lane * width}% + 2px);width:calc(${width}% - 4px);background:${hexToRgba(color, 0.2)};border-left:3px solid ${esc(color)};color:#0f172a">
+              <div class="font-semibold truncate">${esc(item.e.title)}</div>
+              ${height > 30 ? `<div class="text-[10px] text-slate-600 truncate">${esc(item.e.start)}–${esc(item.e.end)}</div>` : ""}
+            </div>`;
+        });
+
+        if (d === today) {
+          const now = new Date();
+          const nowMin = now.getHours() * 60 + now.getMinutes();
+          if (nowMin >= rangeStart && nowMin <= rangeEnd) {
+            html += `<div class="absolute left-0 right-0 z-10 pointer-events-none" style="top:${(nowMin - rangeStart) / 60 * HOUR_PX}px"><div class="h-0.5 bg-rose-500"></div><div class="absolute -left-1 -top-1 w-2.5 h-2.5 rounded-full bg-rose-500"></div></div>`;
+          }
+        }
+        html += `</div>`;
+      });
+      html += `</div></div>`;
+
+      document.getElementById("planner-grid").innerHTML = html;
+
+      if (scrollToNow) {
+        const now = new Date();
+        const anchorHour = Math.max(PLANNER_START_HOUR, Math.min(now.getHours() - 1, PLANNER_END_HOUR - 8));
+        document.getElementById("planner-scroll").scrollTop = (anchorHour - PLANNER_START_HOUR) * HOUR_PX;
+      }
       lucide.createIcons();
     }
 
-    function promptAddIndustry() {
-      const name = prompt("Enter new Industry Category Name (e.g. Healthcare, Energy, Startup):");
-      if (name && name.trim()) {
-        const newInd = {
-          id: "ind-" + Date.now(),
-          name: name.trim(),
-          companies: []
-        };
-        state.industries.push(newInd);
-        state.activeIndustryId = newInd.id;
-        saveState();
-        renderIndustryHub();
+    function handlePlannerGridClick(e) {
+      const block = e.target.closest("[data-event]");
+      if (block) { openEventModal(block.dataset.event); return; }
+
+      const head = e.target.closest("[data-dayhead]");
+      if (head) { state.plannerDate = head.dataset.dayhead; renderPlanner(); return; }
+
+      const col = e.target.closest("[data-daycol]");
+      if (col) {
+        const offsetY = e.clientY - col.getBoundingClientRect().top;
+        const minute = PLANNER_START_HOUR * 60 + Math.floor(offsetY / HOUR_PX * 2) * 30;
+        openEventModal(null, { date: col.dataset.daycol, start: minToTime(minute), end: minToTime(minute + 60) });
       }
     }
 
-    function deleteCurrentIndustry() {
-      const activeInd = state.industries.find(i => i.id === state.activeIndustryId);
-      if (!activeInd) return;
+    function renderEventCategoryPicker(selectedId) {
+      document.getElementById("event-cat").value = selectedId || "";
+      const options = [...state.planner.categories, { id: "", name: "No group", color: NO_GROUP_COLOR }];
+      document.getElementById("event-cat-picker").innerHTML = options.map(c => {
+        const active = (selectedId || "") === c.id;
+        return `
+          <button type="button" onclick="renderEventCategoryPicker('${esc(c.id)}')" class="px-2.5 py-1 rounded-full border text-[11px] font-semibold flex items-center gap-1.5 transition ${active ? "ring-2 ring-offset-1 ring-indigo-500" : "hover:bg-slate-50"}"
+            style="border-color:${esc(c.color)};background:${active ? hexToRgba(c.color, 0.2) : "#fff"}">
+            <span class="w-2.5 h-2.5 rounded-full" style="background:${esc(c.color)}"></span>${esc(c.name)}
+          </button>`;
+      }).join("");
+    }
 
+    function openEventModal(id = null, defaults = {}) {
+      const ev = id ? state.planner.events.find(e => e.id === id) : null;
+      const baseDate = defaults.date || state.plannerDate || todayISO();
+      document.getElementById("modal-event-title").innerHTML = `<i data-lucide="${ev ? "calendar-check" : "calendar-plus"}" class="w-4 h-4 text-sky-400"></i> ${ev ? "Edit Block" : "Add Block"}`;
+      document.getElementById("event-id").value = ev ? ev.id : "";
+      document.getElementById("event-title").value = ev ? ev.title : "";
+      document.getElementById("event-date").value = ev ? ev.date : baseDate;
+      document.getElementById("event-start").value = ev ? ev.start : (defaults.start || "09:00");
+      document.getElementById("event-end").value = ev ? ev.end : (defaults.end || "10:00");
+      document.getElementById("event-notes").value = ev ? (ev.notes || "") : "";
+      document.getElementById("btn-event-delete").classList.toggle("hidden", !ev);
+      renderEventCategoryPicker(ev ? ev.catId : (state.planner.categories[0]?.id || ""));
+      document.getElementById("modal-event").classList.remove("hidden");
+      lucide.createIcons();
+      setTimeout(() => document.getElementById("event-title").focus(), 50);
+    }
+
+    function closeEventModal() {
+      document.getElementById("modal-event").classList.add("hidden");
+    }
+
+    function handleEventFormSubmit(e) {
+      e.preventDefault();
+      const id = document.getElementById("event-id").value;
+      const start = document.getElementById("event-start").value;
+      const end = document.getElementById("event-end").value;
+      if (timeToMin(end) <= timeToMin(start)) {
+        showToast("End time must be after the start time.");
+        return;
+      }
+      const data = {
+        id: id || "evt-" + Date.now(),
+        title: document.getElementById("event-title").value.trim(),
+        catId: document.getElementById("event-cat").value,
+        date: document.getElementById("event-date").value,
+        start,
+        end,
+        notes: document.getElementById("event-notes").value
+      };
+      const index = state.planner.events.findIndex(ev => ev.id === id);
+      if (index !== -1) state.planner.events[index] = data; else state.planner.events.push(data);
+      state.plannerDate = data.date;
+      saveState();
+      closeEventModal();
+      renderPlanner();
+    }
+
+    function deleteEventFromModal() {
+      const id = document.getElementById("event-id").value;
+      state.planner.events = state.planner.events.filter(e => e.id !== id);
+      saveState();
+      closeEventModal();
+      renderPlanner();
+    }
+
+    function addCategoryRow(cat = { id: "", name: "", color: "#6366f1" }) {
+      const row = document.createElement("div");
+      row.className = "category-row flex items-center gap-2";
+      row.dataset.id = cat.id;
+      row.innerHTML = `
+        <input type="color" value="${esc(cat.color)}" class="cat-color w-9 h-9 p-0.5 border border-slate-200 rounded-lg cursor-pointer flex-shrink-0">
+        <input type="text" value="${esc(cat.name)}" placeholder="Group name" class="cat-name flex-1 p-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-indigo-500">
+        <button type="button" class="p-2 text-slate-400 hover:text-rose-600" title="Delete group"><i data-lucide="trash-2" class="w-4 h-4"></i></button>`;
+      row.querySelector("button").onclick = () => row.remove();
+      document.getElementById("category-rows").appendChild(row);
+      lucide.createIcons();
+    }
+
+    function openCategoryModal() {
+      document.getElementById("category-rows").innerHTML = "";
+      state.planner.categories.forEach(c => addCategoryRow(c));
+      document.getElementById("modal-categories").classList.remove("hidden");
+    }
+
+    function closeCategoryModal() {
+      document.getElementById("modal-categories").classList.add("hidden");
+    }
+
+    function handleCategoryFormSubmit(e) {
+      e.preventDefault();
+      const categories = [];
+      document.querySelectorAll("#category-rows .category-row").forEach((row, i) => {
+        const name = row.querySelector(".cat-name").value.trim();
+        if (!name) return;
+        categories.push({ id: row.dataset.id || `cat-${Date.now()}-${i}`, name, color: row.querySelector(".cat-color").value });
+      });
+      state.planner.categories = categories;
+      saveState();
+      closeCategoryModal();
+      renderPlanner();
+      showToast("Planner groups saved!");
+    }
+
+    /* ==========================================================================
+       3. INDUSTRY TARGET DIRECTORY & CHECKLIST LOGIC
+       ========================================================================== */
+    const OVERVIEW_ID = "__overview";
+    const UNASSIGNED_ID = "__unassigned";
+
+    function normName(s) { return (s || "").trim().toLowerCase(); }
+    function getIndustry(id) { return state.industries.find(i => i.id === id) || null; }
+
+    function getCompanyStats(companyName) {
+      const n = normName(companyName);
+      const matchedJobs = state.applications.filter(a => normName(a.company) === n);
+      const total = matchedJobs.length;
+      const pending = matchedJobs.filter(a => a.status === 'Wishlist').length;
+      return {
+        total,
+        pending,
+        applied: matchedJobs.filter(a => a.status !== 'Wishlist').length,
+        interview: matchedJobs.filter(a => a.status === 'Interview' || a.status === 'Screening').length,
+        // All logged jobs applied → checked & struck through
+        fullyApplied: total > 0 && pending === 0
+      };
+    }
+
+    // Companies from applications (or manually unassigned) that are in no industry yet
+    function getUnassignedCompanies() {
+      const assigned = new Set();
+      state.industries.forEach(ind => ind.companies.forEach(c => assigned.add(normName(c))));
+      const found = new Map();
+      const consider = name => {
+        const n = normName(name);
+        if (n && !assigned.has(n) && !found.has(n)) found.set(n, name.trim());
+      };
+      state.applications.forEach(a => consider(a.company));
+      state.looseCompanies.forEach(consider);
+      return [...found.values()].sort((a, b) => a.localeCompare(b));
+    }
+
+    function moveCompany(name, fromId, toId) {
+      if (!name || fromId === toId || toId === OVERVIEW_ID) return;
+      const n = normName(name);
+      const source = getIndustry(fromId);
+      if (source) source.companies = source.companies.filter(c => normName(c) !== n);
+      state.looseCompanies = state.looseCompanies.filter(c => normName(c) !== n);
+
+      if (toId === UNASSIGNED_ID) {
+        // Keep it visible in the unassigned list even if no application references it
+        const stillAssigned = state.industries.some(ind => ind.companies.some(c => normName(c) === n));
+        if (!stillAssigned && !state.applications.some(a => normName(a.company) === n)) state.looseCompanies.push(name);
+        showToast(`${name} moved to Unassigned.`);
+      } else {
+        const target = getIndustry(toId);
+        if (!target) return;
+        if (!target.companies.some(c => normName(c) === n)) target.companies.push(name);
+        showToast(`${name} moved to ${target.name}.`);
+      }
+      saveState();
+      renderIndustryHub();
+    }
+
+    function companyChipHTML(name, fromId) {
+      const stats = getCompanyStats(name);
+      const dot = stats.fullyApplied ? "bg-emerald-500" : stats.applied > 0 ? "bg-amber-500" : stats.total > 0 ? "bg-slate-400" : "bg-slate-200";
+      return `
+        <span draggable="true" data-drag-company data-company="${esc(name)}" data-from="${esc(fromId)}" data-action="move-company"
+          title="Drag to another industry, or click to choose"
+          class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full border text-[11px] font-semibold cursor-grab active:cursor-grabbing select-none transition
+          ${stats.fullyApplied ? "bg-emerald-50 border-emerald-200 text-slate-400 line-through" : "bg-white border-slate-200 text-slate-700 hover:border-indigo-300"}">
+          <span class="w-1.5 h-1.5 rounded-full ${dot}"></span>${esc(name)}${stats.total > 0 ? `<span class="text-[10px] text-slate-400 no-underline">${stats.total}</span>` : ""}
+        </span>`;
+    }
+
+    function renderUnassignedPanel() {
+      const companies = getUnassignedCompanies();
+      document.getElementById("unassigned-count").innerText = companies.length;
+      document.getElementById("unassigned-list").innerHTML = companies.length === 0
+        ? `<span class="text-[11px] text-amber-800/70 italic">Every company you've applied to is assigned to an industry. 🎉</span>`
+        : companies.map(c => companyChipHTML(c, UNASSIGNED_ID)).join("");
+    }
+
+    function renderIndustryHub() {
+      if (!Array.isArray(state.industries)) state.industries = [];
+      if (state.activeIndustryId !== OVERVIEW_ID && !getIndustry(state.activeIndustryId)) {
+        state.activeIndustryId = state.industries.length > 0 ? state.industries[0].id : OVERVIEW_ID;
+      }
+
+      renderUnassignedPanel();
+
+      // Sidebar: overview entry + one drop-target tab per industry
+      const tabClass = active => `w-full text-left px-3.5 py-2.5 rounded-lg text-xs font-semibold transition flex items-center justify-between gap-2 ${
+        active ? "bg-indigo-600 text-white shadow-sm" : "bg-white hover:bg-slate-200/70 text-slate-700 border border-slate-200/60"
+      }`;
+      const countClass = active => `text-[10px] px-2 py-0.5 rounded-full ${active ? "bg-indigo-800 text-indigo-100" : "bg-slate-100 text-slate-500"}`;
+      const totalAssigned = state.industries.reduce((sum, ind) => sum + ind.companies.length, 0);
+      const overviewActive = state.activeIndustryId === OVERVIEW_ID;
+
+      let tabs = `
+        <button data-action="open-industry" data-id="${OVERVIEW_ID}" class="${tabClass(overviewActive)}">
+          <span class="flex items-center gap-1.5 truncate"><i data-lucide="layout-grid" class="w-3.5 h-3.5"></i> Overview (all)</span>
+          <span class="${countClass(overviewActive)}">${totalAssigned}</span>
+        </button>
+        <div class="border-t border-slate-200 my-1.5"></div>`;
+      state.industries.forEach(ind => {
+        const active = ind.id === state.activeIndustryId;
+        tabs += `
+          <button data-action="open-industry" data-id="${esc(ind.id)}" data-drop="${esc(ind.id)}" title="Double-click to rename · drop a company here" class="${tabClass(active)}">
+            <span class="truncate">${esc(ind.name)}</span>
+            <span class="${countClass(active)}">${ind.companies.length}</span>
+          </button>`;
+      });
+      document.getElementById("industry-tab-container").innerHTML = tabs;
+
+      const content = document.getElementById("industry-content");
+      content.innerHTML = overviewActive ? renderIndustryOverviewHTML() : renderIndustryDetailHTML(getIndustry(state.activeIndustryId));
+      lucide.createIcons();
+    }
+
+    function renderIndustryOverviewHTML() {
+      const cards = state.industries.map(ind => `
+        <div data-drop="${esc(ind.id)}" class="bg-white p-3.5 rounded-xl border border-slate-200 shadow-sm space-y-2.5 transition">
+          <div class="flex items-center justify-between gap-2">
+            <button data-action="open-industry" data-id="${esc(ind.id)}" class="font-bold text-xs text-slate-800 hover:text-indigo-700 truncate">${esc(ind.name)}</button>
+            <div class="flex items-center gap-1 flex-shrink-0">
+              <span class="text-[10px] font-semibold bg-indigo-50 text-indigo-700 px-2 py-0.5 rounded-full">${ind.companies.length}</span>
+              <button data-action="rename-industry" data-id="${esc(ind.id)}" class="p-1 text-slate-400 hover:text-indigo-600" title="Rename"><i data-lucide="pencil" class="w-3 h-3"></i></button>
+            </div>
+          </div>
+          <div class="flex flex-wrap gap-1.5 min-h-[32px]">
+            ${ind.companies.length ? ind.companies.map(c => companyChipHTML(c, ind.id)).join("") : `<span class="text-[11px] text-slate-400 italic">Drop companies here</span>`}
+          </div>
+        </div>`).join("");
+
+      return `
+        <div class="flex flex-wrap items-center justify-between gap-2 bg-slate-100/70 p-3 rounded-xl border border-slate-200">
+          <div class="flex items-center gap-2">
+            <span class="font-bold text-sm text-slate-800">All Industries Overview</span>
+            <span class="text-[11px] font-semibold bg-indigo-100 text-indigo-800 px-2.5 py-0.5 rounded-full">${state.industries.reduce((s, i) => s + i.companies.length, 0)} Companies</span>
+          </div>
+          <div class="flex items-center gap-3 text-[10px] text-slate-500">
+            <span class="flex items-center gap-1"><span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>All applied</span>
+            <span class="flex items-center gap-1"><span class="w-1.5 h-1.5 rounded-full bg-amber-500"></span>Some applied</span>
+            <span class="flex items-center gap-1"><span class="w-1.5 h-1.5 rounded-full bg-slate-400"></span>Logged, not applied</span>
+            <span class="flex items-center gap-1"><span class="w-1.5 h-1.5 rounded-full bg-slate-200"></span>No jobs yet</span>
+          </div>
+        </div>
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">${cards || `<p class="text-xs text-slate-400 italic col-span-full text-center py-8">No industries yet. Click "+ New Industry" to create one.</p>`}</div>`;
+    }
+
+    function renderIndustryDetailHTML(activeInd) {
+      const header = `
+        <div class="flex flex-wrap items-center justify-between gap-2 bg-slate-100/70 p-3 rounded-xl border border-slate-200">
+          <div class="flex items-center gap-2 min-w-0">
+            <span class="font-bold text-sm text-slate-800 truncate">${esc(activeInd.name)}</span>
+            <span class="text-[11px] font-semibold bg-indigo-100 text-indigo-800 px-2.5 py-0.5 rounded-full flex-shrink-0">${activeInd.companies.length} Target Companies</span>
+          </div>
+          <div class="flex items-center gap-3">
+            <button data-action="rename-industry" data-id="${esc(activeInd.id)}" class="text-xs text-slate-600 hover:text-indigo-700 font-medium flex items-center gap-1">
+              <i data-lucide="pencil" class="w-3.5 h-3.5"></i> Rename
+            </button>
+            <button data-action="delete-industry" data-id="${esc(activeInd.id)}" class="text-xs text-rose-500 hover:text-rose-700 font-medium flex items-center gap-1">
+              <i data-lucide="trash-2" class="w-3.5 h-3.5"></i> Delete
+            </button>
+          </div>
+        </div>`;
+
+      if (activeInd.companies.length === 0) {
+        return header + `
+          <div data-drop="${esc(activeInd.id)}" class="text-center py-10 text-slate-400 italic text-xs border-2 border-dashed border-slate-200 rounded-xl transition">
+            No target companies in this industry yet. Drag one here from Unassigned, or click "Add Target Company".
+          </div>`;
+      }
+
+      const cards = activeInd.companies.map(companyName => {
+        const s = getCompanyStats(companyName);
+        const name = esc(companyName);
+        return `
+          <div draggable="true" data-drag-company data-company="${name}" data-from="${esc(activeInd.id)}"
+            class="p-3.5 rounded-xl border transition flex flex-col justify-between cursor-grab active:cursor-grabbing ${
+              s.fullyApplied ? 'bg-emerald-50/50 border-emerald-200' : 'bg-white border-slate-200 hover:border-indigo-300 shadow-sm'
+            }">
+            <div class="space-y-2">
+              <div class="flex items-center justify-between gap-2">
+                <label class="flex items-center gap-2 font-bold text-xs min-w-0">
+                  <i data-lucide="grip-vertical" class="w-3.5 h-3.5 text-slate-300 flex-shrink-0"></i>
+                  <input type="checkbox" ${s.fullyApplied ? 'checked' : ''} class="w-4 h-4 rounded text-emerald-600 focus:ring-emerald-500" disabled>
+                  <span class="truncate ${s.fullyApplied ? 'line-through text-slate-400 font-normal' : 'text-slate-800 font-bold'}">${name}</span>
+                </label>
+                <button data-action="remove-company" data-company="${name}" data-from="${esc(activeInd.id)}" class="text-slate-300 hover:text-rose-600 p-1" title="Remove from this industry">
+                  <i data-lucide="x-circle" class="w-3.5 h-3.5"></i>
+                </button>
+              </div>
+              <div class="text-[11px] space-y-1">
+                ${s.total === 0
+                  ? `<span class="text-slate-400 italic">No job postings added yet</span>`
+                  : `<div class="flex flex-wrap items-center gap-1.5">
+                      <span class="bg-indigo-50 text-indigo-700 px-2 py-0.5 rounded font-semibold border border-indigo-100">${s.total} Logged</span>
+                      ${s.applied > 0 ? `<span class="bg-amber-100 text-amber-800 px-2 py-0.5 rounded font-medium">${s.applied} Applied</span>` : ''}
+                      ${s.pending > 0 ? `<span class="bg-slate-100 text-slate-600 px-2 py-0.5 rounded font-medium">${s.pending} Not Applied</span>` : ''}
+                      ${s.interview > 0 ? `<span class="bg-purple-100 text-purple-800 px-2 py-0.5 rounded font-medium">${s.interview} Interview</span>` : ''}
+                     </div>`}
+              </div>
+            </div>
+            <div class="pt-3 mt-3 border-t border-slate-100 flex items-center justify-between text-[11px]">
+              <button data-action="view-jobs" data-company="${name}" class="text-indigo-600 hover:underline font-semibold flex items-center gap-1">
+                <i data-lucide="list" class="w-3 h-3"></i> View Jobs
+              </button>
+              <button data-action="move-company" data-company="${name}" data-from="${esc(activeInd.id)}" class="text-slate-500 hover:underline font-semibold flex items-center gap-1">
+                <i data-lucide="move" class="w-3 h-3"></i> Move
+              </button>
+              <button data-action="add-job" data-company="${name}" class="text-emerald-600 hover:underline font-semibold flex items-center gap-1">
+                <i data-lucide="plus" class="w-3 h-3"></i> Add Job
+              </button>
+            </div>
+          </div>`;
+      }).join("");
+
+      return header + `<div data-drop="${esc(activeInd.id)}" class="grid grid-cols-1 sm:grid-cols-2 gap-3 rounded-xl transition">${cards}</div>`;
+    }
+
+    function clearDropHighlights() {
+      document.querySelectorAll(".drop-active").forEach(el => el.classList.remove("drop-active"));
+    }
+
+    // Event delegation for drag & drop and buttons inside the industry view (wired once)
+    function initIndustryInteractions() {
+      const root = document.getElementById("view-industry");
+
+      root.addEventListener("dragstart", e => {
+        const el = e.target.closest && e.target.closest("[data-drag-company]");
+        if (!el) return;
+        e.dataTransfer.setData("text/plain", JSON.stringify({ name: el.dataset.company, from: el.dataset.from }));
+        e.dataTransfer.effectAllowed = "move";
+        setTimeout(() => el.classList.add("opacity-40"), 0);
+      });
+      root.addEventListener("dragend", e => {
+        const el = e.target.closest && e.target.closest("[data-drag-company]");
+        if (el) el.classList.remove("opacity-40");
+        clearDropHighlights();
+      });
+      root.addEventListener("dragover", e => {
+        const target = e.target.closest && e.target.closest("[data-drop]");
+        if (!target) return;
+        e.preventDefault();
+        e.dataTransfer.dropEffect = "move";
+        if (!target.classList.contains("drop-active")) {
+          clearDropHighlights();
+          target.classList.add("drop-active");
+        }
+      });
+      root.addEventListener("dragleave", e => {
+        const target = e.target.closest && e.target.closest("[data-drop]");
+        if (target && !target.contains(e.relatedTarget)) target.classList.remove("drop-active");
+      });
+      root.addEventListener("drop", e => {
+        const target = e.target.closest && e.target.closest("[data-drop]");
+        if (!target) return;
+        e.preventDefault();
+        clearDropHighlights();
+        let data;
+        try { data = JSON.parse(e.dataTransfer.getData("text/plain")); } catch (err) { return; }
+        moveCompany(data.name, data.from, target.dataset.drop);
+      });
+
+      root.addEventListener("click", e => {
+        const btn = e.target.closest("[data-action]");
+        if (!btn) return;
+        const { action, id, company, from } = btn.dataset;
+        if (action === "open-industry") {
+          state.activeIndustryId = id;
+          saveState();
+          renderIndustryHub();
+        } else if (action === "rename-industry") {
+          promptRenameIndustry(id);
+        } else if (action === "delete-industry") {
+          deleteIndustry(id);
+        } else if (action === "remove-company") {
+          removeTargetCompany(from, company);
+        } else if (action === "move-company") {
+          openMoveCompanyModal(company, from);
+        } else if (action === "view-jobs") {
+          filterByCompany(company);
+        } else if (action === "add-job") {
+          quickAddJobForCompany(company);
+        }
+      });
+
+      root.addEventListener("dblclick", e => {
+        const btn = e.target.closest("[data-action='open-industry']");
+        if (btn && btn.dataset.id !== OVERVIEW_ID) promptRenameIndustry(btn.dataset.id);
+      });
+    }
+
+    // Generic single-field prompt modal (replaces the browser's prompt())
+    let promptCallback = null;
+
+    function openPromptModal({ title, label, value = "", placeholder = "", confirmText = "Save", onSubmit }) {
+      document.getElementById("prompt-title").innerText = title;
+      document.getElementById("prompt-label").innerText = label;
+      document.getElementById("prompt-submit").innerText = confirmText;
+      const input = document.getElementById("prompt-input");
+      input.value = value;
+      input.placeholder = placeholder;
+      promptCallback = onSubmit;
+      document.getElementById("modal-prompt").classList.remove("hidden");
+      setTimeout(() => { input.focus(); input.select(); }, 50);
+    }
+
+    function closePromptModal() {
+      document.getElementById("modal-prompt").classList.add("hidden");
+      promptCallback = null;
+    }
+
+    function handlePromptSubmit(e) {
+      e.preventDefault();
+      const value = document.getElementById("prompt-input").value.trim();
+      if (!value) return;
+      const cb = promptCallback;
+      closePromptModal();
+      if (cb) cb(value);
+    }
+
+    function promptAddIndustry() {
+      openPromptModal({
+        title: "New Industry",
+        label: "Industry name",
+        placeholder: "e.g. Healthcare, Energy, Startup",
+        confirmText: "Create",
+        onSubmit: name => {
+          const newInd = { id: "ind-" + Date.now(), name, companies: [] };
+          state.industries.push(newInd);
+          state.activeIndustryId = newInd.id;
+          saveState();
+          renderIndustryHub();
+        }
+      });
+    }
+
+    function promptRenameIndustry(id) {
+      const ind = getIndustry(id);
+      if (!ind) return;
+      openPromptModal({
+        title: "Rename Industry",
+        label: "Industry name",
+        value: ind.name,
+        confirmText: "Rename",
+        onSubmit: name => {
+          ind.name = name;
+          saveState();
+          renderIndustryHub();
+          showToast("Industry renamed.");
+        }
+      });
+    }
+
+    function deleteIndustry(id) {
+      const ind = getIndustry(id);
+      if (!ind) return;
       openConfirmModal(
-        `Delete "${activeInd.name}" tab?`,
-        "This will remove this industry category and its company checklist from your hub.",
+        `Delete "${ind.name}"?`,
+        "This removes the industry. Companies with applications will reappear under Unassigned.",
         () => {
-          state.industries = state.industries.filter(i => i.id !== state.activeIndustryId);
-          if (state.industries.length > 0) state.activeIndustryId = state.industries[0].id;
+          state.industries = state.industries.filter(i => i.id !== id);
+          state.activeIndustryId = state.industries.length > 0 ? state.industries[0].id : OVERVIEW_ID;
           saveState();
           renderIndustryHub();
         }
@@ -1038,28 +2202,61 @@
       e.preventDefault();
       const compName = document.getElementById("target-name-input").value.trim();
       const indId = document.getElementById("target-industry-select").value;
-
       if (!compName) return;
 
-      const ind = state.industries.find(i => i.id === indId);
-      if (ind) {
-        if (!ind.companies.includes(compName)) {
-          ind.companies.push(compName);
-          saveState();
-        }
+      const ind = getIndustry(indId);
+      if (ind && !ind.companies.some(c => normName(c) === normName(compName))) {
+        ind.companies.push(compName);
+        state.looseCompanies = state.looseCompanies.filter(c => normName(c) !== normName(compName));
+        saveState();
       }
 
       closeTargetModal();
       renderIndustryHub();
     }
 
-    function removeTargetCompany(companyName) {
-      const ind = state.industries.find(i => i.id === state.activeIndustryId);
+    function removeTargetCompany(industryId, companyName) {
+      const ind = getIndustry(industryId);
       if (ind) {
         ind.companies = ind.companies.filter(c => c !== companyName);
         saveState();
         renderIndustryHub();
       }
+    }
+
+    let moveCompanyContext = null;
+
+    function openMoveCompanyModal(name, fromId) {
+      moveCompanyContext = { name, fromId };
+      document.getElementById("move-company-title").innerText = `Move "${name}"`;
+      const select = document.getElementById("move-target-select");
+      select.innerHTML = "";
+      state.industries.filter(ind => ind.id !== fromId).forEach(ind => {
+        const opt = document.createElement("option");
+        opt.value = ind.id;
+        opt.textContent = ind.name;
+        select.appendChild(opt);
+      });
+      if (fromId !== UNASSIGNED_ID) {
+        const opt = document.createElement("option");
+        opt.value = UNASSIGNED_ID;
+        opt.textContent = "— Unassigned —";
+        select.appendChild(opt);
+      }
+      document.getElementById("modal-move-company").classList.remove("hidden");
+    }
+
+    function closeMoveCompanyModal() {
+      document.getElementById("modal-move-company").classList.add("hidden");
+      moveCompanyContext = null;
+    }
+
+    function handleMoveCompanySubmit(e) {
+      e.preventDefault();
+      const ctx = moveCompanyContext;
+      const target = document.getElementById("move-target-select").value;
+      closeMoveCompanyModal();
+      if (ctx && target) moveCompany(ctx.name, ctx.fromId, target);
     }
 
     function filterByCompany(companyName) {
@@ -1074,7 +2271,7 @@
     }
 
     /* ==========================================================================
-       3. DASHBOARD METRICS & CHARTS
+       4. DASHBOARD METRICS & CHARTS
        ========================================================================== */
     let statusChartInstance = null;
     let cityChartInstance = null;
@@ -1183,7 +2380,7 @@
           item.className = "bg-slate-50 p-2.5 rounded-lg border border-slate-200 flex items-center justify-between";
           item.innerHTML = `
             <div>
-              <span class="font-bold text-slate-800 block">${app.company} – ${app.title}</span>
+              <span class="font-bold text-slate-800 block">${esc(app.company)} – ${esc(app.title)}</span>
               <span class="text-slate-500 text-[11px]">${taskDesc.join(", ") || "Follow up pending"}</span>
             </div>
             <button onclick="openJobModal('${app.id}')" class="text-indigo-600 hover:text-indigo-800 font-semibold text-[11px]">Edit &rarr;</button>
@@ -1212,13 +2409,13 @@
         const tr = document.createElement("tr");
         tr.className = "hover:bg-slate-50/80 transition";
         tr.innerHTML = `
-          <td class="py-2.5 px-4 font-bold text-slate-800">${job.company}</td>
-          <td class="py-2.5 px-4 font-medium text-slate-700">${job.title}</td>
+          <td class="py-2.5 px-4 font-bold text-slate-800">${esc(job.company)}</td>
+          <td class="py-2.5 px-4">${renderJobTitleLink(job)}</td>
           <td class="py-2.5 px-4">${renderCityBadge(job.city)}</td>
           <td class="py-2.5 px-4">${renderLangBadge(job.lang)}</td>
-          <td class="py-2.5 px-4 text-slate-500">${job.source || 'LinkedIn'}</td>
+          <td class="py-2.5 px-4 text-slate-500">${esc(job.source || 'LinkedIn')}</td>
           <td class="py-2.5 px-4">${renderStatusBadge(job.status)}</td>
-          <td class="py-2.5 px-4 text-slate-500">${job.appliedDate || '-'}</td>
+          <td class="py-2.5 px-4 text-slate-500">${esc(job.appliedDate || '-')}</td>
           <td class="py-2.5 px-4 text-right">
             <button onclick="openJobModal('${job.id}')" class="text-indigo-600 hover:text-indigo-800 font-semibold text-[11px]">View</button>
           </td>
@@ -1228,7 +2425,7 @@
     }
 
     /* ==========================================================================
-       4. RENDER APPLICATIONS (TABLE & KANBAN)
+       5. RENDER APPLICATIONS (TABLE & KANBAN)
        ========================================================================== */
     function setViewMode(mode) {
       state.currentViewMode = mode;
@@ -1254,6 +2451,7 @@
     function renderApplications() {
       const search = (document.getElementById("search-input").value || "").toLowerCase();
       const statusFilter = document.getElementById("filter-status").value;
+      const priorityFilter = document.getElementById("filter-priority").value;
       const sourceFilter = document.getElementById("filter-source").value;
       const cityFilter = document.getElementById("filter-city").value;
 
@@ -1262,9 +2460,10 @@
       const filtered = state.applications.filter(job => {
         const matchesSearch = ((job.title || '') + " " + (job.company || '') + " " + (job.city || '')).toLowerCase().includes(search);
         const matchesStatus = statusFilter === 'ALL' || job.status === statusFilter;
+        const matchesPriority = priorityFilter === 'ALL' || job.priority === priorityFilter;
         const matchesSource = sourceFilter === 'ALL' || job.source === sourceFilter;
         const matchesCity = cityFilter === 'ALL' || job.city === cityFilter;
-        return matchesSearch && matchesStatus && matchesSource && matchesCity;
+        return matchesSearch && matchesStatus && matchesPriority && matchesSource && matchesCity;
       });
 
       if (state.currentViewMode === 'table') {
@@ -1294,39 +2493,15 @@
       tbody.innerHTML = "";
 
       if (jobs.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="13" class="py-8 text-center text-slate-400 italic">No job applications match your filter. Click "+ Add Application" to create one.</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="13" class="py-8 text-center text-slate-400 italic">No applications match your filter. Click "+ Add Application" to create one.</td></tr>`;
         return;
       }
 
       jobs.forEach(job => {
         const tr = document.createElement("tr");
-        tr.className = "hover:bg-slate-50 border-b border-slate-100 transition";
+        tr.className = "group hover:bg-slate-50 border-b border-slate-100 transition";
         tr.innerHTML = `
-          <td class="py-2.5 px-3">
-            ${job.linkedinUrl ? `<a href="${job.linkedinUrl}" target="_blank" class="text-blue-600 hover:underline flex items-center gap-1 font-medium"><i data-lucide="linkedin" class="w-3.5 h-3.5"></i> LinkedIn</a>` : '<span class="text-slate-300">-</span>'}
-          </td>
-          <td class="py-2.5 px-3">
-            <span class="bg-blue-50 text-blue-700 px-2 py-0.5 rounded text-[11px] font-semibold border border-blue-200/50">${job.source || 'LinkedIn'}</span>
-          </td>
-          <td class="py-2.5 px-3">${renderCityBadge(job.city)}</td>
-          <td class="py-2.5 px-3">${renderLangBadge(job.lang)}</td>
-          <td class="py-2.5 px-3 font-bold text-slate-800">${job.company}</td>
-          <td class="py-2.5 px-3">
-            ${job.careerSiteUrl ? `<a href="${job.careerSiteUrl}" target="_blank" class="text-indigo-600 hover:underline flex items-center gap-1 text-[11px]"><i data-lucide="external-link" class="w-3 h-3"></i> Career Site</a>` : '<span class="text-slate-300">-</span>'}
-          </td>
-          <td class="py-2.5 px-3 font-semibold text-slate-800 max-w-xs truncate" title="${job.title}">${job.title}</td>
-          <td class="py-2.5 px-3 text-slate-600">${job.email ? `<a href="mailto:${job.email}" class="hover:underline">${job.email}</a>` : '<span class="text-slate-300">-</span>'}</td>
-          <td class="py-2.5 px-3 text-slate-600">${job.phone || '<span class="text-slate-300">-</span>'}</td>
-          <td class="py-2.5 px-3">${renderStatusSelectDropdown(job)}</td>
-          <td class="py-2.5 px-3 text-slate-500">${job.appliedDate || '<span class="text-slate-300">m/d/yyyy</span>'}</td>
-          <td class="py-2.5 px-3">
-            <div class="flex items-center space-x-1.5">
-              <span title="CV Sent" class="px-1.5 py-0.5 rounded text-[10px] font-semibold ${job.tasks?.cv ? 'bg-emerald-100 text-emerald-800' : 'bg-slate-100 text-slate-400'}">CV</span>
-              <span title="Cover Letter Ready" class="px-1.5 py-0.5 rounded text-[10px] font-semibold ${job.tasks?.cl ? 'bg-emerald-100 text-emerald-800' : 'bg-slate-100 text-slate-400'}">CL</span>
-              <span title="Interview Prepped" class="px-1.5 py-0.5 rounded text-[10px] font-semibold ${job.tasks?.prep ? 'bg-purple-100 text-purple-800' : 'bg-slate-100 text-slate-400'}">Prep</span>
-            </div>
-          </td>
-          <td class="py-2.5 px-3 text-center">
+          <td class="py-2.5 px-3 sticky left-0 z-10 bg-white group-hover:bg-slate-50 border-r border-slate-200 shadow-[2px_0_4px_-2px_rgba(0,0,0,0.15)] text-center transition">
             <div class="flex items-center justify-center space-x-2">
               <button onclick="openJobModal('${job.id}')" class="p-1 text-slate-500 hover:text-indigo-600 rounded hover:bg-slate-200/60" title="Edit Application">
                 <i data-lucide="edit-3" class="w-4 h-4"></i>
@@ -1334,6 +2509,31 @@
               <button onclick="deleteJob('${job.id}')" class="p-1 text-slate-400 hover:text-rose-600 rounded hover:bg-slate-200/60" title="Delete">
                 <i data-lucide="trash-2" class="w-4 h-4"></i>
               </button>
+            </div>
+          </td>
+          <td class="py-2.5 px-3 font-bold text-slate-800 whitespace-nowrap">${esc(job.company)}</td>
+          <td class="py-2.5 px-3 min-w-[180px] max-w-[280px] whitespace-normal break-words">${renderJobTitleLink(job)}</td>
+          <td class="py-2.5 px-3 whitespace-nowrap">${renderStatusSelectDropdown(job)}</td>
+          <td class="py-2.5 px-3 whitespace-nowrap">${renderPriorityBadge(job.priority)}</td>
+          <td class="py-2.5 px-3 whitespace-nowrap">${renderMatchBadge(job.linkedinMatch)}</td>
+          <td class="py-2.5 px-3 whitespace-nowrap">${renderCityBadge(job.city)}</td>
+          <td class="py-2.5 px-3 whitespace-nowrap">${renderLangBadge(job.lang)}</td>
+          <td class="py-2.5 px-3 whitespace-nowrap">
+            <span class="bg-blue-50 text-blue-700 px-2 py-0.5 rounded text-[11px] font-semibold border border-blue-200/50">${esc(job.source || 'LinkedIn')}</span>
+          </td>
+          <td class="py-2.5 px-3 text-slate-500 whitespace-nowrap">${esc(job.appliedDate) || '<span class="text-slate-300">m/d/yyyy</span>'}</td>
+          <td class="py-2.5 px-3 whitespace-nowrap">
+            ${job.linkedinUrl ? `<a href="${esc(job.linkedinUrl)}" target="_blank" rel="noopener" class="text-blue-600 hover:underline flex items-center gap-1 font-medium"><i data-lucide="linkedin" class="w-3.5 h-3.5"></i> LinkedIn</a>` : '<span class="text-slate-300">-</span>'}
+          </td>
+          <td class="py-2.5 px-3 whitespace-nowrap">
+            ${job.careerSiteUrl ? `<a href="${esc(job.careerSiteUrl)}" target="_blank" rel="noopener" class="text-indigo-600 hover:underline flex items-center gap-1 text-[11px]"><i data-lucide="external-link" class="w-3 h-3"></i> Career Site</a>` : '<span class="text-slate-300">-</span>'}
+          </td>
+          <td class="py-2.5 px-3 whitespace-nowrap">
+            <div class="flex items-center space-x-1.5">
+              <span title="CV Sent" class="px-1.5 py-0.5 rounded text-[10px] font-semibold ${job.tasks?.cv ? 'bg-emerald-100 text-emerald-800' : 'bg-slate-100 text-slate-400'}">CV</span>
+              <span title="Cover Letter Ready" class="px-1.5 py-0.5 rounded text-[10px] font-semibold ${job.tasks?.cl ? 'bg-emerald-100 text-emerald-800' : 'bg-slate-100 text-slate-400'}">CL</span>
+              <span title="Interview Prepped" class="px-1.5 py-0.5 rounded text-[10px] font-semibold ${job.tasks?.prep ? 'bg-purple-100 text-purple-800' : 'bg-slate-100 text-slate-400'}">Prep</span>
+              ${hasAnyDoc(job) ? `<span title="Documents attached" class="text-slate-400"><i data-lucide="paperclip" class="w-3.5 h-3.5"></i></span>` : ''}
             </div>
           </td>
         `;
@@ -1366,12 +2566,13 @@
           card.onclick = () => openJobModal(job.id);
           card.innerHTML = `
             <div class="flex items-center justify-between">
-              <span class="font-bold text-slate-800 text-xs truncate max-w-[140px]">${job.company}</span>
+              <span class="font-bold text-slate-800 text-xs truncate max-w-[140px]">${esc(job.company)}</span>
               ${renderCityBadge(job.city)}
             </div>
-            <h4 class="font-semibold text-slate-900 text-xs leading-snug">${job.title}</h4>
+            <h4 class="font-semibold text-indigo-700 text-xs leading-snug hover:underline">${esc(job.title)}</h4>
+            ${job.priority || job.linkedinMatch ? `<div class="flex flex-wrap gap-1">${job.priority ? renderPriorityBadge(job.priority) : ''}${job.linkedinMatch ? renderMatchBadge(job.linkedinMatch) : ''}</div>` : ''}
             <div class="flex items-center justify-between pt-2 border-t border-slate-100 text-[11px] text-slate-500">
-              <span>${job.appliedDate || 'Not applied'}</span>
+              <span>${esc(job.appliedDate || 'Not applied')}</span>
               <div class="flex items-center space-x-1">
                 ${renderLangBadge(job.lang)}
               </div>
@@ -1388,15 +2589,40 @@
     }
 
     /* Badge Helper Formatters */
+    function renderJobTitleLink(job) {
+      return `<button type="button" onclick="openJobModal('${job.id}')" title="Open application details" class="text-left font-semibold text-indigo-700 hover:text-indigo-900 hover:underline">${esc(job.title)}</button>`;
+    }
+
     function renderCityBadge(city) {
       if (!city) return '<span class="text-slate-300">-</span>';
-      return `<span class="bg-rose-100/80 text-rose-800 border border-rose-200/60 px-2 py-0.5 rounded-full text-[11px] font-medium">${city}</span>`;
+      return `<span class="bg-rose-100/80 text-rose-800 border border-rose-200/60 px-2 py-0.5 rounded-full text-[11px] font-medium">${esc(city)}</span>`;
     }
 
     function renderLangBadge(lang) {
       if (!lang) return '<span class="text-slate-300">-</span>';
       const bg = lang === 'NL' ? 'bg-amber-100 text-amber-800 border-amber-200' : 'bg-emerald-100 text-emerald-800 border-emerald-200';
-      return `<span class="${bg} border px-1.5 py-0.5 rounded text-[10px] font-bold">${lang}</span>`;
+      return `<span class="${bg} border px-1.5 py-0.5 rounded text-[10px] font-bold">${esc(lang)}</span>`;
+    }
+
+    function renderPriorityBadge(priority) {
+      if (!priority) return '<span class="text-slate-300">-</span>';
+      const map = {
+        High: 'bg-rose-100 text-rose-800 border-rose-200',
+        Medium: 'bg-amber-100 text-amber-800 border-amber-200',
+        Low: 'bg-slate-100 text-slate-600 border-slate-200'
+      };
+      return `<span class="${map[priority] || map.Low} border px-2 py-0.5 rounded-full text-[10px] font-bold">${esc(priority)} priority</span>`;
+    }
+
+    function renderMatchBadge(match) {
+      if (!match) return '<span class="text-slate-300">-</span>';
+      const map = {
+        Top: 'bg-emerald-600 text-white border-emerald-700',
+        High: 'bg-emerald-100 text-emerald-800 border-emerald-200',
+        Medium: 'bg-sky-100 text-sky-800 border-sky-200',
+        Low: 'bg-slate-100 text-slate-600 border-slate-200'
+      };
+      return `<span class="${map[match] || map.Low} border px-2 py-0.5 rounded-full text-[10px] font-bold">${esc(match)} match</span>`;
     }
 
     function renderStatusBadge(status) {
@@ -1412,7 +2638,7 @@
         Wishlist: 'bg-slate-100 text-slate-800 border-slate-300'
       };
       const cls = map[status] || 'bg-slate-100 text-slate-700';
-      return `<span class="${cls} border px-2 py-0.5 rounded-full text-[11px] font-semibold">${status}</span>`;
+      return `<span class="${cls} border px-2 py-0.5 rounded-full text-[11px] font-semibold">${esc(status)}</span>`;
     }
 
     function renderStatusSelectDropdown(job) {
@@ -1443,43 +2669,137 @@
     }
 
     /* ==========================================================================
-       5. JOB APPLICATION FORM MODAL LOGIC
+       6. APPLICATION FORM MODAL LOGIC
        ========================================================================== */
+    // Document changes made in the open modal are staged here and only written on Save.
+    // slot ("cv-upload", "cv-compiled", ...) → { blob, name, savedAt } to store, or null to delete
+    let jobModalPending = {};
+
+    // Google Drive / OneDrive links saved with the old "Add Document Link" feature (read-only now)
+    function getLegacyDoc(id) {
+      return id ? state.legacyDocs.find(d => d.id === id) || null : null;
+    }
+
+    function legacyDocLinkHTML(doc) {
+      return doc.url
+        ? `<a href="${esc(doc.url)}" target="_blank" rel="noopener" class="text-indigo-600 hover:underline font-semibold inline-flex items-center gap-1"><i data-lucide="link" class="w-3 h-3"></i> ${esc(doc.title)}</a>`
+        : `<span class="text-slate-600">${esc(doc.title)}</span>`;
+    }
+
+    function hasAnyDoc(job) {
+      return Boolean(getLegacyDoc(job.docId) || job.cvFile || job.clFile || job.cvCompiledAt || job.clCompiledAt || (job.cvLatex || '').trim() || (job.clLatex || '').trim());
+    }
+
+    function currentModalJob() {
+      const id = document.getElementById("job-id").value;
+      return id ? state.applications.find(a => a.id === id) : null;
+    }
+
+    // What the modal should show for a document slot, taking staged changes into account
+    function modalDocInfo(slot) {
+      if (slot in jobModalPending) {
+        const p = jobModalPending[slot];
+        return p ? { name: p.name, savedAt: p.savedAt, staged: true } : null;
+      }
+      const job = currentModalJob();
+      if (!job) return null;
+      const [kind, variant] = slot.split("-");
+      if (variant === "upload") return job[`${kind}File`] || null;
+      return job[`${kind}CompiledAt`] ? { name: `${kind.toUpperCase()} (compiled)`, savedAt: job[`${kind}CompiledAt`] } : null;
+    }
+
+    function formatDateTime(ts) {
+      return new Date(ts).toLocaleString("en-GB", { day: "numeric", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" });
+    }
+
+    function refreshJobDocUI(kind) {
+      const upload = modalDocInfo(`${kind}-upload`);
+      const compiled = modalDocInfo(`${kind}-compiled`);
+      document.getElementById(`job-${kind}-upload-label`).innerHTML = upload
+        ? `<span class="font-medium text-slate-700">${esc(upload.name)}</span>${upload.staged ? ' <span class="text-amber-600">(unsaved)</span>' : ''}`
+        : "None";
+      document.getElementById(`job-${kind}-upload-view`).classList.toggle("hidden", !upload);
+      document.getElementById(`job-${kind}-upload-remove`).classList.toggle("hidden", !upload);
+      document.getElementById(`job-${kind}-compiled-view`).classList.toggle("hidden", !compiled);
+      document.getElementById(`job-${kind}-compiled-label`).innerHTML = compiled
+        ? `Compiled ${formatDateTime(compiled.savedAt)}${compiled.staged ? ' <span class="text-amber-600">(unsaved)</span>' : ''}`
+        : "";
+
+      const hasLatex = document.getElementById(`job-${kind}-latex`).value.trim().length > 0;
+      const badge = (label, cls) => `<span class="px-1.5 py-0.5 rounded text-[10px] font-semibold ${cls}">${label}</span>`;
+      document.getElementById(`job-${kind}-badges`).innerHTML =
+        (upload ? badge("PDF", "bg-blue-100 text-blue-800") : "") +
+        (hasLatex ? badge("LaTeX", "bg-slate-200 text-slate-700") : "") +
+        (compiled ? badge("Compiled", "bg-emerald-100 text-emerald-800") : "") ||
+        `<span class="text-[10px] text-slate-400">Nothing attached</span>`;
+    }
+
+    function populateTemplateSelect(kind, selectedId) {
+      const select = document.getElementById(`job-${kind}-template`);
+      const type = kind === "cv" ? "CV" : "CL";
+      const matching = state.templates.filter(t => t.type === type);
+      const others = state.templates.filter(t => t.type !== type);
+      select.innerHTML = "";
+      [...matching, ...others].forEach(t => {
+        const opt = document.createElement("option");
+        opt.value = t.id;
+        opt.textContent = `Template: ${t.name}`;
+        select.appendChild(opt);
+      });
+      const none = document.createElement("option");
+      none.value = "";
+      none.textContent = "No template (self-contained main.tex)";
+      select.appendChild(none);
+      select.value = selectedId !== undefined && [...select.options].some(o => o.value === selectedId)
+        ? selectedId
+        : (matching[0]?.id || "");
+    }
+
     function openJobModal(id = null) {
-      populateDocSelectOptions();
       const modal = document.getElementById("modal-job");
       const form = document.getElementById("form-job");
       form.reset();
+      jobModalPending = {};
 
-      if (id) {
-        const job = state.applications.find(a => a.id === id);
-        if (job) {
-          document.getElementById("modal-job-title").innerHTML = `<i data-lucide="edit" class="w-4 h-4 text-indigo-400"></i> Edit Job Application`;
-          document.getElementById("job-id").value = job.id;
-          document.getElementById("job-title-input").value = job.title || '';
-          document.getElementById("job-company-input").value = job.company || '';
-          document.getElementById("job-city-input").value = job.city || '';
-          document.getElementById("job-lang-input").value = job.lang || 'EN';
-          document.getElementById("job-source-input").value = job.source || 'Linkedin';
-          document.getElementById("job-status-input").value = job.status || 'Applied';
-          document.getElementById("job-linkedin-input").value = job.linkedinUrl || '';
-          document.getElementById("job-careersite-input").value = job.careerSiteUrl || '';
-          document.getElementById("job-date-input").value = job.appliedDate || '';
-          document.getElementById("job-salary-input").value = job.salary || '';
-          document.getElementById("job-email-input").value = job.email || '';
-          document.getElementById("job-phone-input").value = job.phone || '';
-          document.getElementById("job-task-cv").checked = job.tasks?.cv || false;
-          document.getElementById("job-task-cl").checked = job.tasks?.cl || false;
-          document.getElementById("job-task-prep").checked = job.tasks?.prep || false;
-          document.getElementById("job-task-followup").checked = job.tasks?.followup || false;
-          document.getElementById("job-doc-input").value = job.docId || '';
-          document.getElementById("job-notes-input").value = job.notes || '';
-        }
+      const job = id ? state.applications.find(a => a.id === id) : null;
+      if (job) {
+        document.getElementById("modal-job-title").innerHTML = `<i data-lucide="edit" class="w-4 h-4 text-indigo-400"></i> ${esc(job.company)} – ${esc(job.title)}`;
+        document.getElementById("job-id").value = job.id;
+        document.getElementById("job-title-input").value = job.title || '';
+        document.getElementById("job-company-input").value = job.company || '';
+        document.getElementById("job-city-input").value = job.city || '';
+        document.getElementById("job-lang-input").value = job.lang || 'EN';
+        document.getElementById("job-source-input").value = job.source || 'Linkedin';
+        document.getElementById("job-status-input").value = job.status || 'Applied';
+        document.getElementById("job-priority-input").value = job.priority || '';
+        document.getElementById("job-match-input").value = job.linkedinMatch || '';
+        document.getElementById("job-linkedin-input").value = job.linkedinUrl || '';
+        document.getElementById("job-careersite-input").value = job.careerSiteUrl || '';
+        document.getElementById("job-date-input").value = job.appliedDate || '';
+        document.getElementById("job-salary-input").value = job.salary || '';
+        document.getElementById("job-task-cv").checked = job.tasks?.cv || false;
+        document.getElementById("job-task-cl").checked = job.tasks?.cl || false;
+        document.getElementById("job-task-prep").checked = job.tasks?.prep || false;
+        document.getElementById("job-task-followup").checked = job.tasks?.followup || false;
+        document.getElementById("job-notes-input").value = job.notes || '';
+        document.getElementById("job-cv-latex").value = job.cvLatex || '';
+        document.getElementById("job-cl-latex").value = job.clLatex || '';
       } else {
-        document.getElementById("modal-job-title").innerHTML = `<i data-lucide="plus-circle" class="w-4 h-4 text-indigo-400"></i> Add New Job Application`;
+        document.getElementById("modal-job-title").innerHTML = `<i data-lucide="plus-circle" class="w-4 h-4 text-indigo-400"></i> Add New Application`;
         document.getElementById("job-id").value = '';
         document.getElementById("job-date-input").value = new Date().toISOString().split('T')[0];
       }
+
+      ["cv", "cl"].forEach(kind => {
+        populateTemplateSelect(kind, job ? job[`${kind}TemplateId`] : undefined);
+        refreshJobDocUI(kind);
+        document.getElementById(`job-${kind}-details`).open = Boolean(job && (job[`${kind}File`] || job[`${kind}CompiledAt`] || (job[`${kind}Latex`] || '').trim()));
+      });
+
+      const legacy = getLegacyDoc(job && job.docId);
+      const legacyEl = document.getElementById("job-legacy-doc");
+      legacyEl.classList.toggle("hidden", !legacy);
+      legacyEl.innerHTML = legacy ? `Linked document (old): ${legacyDocLinkHTML(legacy)}` : "";
 
       modal.classList.remove("hidden");
       lucide.createIcons();
@@ -1487,13 +2807,85 @@
 
     function closeJobModal() {
       document.getElementById("modal-job").classList.add("hidden");
+      jobModalPending = {};
     }
 
-    function handleJobFormSubmit(e) {
+    function handleJobDocUpload(kind, event) {
+      const file = event.target.files[0];
+      event.target.value = "";
+      if (!file) return;
+      if (file.type !== "application/pdf" && !file.name.toLowerCase().endsWith(".pdf")) {
+        showToast("Please upload a PDF file.");
+        return;
+      }
+      jobModalPending[`${kind}-upload`] = { blob: file, name: file.name, size: file.size, savedAt: Date.now() };
+      refreshJobDocUI(kind);
+    }
+
+    function removeJobDoc(slot) {
+      jobModalPending[slot] = null;
+      refreshJobDocUI(slot.split("-")[0]);
+    }
+
+    async function viewJobDoc(slot) {
+      const label = slot.startsWith("cv") ? "CV" : "Cover Letter";
+      const title = `${label}: ${document.getElementById("job-company-input").value || "Application"}`;
+      if (jobModalPending[slot]) {
+        openPdfModal({ title, blob: jobModalPending[slot].blob });
+        return;
+      }
+      const job = currentModalJob();
+      if (job) await viewStoredFile(job.id, slot, title);
+    }
+
+    async function viewStoredFile(jobId, slot, title) {
+      try {
+        const record = await FileStore.get(`${jobId}:${slot}`);
+        if (!record) {
+          showToast("File not found in this browser's storage.");
+          return;
+        }
+        openPdfModal({ title, blob: record.blob });
+      } catch (e) {
+        console.error(e);
+        showToast("Could not open the stored file.");
+      }
+    }
+
+    async function compileJobLatex(kind) {
+      const source = document.getElementById(`job-${kind}-latex`).value;
+      if (!source.trim()) {
+        showToast("Paste your LaTeX main text first.");
+        return;
+      }
+      const template = state.templates.find(t => t.id === document.getElementById(`job-${kind}-template`).value) || null;
+      const btn = document.getElementById(`job-${kind}-compile-btn`);
+      const label = kind === "cv" ? "CV" : "Cover Letter";
+      btn.disabled = true;
+      btn.innerHTML = `<i data-lucide="loader-2" class="w-3.5 h-3.5 animate-spin"></i> Compiling...`;
+      lucide.createIcons();
+
+      try {
+        const { blob } = await compileLatex(source, template);
+        jobModalPending[`${kind}-compiled`] = { blob, name: `${label} (compiled).pdf`, savedAt: Date.now() };
+        refreshJobDocUI(kind);
+        openPdfModal({ title: `${label} preview — save the application to keep this PDF`, blob });
+      } catch (err) {
+        openPdfModal({ title: `${label}: compile failed`, error: err.message, log: err.log, unresolved: err.unresolved });
+      } finally {
+        btn.disabled = false;
+        btn.innerHTML = `<i data-lucide="play" class="w-3.5 h-3.5"></i> Compile &amp; Preview`;
+        lucide.createIcons();
+      }
+    }
+
+    async function handleJobFormSubmit(e) {
       e.preventDefault();
       const id = document.getElementById("job-id").value;
+      const existing = id ? state.applications.find(a => a.id === id) : null;
 
       const jobData = {
+        ...(existing || {}),
         id: id || "job-" + Date.now(),
         title: document.getElementById("job-title-input").value,
         company: document.getElementById("job-company-input").value,
@@ -1501,25 +2893,52 @@
         lang: document.getElementById("job-lang-input").value,
         source: document.getElementById("job-source-input").value,
         status: document.getElementById("job-status-input").value,
+        priority: document.getElementById("job-priority-input").value,
+        linkedinMatch: document.getElementById("job-match-input").value,
         linkedinUrl: document.getElementById("job-linkedin-input").value,
         careerSiteUrl: document.getElementById("job-careersite-input").value,
         appliedDate: document.getElementById("job-date-input").value,
         salary: document.getElementById("job-salary-input").value,
-        email: document.getElementById("job-email-input").value,
-        phone: document.getElementById("job-phone-input").value,
         tasks: {
           cv: document.getElementById("job-task-cv").checked,
           cl: document.getElementById("job-task-cl").checked,
           prep: document.getElementById("job-task-prep").checked,
           followup: document.getElementById("job-task-followup").checked
         },
-        docId: document.getElementById("job-doc-input").value,
+        cvLatex: document.getElementById("job-cv-latex").value,
+        clLatex: document.getElementById("job-cl-latex").value,
+        cvTemplateId: document.getElementById("job-cv-template").value,
+        clTemplateId: document.getElementById("job-cl-template").value,
         notes: document.getElementById("job-notes-input").value
       };
+      // Recruiter contact fields are no longer collected
+      delete jobData.email;
+      delete jobData.phone;
 
-      if (id) {
+      // Commit staged document changes to IndexedDB
+      try {
+        for (const [slot, pending] of Object.entries(jobModalPending)) {
+          const key = `${jobData.id}:${slot}`;
+          const [kind, variant] = slot.split("-");
+          if (pending) {
+            await FileStore.put(key, { name: pending.name, blob: pending.blob, savedAt: pending.savedAt });
+            if (variant === "upload") jobData[`${kind}File`] = { name: pending.name, size: pending.size, savedAt: pending.savedAt };
+            else jobData[`${kind}CompiledAt`] = pending.savedAt;
+          } else {
+            await FileStore.del(key);
+            if (variant === "upload") delete jobData[`${kind}File`];
+            else delete jobData[`${kind}CompiledAt`];
+          }
+        }
+      } catch (err) {
+        console.error(err);
+        showToast("Could not save the PDF files in this browser.");
+        return;
+      }
+
+      if (existing) {
         const index = state.applications.findIndex(a => a.id === id);
-        if (index !== -1) state.applications[index] = jobData;
+        state.applications[index] = jobData;
       } else {
         state.applications.unshift(jobData);
       }
@@ -1529,37 +2948,173 @@
       renderApplications();
       renderDashboard();
       renderIndustryHub();
-      showToast("Job application saved successfully!");
+      renderDocuments();
+      showToast("Application saved successfully!");
     }
 
     function deleteJob(id) {
       openConfirmModal(
         "Delete Application?",
-        "Are you sure you want to remove this job application from your tracker?",
-        () => {
+        "Are you sure you want to remove this application (and its attached PDFs) from your tracker?",
+        async () => {
           state.applications = state.applications.filter(a => a.id !== id);
           saveState();
+          await deleteJobFiles(id);
           renderApplications();
           renderDashboard();
           renderIndustryHub();
+          renderDocuments();
           showToast("Application deleted.");
         }
       );
     }
 
-    function populateDocSelectOptions() {
-      const select = document.getElementById("job-doc-input");
-      select.innerHTML = `<option value="">-- None / Default CV --</option>`;
-      state.documents.forEach(doc => {
-        const opt = document.createElement("option");
-        opt.value = doc.id;
-        opt.textContent = `${doc.title} (${doc.type})`;
-        select.appendChild(opt);
+    /* ==========================================================================
+       7. LATEX COMPILATION
+       The template's files are inlined into one document here (texlive.net only
+       accepts flat file names), then /api/compile-latex compiles it to PDF.
+       ========================================================================== */
+    const FALLBACK_SKELETON = "\\documentclass[11pt,a4paper]{article}\n\\begin{document}\n%BODY%\n\\end{document}\n";
+
+    function normalizeTexPath(p) {
+      return p.trim().replace(/^\.\//, "").replace(/\\/g, "/");
+    }
+
+    function findTemplateFile(files, rawPath) {
+      const path = normalizeTexPath(rawPath);
+      const candidates = path.endsWith(".tex") ? [path] : [path, `${path}.tex`];
+      for (const c of candidates) {
+        const exact = files.find(f => normalizeTexPath(f.path) === c);
+        if (exact) return exact;
+      }
+      // Fall back to matching on the file name alone (e.g. \input{preamble} → shared/preamble.tex)
+      for (const c of candidates) {
+        const base = c.split("/").pop();
+        const byName = files.find(f => normalizeTexPath(f.path).split("/").pop() === base);
+        if (byName) return byName;
+      }
+      return null;
+    }
+
+    function inlineTexInputs(source, files, unresolved, depth = 0) {
+      if (depth > 10) return source;
+      return source.replace(/\\(input|include)\s*\{([^}]*)\}/g, (match, cmd, path, offset, whole) => {
+        const lineStart = whole.lastIndexOf("\n", offset - 1) + 1;
+        if (/(^|[^\\])%/.test(whole.slice(lineStart, offset))) return match; // commented out
+        const file = findTemplateFile(files, path);
+        if (!file) {
+          unresolved.push(path); // may still be a TeX Live file, e.g. \input{glyphtounicode}
+          return match;
+        }
+        const body = inlineTexInputs(file.content, files, unresolved, depth + 1);
+        return (cmd === "include" ? "\\clearpage\n" : "") + `%%% begin ${file.path}\n${body}\n%%% end ${file.path}\n`;
       });
     }
 
+    function buildLatexSource(main, template) {
+      const files = template ? template.files : [];
+      const uncommented = main.replace(/(^|[^\\])%.*$/gm, "$1");
+      let source = main;
+      if (!/\\documentclass/.test(uncommented)) {
+        const skeleton = (template && template.skeleton && template.skeleton.includes("%BODY%")) ? template.skeleton : FALLBACK_SKELETON;
+        if (/\\begin\s*\{document\}/.test(uncommented)) {
+          // Body already has begin/end document: only take the skeleton's preamble part
+          source = skeleton.split(/\\begin\s*\{document\}/)[0] + main;
+        } else {
+          source = skeleton.split("%BODY%").join(main);
+        }
+      }
+      const unresolved = [];
+      return { source: inlineTexInputs(source, files, unresolved), unresolved };
+    }
+
+    async function compileLatex(mainSource, template) {
+      const { source, unresolved } = buildLatexSource(mainSource, template);
+      let res;
+      try {
+        res = await fetch("/api/compile-latex", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ source, engine: template ? template.engine : "pdflatex" })
+        });
+      } catch (e) {
+        const err = new Error("Could not reach the compile service. Run the app with `vercel dev` locally, or use the deployed site.");
+        err.unresolved = unresolved;
+        throw err;
+      }
+      const contentType = res.headers.get("content-type") || "";
+      if (res.ok && contentType.includes("application/pdf")) {
+        return { blob: await res.blob(), unresolved };
+      }
+      let data = {};
+      try { data = await res.json(); } catch (e) { /* non-JSON error body */ }
+      const err = new Error(data.error || `Compile failed (HTTP ${res.status}). Is /api/compile-latex deployed?`);
+      err.log = data.log || "";
+      err.unresolved = unresolved;
+      throw err;
+    }
+
+    // Pull the "! ..." error lines (and the l.<n> context after them) out of a LaTeX log
+    function summarizeLatexLog(log) {
+      const lines = (log || "").split("\n");
+      const out = [];
+      for (let i = 0; i < lines.length && out.length < 40; i++) {
+        if (lines[i].startsWith("!")) {
+          out.push(lines[i]);
+          for (let j = i + 1; j < Math.min(i + 8, lines.length); j++) {
+            out.push(lines[j]);
+            if (/^l\.\d+/.test(lines[j])) { out.push(lines[j + 1] || ""); break; }
+          }
+          out.push("");
+        }
+      }
+      return out.join("\n").trim();
+    }
+
+    /* PDF preview modal (compiled output, uploaded files, or compile errors) */
+    let pdfModalUrl = null;
+
+    function openPdfModal({ title, blob = null, error = null, log = "", unresolved = [] }) {
+      closePdfModal();
+      document.getElementById("pdf-modal-title").innerText = title;
+      const frame = document.getElementById("pdf-modal-frame");
+      const openLink = document.getElementById("pdf-modal-open");
+      const errorBox = document.getElementById("pdf-modal-error");
+
+      if (blob) {
+        pdfModalUrl = URL.createObjectURL(blob.type === "application/pdf" ? blob : new Blob([blob], { type: "application/pdf" }));
+        frame.src = pdfModalUrl;
+        openLink.href = pdfModalUrl;
+        frame.classList.remove("hidden");
+        openLink.classList.remove("hidden");
+        errorBox.classList.add("hidden");
+      } else {
+        frame.classList.add("hidden");
+        openLink.classList.add("hidden");
+        errorBox.classList.remove("hidden");
+        document.getElementById("pdf-modal-error-msg").innerText = error || "Something went wrong.";
+        const summary = summarizeLatexLog(log);
+        const hints = unresolved && unresolved.length
+          ? `\n\nNot found in the selected template (checked TeX Live instead): ${[...new Set(unresolved)].join(", ")}\nTip: make the file paths in Doc Vault → LaTeX Templates match your \\input{...} lines.`
+          : "";
+        document.getElementById("pdf-modal-error-summary").innerText = (summary || "No error lines found in the log.") + hints;
+        document.getElementById("pdf-modal-error-log").innerText = log || "(no log returned)";
+      }
+      document.getElementById("modal-pdf").classList.remove("hidden");
+      lucide.createIcons();
+    }
+
+    function closePdfModal() {
+      document.getElementById("modal-pdf").classList.add("hidden");
+      document.getElementById("pdf-modal-frame").removeAttribute("src");
+      if (pdfModalUrl) {
+        URL.revokeObjectURL(pdfModalUrl);
+        pdfModalUrl = null;
+      }
+    }
+
     /* ==========================================================================
-       6. AI SMART EXTRACTOR (GEMINI API INTEGRATION)
+       8. AI SMART EXTRACTOR (GEMINI API INTEGRATION)
        ========================================================================== */
     async function handleAIFileUpload(event) {
       const file = event.target.files[0];
@@ -1644,26 +3199,14 @@
     }
 
     function fallbackRuleParser(text) {
-      let company = "Target Company";
-      let title = "Job Position";
-      let city = "Amsterdam";
-      let lang = text.toLowerCase().includes("dutch") || text.toLowerCase().includes("nederlands") ? "NL" : "EN";
-
-      const emailMatch = text.match(/[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/);
-      const email = emailMatch ? emailMatch[0] : "";
-
-      const phoneMatch = text.match(/[\+]?[(]?[0-9]{3}[)]?[-\s\.]?[0-9]{3}[-\s\.]?[0-9]{4,6}/);
-      const phone = phoneMatch ? phoneMatch[0] : "";
-
+      const lang = text.toLowerCase().includes("dutch") || text.toLowerCase().includes("nederlands") ? "NL" : "EN";
       return {
-        company: company,
-        title: title,
-        city: city,
+        company: "Target Company",
+        title: "Job Position",
+        city: "Amsterdam",
         lang: lang,
         source: "Linkedin",
         salary: "",
-        recruiterEmail: email,
-        recruiterPhone: phone,
         summary: text.substring(0, 180) + "..."
       };
     }
@@ -1672,16 +3215,14 @@
       const cont = document.getElementById("ai-extracted-fields");
       cont.innerHTML = `
         <div class="space-y-2 bg-white p-3 rounded-lg border border-slate-200">
-          <div><strong class="text-slate-500">Position:</strong> <span class="text-slate-900 font-bold">${parsed.title || '-'}</span></div>
-          <div><strong class="text-slate-500">Company:</strong> <span class="text-slate-900 font-bold">${parsed.company || '-'}</span></div>
+          <div><strong class="text-slate-500">Position:</strong> <span class="text-slate-900 font-bold">${esc(parsed.title || '-')}</span></div>
+          <div><strong class="text-slate-500">Company:</strong> <span class="text-slate-900 font-bold">${esc(parsed.company || '-')}</span></div>
           <div class="flex gap-4">
             <div><strong class="text-slate-500">City:</strong> ${renderCityBadge(parsed.city)}</div>
             <div><strong class="text-slate-500">Lang:</strong> ${renderLangBadge(parsed.lang)}</div>
           </div>
-          <div><strong class="text-slate-500">Salary:</strong> <span class="text-emerald-700 font-semibold">${parsed.salary || 'Not specified'}</span></div>
-          <div><strong class="text-slate-500">Email:</strong> ${parsed.recruiterEmail || '-'}</div>
-          <div><strong class="text-slate-500">Phone:</strong> ${parsed.recruiterPhone || '-'}</div>
-          <div><strong class="text-slate-500">Summary:</strong> <p class="text-slate-600 mt-0.5 text-[11px] leading-relaxed">${parsed.summary || ''}</p></div>
+          <div><strong class="text-slate-500">Salary:</strong> <span class="text-emerald-700 font-semibold">${esc(parsed.salary || 'Not specified')}</span></div>
+          <div><strong class="text-slate-500">Summary:</strong> <p class="text-slate-600 mt-0.5 text-[11px] leading-relaxed">${esc(parsed.summary || '')}</p></div>
         </div>
       `;
 
@@ -1698,104 +3239,197 @@
       document.getElementById("job-city-input").value = d.city || '';
       document.getElementById("job-lang-input").value = d.lang || 'EN';
       document.getElementById("job-salary-input").value = d.salary || '';
-      document.getElementById("job-email-input").value = d.recruiterEmail || '';
-      document.getElementById("job-phone-input").value = d.recruiterPhone || '';
       document.getElementById("job-notes-input").value = d.summary || '';
     }
 
     /* ==========================================================================
-       7. DOCUMENT VAULT MANAGEMENT LOGIC
+       9. DOCUMENT VAULT: LaTeX templates + sent documents archive
        ========================================================================== */
     function renderDocuments() {
-      const listCv = document.getElementById("list-docs-cv");
-      const listCl = document.getElementById("list-docs-cl");
-      const listOther = document.getElementById("list-docs-other");
-
-      listCv.innerHTML = "";
-      listCl.innerHTML = "";
-      listOther.innerHTML = "";
-
-      let cvCount = 0, clCount = 0, otherCount = 0;
-
-      if (state.documents.length === 0) {
-        listCv.innerHTML = `<p class="text-slate-400 italic text-[11px]">No CVs added yet.</p>`;
-        listCl.innerHTML = `<p class="text-slate-400 italic text-[11px]">No Cover Letters added yet.</p>`;
-        listOther.innerHTML = `<p class="text-slate-400 italic text-[11px]">No Portfolios added yet.</p>`;
-      }
-
-      state.documents.forEach(doc => {
-        const item = document.createElement("div");
-        item.className = "bg-slate-50 p-3 rounded-xl border border-slate-200 flex flex-col justify-between space-y-2 hover:bg-slate-100/80 transition";
-        item.innerHTML = `
-          <div>
-            <span class="font-bold text-slate-800 text-xs block">${doc.title}</span>
-            <span class="text-[10px] text-slate-400 font-medium">${doc.tags || 'General'}</span>
-          </div>
-          <div class="flex items-center justify-between pt-2 border-t border-slate-200 text-[11px]">
-            ${doc.url ? `<a href="${doc.url}" target="_blank" class="text-indigo-600 hover:underline font-semibold flex items-center gap-1"><i data-lucide="external-link" class="w-3 h-3"></i> Open File</a>` : '<span class="text-slate-400 italic">No link</span>'}
-            <button onclick="deleteDoc('${doc.id}')" class="text-rose-500 hover:text-rose-700 font-semibold text-[10px]">Delete</button>
-          </div>
-        `;
-
-        if (doc.type === 'CV') {
-          listCv.appendChild(item);
-          cvCount++;
-        } else if (doc.type === 'CL') {
-          listCl.appendChild(item);
-          clCount++;
-        } else {
-          listOther.appendChild(item);
-          otherCount++;
-        }
-      });
-
-      document.getElementById("count-docs-cv").innerText = `${cvCount} files`;
-      document.getElementById("count-docs-cl").innerText = `${clCount} files`;
-      document.getElementById("count-docs-other").innerText = `${otherCount} files`;
-
+      renderLegacyDocs();
+      renderTemplateList();
+      renderSentDocsArchive();
       lucide.createIcons();
     }
 
-    function openDocModal() {
-      document.getElementById("modal-doc").classList.remove("hidden");
+    function renderLegacyDocs() {
+      const card = document.getElementById("legacy-docs-card");
+      card.classList.toggle("hidden", state.legacyDocs.length === 0);
+      const typeLabel = { CV: "CV", CL: "Cover Letter" };
+      document.getElementById("legacy-docs-list").innerHTML = state.legacyDocs.map(doc => {
+        const usedBy = state.applications.filter(a => a.docId === doc.id).length;
+        return `
+          <div class="bg-slate-50 p-3 rounded-xl border border-slate-200 space-y-2">
+            <div class="flex items-center justify-between gap-2">
+              ${legacyDocLinkHTML(doc)}
+              <span class="text-[10px] font-semibold bg-white border border-slate-200 px-2 py-0.5 rounded-full">${esc(typeLabel[doc.type] || "Other")}</span>
+            </div>
+            <div class="flex items-center justify-between text-[11px] text-slate-400">
+              <span>Used by ${usedBy} application${usedBy === 1 ? "" : "s"}</span>
+              <button onclick="deleteLegacyDoc('${esc(doc.id)}')" class="text-rose-500 hover:text-rose-700 font-semibold">Delete</button>
+            </div>
+          </div>`;
+      }).join("");
     }
 
-    function closeDocModal() {
-      document.getElementById("modal-doc").classList.add("hidden");
+    function deleteLegacyDoc(id) {
+      openConfirmModal("Delete this link?", "Applications that used it will no longer show it.", () => {
+        state.legacyDocs = state.legacyDocs.filter(d => d.id !== id);
+        saveState();
+        renderDocuments();
+      });
     }
 
-    function handleDocFormSubmit(e) {
-      e.preventDefault();
-      const newDoc = {
-        id: "doc-" + Date.now(),
-        title: document.getElementById("doc-title-input").value,
-        type: document.getElementById("doc-type-input").value,
-        url: document.getElementById("doc-url-input").value,
-        tags: document.getElementById("doc-tags-input").value
+    function renderTemplateList() {
+      const list = document.getElementById("template-list");
+      if (state.templates.length === 0) {
+        list.innerHTML = `<p class="text-slate-400 italic text-xs col-span-full">No templates yet. Click "New Template" and upload your Overleaf preamble files.</p>`;
+        return;
+      }
+      list.innerHTML = state.templates.map(t => `
+        <div class="bg-slate-50 p-4 rounded-xl border border-slate-200 flex flex-col justify-between gap-3">
+          <div class="space-y-1.5">
+            <div class="flex items-center justify-between gap-2">
+              <span class="font-bold text-slate-800 text-xs truncate">${esc(t.name)}</span>
+              <span class="text-[10px] font-bold px-2 py-0.5 rounded-full ${t.type === "CV" ? "bg-blue-100 text-blue-800" : "bg-emerald-100 text-emerald-800"}">${t.type === "CV" ? "CV" : "Cover Letter"}</span>
+            </div>
+            <p class="text-[11px] text-slate-500">${esc(t.engine || "pdflatex")} · ${t.files.length} file${t.files.length === 1 ? "" : "s"}</p>
+            <div class="flex flex-wrap gap-1">
+              ${t.files.map(f => `<code class="text-[10px] bg-white border border-slate-200 px-1.5 py-0.5 rounded">${esc(f.path)}</code>`).join("")}
+            </div>
+          </div>
+          <div class="flex items-center justify-between pt-2 border-t border-slate-200 text-[11px]">
+            <button onclick="openTemplateModal('${esc(t.id)}')" class="text-indigo-600 hover:underline font-semibold flex items-center gap-1"><i data-lucide="pencil" class="w-3 h-3"></i> Edit</button>
+            <button onclick="duplicateTemplate('${esc(t.id)}')" class="text-slate-600 hover:underline font-semibold flex items-center gap-1"><i data-lucide="copy" class="w-3 h-3"></i> Duplicate</button>
+            <button onclick="deleteTemplate('${esc(t.id)}')" class="text-rose-500 hover:text-rose-700 font-semibold">Delete</button>
+          </div>
+        </div>`).join("");
+    }
+
+    function renderSentDocsArchive() {
+      const tbody = document.getElementById("sent-docs-tbody");
+      const jobs = state.applications.filter(hasAnyDoc);
+      if (jobs.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="5" class="py-6 text-center text-slate-400 italic">No documents attached yet. Open an application and use the "Documents Sent" section.</td></tr>`;
+        return;
+      }
+      const cell = (job, kind) => {
+        const parts = [];
+        const legacy = getLegacyDoc(job.docId);
+        if (legacy && legacy.type === (kind === "cv" ? "CV" : "CL")) parts.push(legacyDocLinkHTML(legacy));
+        if (job[`${kind}File`]) parts.push(`<button onclick="viewArchivedDoc('${job.id}', '${kind}-upload')" class="text-indigo-600 hover:underline font-semibold flex items-center gap-1"><i data-lucide="file-up" class="w-3 h-3"></i> Uploaded PDF</button>`);
+        if (job[`${kind}CompiledAt`]) parts.push(`<button onclick="viewArchivedDoc('${job.id}', '${kind}-compiled')" class="text-emerald-700 hover:underline font-semibold flex items-center gap-1"><i data-lucide="file-check-2" class="w-3 h-3"></i> Compiled PDF</button>`);
+        if ((job[`${kind}Latex`] || "").trim() && !job[`${kind}CompiledAt`]) parts.push(`<button onclick="openJobModal('${job.id}')" class="text-slate-600 hover:underline font-semibold flex items-center gap-1"><i data-lucide="code-2" class="w-3 h-3"></i> LaTeX (not compiled)</button>`);
+        return parts.length ? `<div class="flex flex-col gap-1">${parts.join("")}</div>` : `<span class="text-slate-300">-</span>`;
       };
-
-      state.documents.push(newDoc);
-      saveState();
-      closeDocModal();
-      renderDocuments();
-      showToast("Document saved to vault!");
+      tbody.innerHTML = jobs.map(job => `
+        <tr class="hover:bg-slate-50/80 transition">
+          <td class="py-2.5 px-4 font-bold text-slate-800">${esc(job.company)}</td>
+          <td class="py-2.5 px-4">${renderJobTitleLink(job)}</td>
+          <td class="py-2.5 px-4 text-slate-500 whitespace-nowrap">${esc(job.appliedDate || '-')}</td>
+          <td class="py-2.5 px-4">${cell(job, "cv")}</td>
+          <td class="py-2.5 px-4">${cell(job, "cl")}</td>
+        </tr>`).join("");
     }
 
-    function deleteDoc(id) {
+    function viewArchivedDoc(jobId, slot) {
+      const job = state.applications.find(a => a.id === jobId);
+      const label = slot.startsWith("cv") ? "CV" : "Cover Letter";
+      viewStoredFile(jobId, slot, `${label}: ${job ? `${job.company} – ${job.title}` : "Application"}`);
+    }
+
+    function addTemplateFileRow(path = "", content = "") {
+      const row = document.createElement("div");
+      row.className = "tpl-file-row border border-slate-200 rounded-xl p-2.5 space-y-2 bg-slate-50";
+      row.innerHTML = `
+        <div class="flex items-center gap-2">
+          <input type="text" placeholder="shared/preamble.tex" class="tpl-file-path flex-1 p-1.5 border border-slate-200 rounded-lg font-mono text-[11px] focus:ring-2 focus:ring-indigo-500">
+          <button type="button" class="p-1.5 text-slate-400 hover:text-rose-600" title="Remove file"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
+        </div>
+        <textarea rows="6" spellcheck="false" class="tpl-file-content w-full p-2 border border-slate-200 rounded-lg font-mono text-[11px] focus:ring-2 focus:ring-indigo-500"></textarea>`;
+      row.querySelector(".tpl-file-path").value = path;
+      row.querySelector(".tpl-file-content").value = content;
+      row.querySelector("button").onclick = () => row.remove();
+      document.getElementById("tpl-files").appendChild(row);
+      lucide.createIcons();
+    }
+
+    function openTemplateModal(id = null) {
+      const t = id ? state.templates.find(x => x.id === id) : null;
+      document.getElementById("modal-template-title").innerHTML = `<i data-lucide="file-code-2" class="w-4 h-4 text-indigo-400"></i> ${t ? "Edit LaTeX Template" : "New LaTeX Template"}`;
+      document.getElementById("tpl-id").value = t ? t.id : "";
+      document.getElementById("tpl-name").value = t ? t.name : "";
+      document.getElementById("tpl-type").value = t ? t.type : "CV";
+      document.getElementById("tpl-engine").value = t ? (t.engine || "pdflatex") : "pdflatex";
+      document.getElementById("tpl-skeleton").value = t ? (t.skeleton || "") : seedText("seed-skeleton");
+      document.getElementById("tpl-files").innerHTML = "";
+      if (t) t.files.forEach(f => addTemplateFileRow(f.path, f.content));
+      else addTemplateFileRow("shared/preamble.tex", "");
+      document.getElementById("modal-template").classList.remove("hidden");
+      lucide.createIcons();
+    }
+
+    function closeTemplateModal() {
+      document.getElementById("modal-template").classList.add("hidden");
+    }
+
+    async function handleTemplateFileUpload(event) {
+      const files = [...event.target.files];
+      event.target.value = "";
+      for (const file of files) {
+        addTemplateFileRow(file.name, await file.text());
+      }
+      if (files.length) showToast(`Added ${files.length} file(s). Check the paths match your \\input{...} lines.`);
+    }
+
+    function handleTemplateFormSubmit(e) {
+      e.preventDefault();
+      const id = document.getElementById("tpl-id").value;
+      const files = [];
+      document.querySelectorAll("#tpl-files .tpl-file-row").forEach(row => {
+        const path = normalizeTexPath(row.querySelector(".tpl-file-path").value);
+        if (path) files.push({ path, content: row.querySelector(".tpl-file-content").value });
+      });
+      const data = {
+        id: id || "tpl-" + Date.now(),
+        name: document.getElementById("tpl-name").value.trim(),
+        type: document.getElementById("tpl-type").value,
+        engine: document.getElementById("tpl-engine").value,
+        skeleton: document.getElementById("tpl-skeleton").value,
+        files
+      };
+      const index = state.templates.findIndex(t => t.id === id);
+      if (index !== -1) state.templates[index] = data; else state.templates.push(data);
+      saveState();
+      closeTemplateModal();
+      renderDocuments();
+      showToast("Template saved!");
+    }
+
+    function duplicateTemplate(id) {
+      const t = state.templates.find(x => x.id === id);
+      if (!t) return;
+      state.templates.push({ ...JSON.parse(JSON.stringify(t)), id: "tpl-" + Date.now(), name: `${t.name} (copy)` });
+      saveState();
+      renderDocuments();
+    }
+
+    function deleteTemplate(id) {
+      const t = state.templates.find(x => x.id === id);
+      if (!t) return;
       openConfirmModal(
-        "Delete Document Version?",
-        "Are you sure you want to delete this document from your vault?",
+        `Delete template "${t.name}"?`,
+        "Applications keep their LaTeX text and compiled PDFs, but will need another template to recompile.",
         () => {
-          state.documents = state.documents.filter(d => d.id !== id);
+          state.templates = state.templates.filter(x => x.id !== id);
           saveState();
           renderDocuments();
-          showToast("Document deleted.");
         }
       );
     }
 
     /* ==========================================================================
-       8. BACKUP, CUSTOM MODALS & UTILITIES
+       10. BACKUP, CUSTOM MODALS & UTILITIES
        ========================================================================== */
     let confirmCallback = null;
 
@@ -1817,28 +3451,60 @@
     function promptClearAllData() {
       openConfirmModal(
         "Start Fresh / Wipe All Data?",
-        "This will delete ALL job applications, document versions, and settings. Export a JSON backup first if needed!",
-        () => {
+        "This deletes ALL applications and their attached PDFs. Your industries, LaTeX templates and planner are kept. Export a JSON backup first if needed!",
+        async () => {
           state.applications = [];
-          state.documents = [];
           saveState();
+          try { await FileStore.clear(); } catch (e) { console.warn(e); }
           renderApplications();
           renderDashboard();
           renderDocuments();
           renderIndustryHub();
-          showToast("All data cleared! Fresh start ready.");
+          showToast("All applications cleared! Fresh start ready.");
         }
       );
     }
 
-    function exportDataJSON() {
-      const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(state, null, 2));
+    function blobToDataURL(blob) {
+      return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(reader.result);
+        reader.onerror = () => reject(reader.error);
+        reader.readAsDataURL(blob);
+      });
+    }
+
+    async function exportDataJSON() {
+      const files = {};
+      try {
+        const keys = await FileStore.keys();
+        for (const key of keys) {
+          const record = await FileStore.get(key);
+          if (record && record.blob) files[key] = { name: record.name, savedAt: record.savedAt, dataUrl: await blobToDataURL(record.blob) };
+        }
+      } catch (e) {
+        console.warn("Could not read stored files for export:", e);
+      }
+
+      const backup = {
+        version: 2,
+        exportedAt: new Date().toISOString(),
+        applications: state.applications,
+        industries: state.industries,
+        looseCompanies: state.looseCompanies,
+        templates: state.templates,
+        documents: state.legacyDocs,
+        planner: state.planner,
+        files
+      };
+      const url = URL.createObjectURL(new Blob([JSON.stringify(backup, null, 2)], { type: "application/json" }));
       const downloadAnchor = document.createElement('a');
-      downloadAnchor.setAttribute("href", dataStr);
-      downloadAnchor.setAttribute("download", `job_tracker_backup_${new Date().toISOString().split('T')[0]}.json`);
+      downloadAnchor.href = url;
+      downloadAnchor.download = `job_tracker_backup_${new Date().toISOString().split('T')[0]}.json`;
       document.body.appendChild(downloadAnchor);
       downloadAnchor.click();
       downloadAnchor.remove();
+      setTimeout(() => URL.revokeObjectURL(url), 1000);
       showToast("JSON Backup downloaded!");
     }
 
@@ -1848,23 +3514,35 @@
 
     function importDataJSON(event) {
       const file = event.target.files[0];
+      event.target.value = "";
       if (!file) return;
 
       const reader = new FileReader();
-      reader.onload = function(e) {
+      reader.onload = async function(e) {
         try {
           const imported = JSON.parse(e.target.result);
           if (imported.applications) state.applications = imported.applications;
-          if (imported.documents) state.documents = imported.documents;
           if (imported.industries) state.industries = imported.industries;
+          if (imported.looseCompanies) state.looseCompanies = imported.looseCompanies;
+          if (imported.templates) state.templates = imported.templates;
+          if (Array.isArray(imported.documents)) state.legacyDocs = imported.documents;
+          if (imported.planner) state.planner = imported.planner;
+          if (imported.files) {
+            for (const [key, record] of Object.entries(imported.files)) {
+              const blob = await (await fetch(record.dataUrl)).blob();
+              await FileStore.put(key, { name: record.name, savedAt: record.savedAt, blob });
+            }
+          }
           saveState();
+          renderPlanner();
           renderDashboard();
           renderApplications();
           renderDocuments();
           renderIndustryHub();
           showToast("Backup imported successfully!");
         } catch (err) {
-          showToast("Failed to parse JSON backup file.");
+          console.error(err);
+          showToast("Failed to import JSON backup file.");
         }
       };
       reader.readAsText(file);
@@ -1872,19 +3550,30 @@
 
     function showToast(msg) {
       const toast = document.createElement("div");
-      toast.className = "fixed bottom-5 right-5 bg-slate-900 text-white px-4 py-2.5 rounded-xl shadow-xl text-xs z-50 flex items-center gap-2 border border-slate-700 animate-bounce";
-      toast.innerHTML = `<i data-lucide="check-circle-2" class="w-4 h-4 text-emerald-400"></i> ${msg}`;
+      toast.className = "fixed bottom-5 right-5 bg-slate-900 text-white px-4 py-2.5 rounded-xl shadow-xl text-xs z-[70] flex items-center gap-2 border border-slate-700 animate-bounce";
+      toast.innerHTML = `<i data-lucide="check-circle-2" class="w-4 h-4 text-emerald-400"></i> ${esc(msg)}`;
       document.body.appendChild(toast);
       lucide.createIcons();
       setTimeout(() => toast.remove(), 3000);
     }
 
     /* ==========================================================================
-       9. INITIALIZATION
+       11. INITIALIZATION
        ========================================================================== */
     window.onload = function() {
+      document.getElementById("planner-grid").addEventListener("click", handlePlannerGridClick);
+      initIndustryInteractions();
+      ["cv", "cl"].forEach(kind => {
+        document.getElementById(`job-${kind}-latex`).addEventListener("input", () => refreshJobDocUI(kind));
+      });
+      document.addEventListener("keydown", e => {
+        if (e.key === "Escape" && !document.getElementById("modal-pdf").classList.contains("hidden")) closePdfModal();
+      });
+      // Persist seeded templates on first run so later edits stick
+      if (getSavedState("job_tracker_templates", null) === null) saveState();
+
       lucide.createIcons();
-      renderDashboard();
+      switchTab('planner');
     };
   </script>
 
