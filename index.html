@@ -323,7 +323,7 @@
               <tr>
                 <th class="py-2.5 px-4">Company</th>
                 <th class="py-2.5 px-4">Job Title</th>
-                <th class="py-2.5 px-4">City</th>
+                <th class="py-2.5 px-4">Location</th>
                 <th class="py-2.5 px-4">Lang</th>
                 <th class="py-2.5 px-4">Source</th>
                 <th class="py-2.5 px-4">Status</th>
@@ -349,7 +349,7 @@
         <!-- Search Bar -->
         <div class="relative w-full md:w-72">
           <i data-lucide="search" class="w-4 h-4 absolute left-3 top-2.5 text-slate-400"></i>
-          <input type="text" id="search-input" oninput="renderApplications()" placeholder="Search company, position, city..." class="w-full pl-9 pr-3 py-1.5 text-xs bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500">
+          <input type="text" id="search-input" oninput="renderApplications()" placeholder="Search company, position, location..." class="w-full pl-9 pr-3 py-1.5 text-xs bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500">
         </div>
 
         <!-- Filter Dropdowns -->
@@ -390,7 +390,7 @@
 
           <!-- City Filter -->
           <select id="filter-city" onchange="renderApplications()" class="text-xs bg-slate-50 border border-slate-200 rounded-lg px-2.5 py-1.5 focus:outline-none focus:ring-2 focus:ring-indigo-500">
-            <option value="ALL">All Cities</option>
+            <option value="ALL">All Locations</option>
           </select>
 
           <!-- Toggle View Mode (Table vs Kanban) -->
@@ -411,19 +411,18 @@
           <table class="w-full text-left text-xs">
             <thead class="bg-amber-900/90 text-white font-semibold uppercase tracking-wider text-[11px] border-b border-amber-950">
               <tr>
-                <th class="py-3 px-3 sticky left-0 z-20 bg-amber-900 border-r border-amber-950 text-center whitespace-nowrap">Actions</th>
-                <th class="py-3 px-3 whitespace-nowrap">Company</th>
-                <th class="py-3 px-3 whitespace-nowrap">Job Title</th>
-                <th class="py-3 px-3 whitespace-nowrap">Status</th>
-                <th class="py-3 px-3 whitespace-nowrap">Priority</th>
-                <th class="py-3 px-3 whitespace-nowrap">LinkedIn Match</th>
-                <th class="py-3 px-3 whitespace-nowrap">City</th>
-                <th class="py-3 px-3 whitespace-nowrap">EN/NL</th>
-                <th class="py-3 px-3 whitespace-nowrap">Platform</th>
-                <th class="py-3 px-3 whitespace-nowrap">Applied Date</th>
-                <th class="py-3 px-3 whitespace-nowrap">LinkedIn Link</th>
-                <th class="py-3 px-3 whitespace-nowrap">Career Site</th>
-                <th class="py-3 px-3 whitespace-nowrap">Docs & Tasks</th>
+                <th class="py-3 px-2 sticky left-0 z-20 bg-amber-900 border-r border-amber-950 w-8"><span class="sr-only">Delete</span></th>
+                <th class="py-3 px-2 whitespace-nowrap">Platform</th>
+                <th class="py-3 px-2 whitespace-nowrap">Career Site</th>
+                <th class="py-3 px-2 whitespace-nowrap">Location</th>
+                <th class="py-3 px-2 whitespace-nowrap">Company</th>
+                <th class="py-3 px-2 whitespace-nowrap">Job Title</th>
+                <th class="py-3 px-2 whitespace-nowrap">Status</th>
+                <th class="py-3 px-2 whitespace-nowrap">Priority</th>
+                <th class="py-3 px-2 whitespace-nowrap" title="LinkedIn job match">Match</th>
+                <th class="py-3 px-2 whitespace-nowrap">EN/NL</th>
+                <th class="py-3 px-2 whitespace-nowrap">Applied</th>
+                <th class="py-3 px-2 whitespace-nowrap">Docs & Tasks</th>
               </tr>
             </thead>
             <tbody id="applications-tbody" class="divide-y divide-slate-100">
@@ -506,7 +505,7 @@
             <i data-lucide="inbox" class="w-4 h-4 text-amber-600"></i> Unassigned Companies
             <span id="unassigned-count" class="text-[10px] font-semibold bg-amber-200/80 text-amber-900 px-2 py-0.5 rounded-full">0</span>
           </h3>
-          <p class="text-[11px] text-amber-800/80">Drag a company onto an industry (or click it to pick one). Drop a company here to unassign it.</p>
+          <p class="text-[11px] text-amber-800/80">Click a name for its job overview. Drag it onto an industry (or use ⇄) to assign it; drop one here to unassign.</p>
         </div>
         <div id="unassigned-list" class="flex flex-wrap gap-2"></div>
       </div>
@@ -702,7 +701,7 @@
 
         <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
           <div>
-            <label class="block font-semibold text-slate-700 mb-1">City / Location</label>
+            <label class="block font-semibold text-slate-700 mb-1">Location</label>
             <input type="text" id="job-city-input" placeholder="e.g. Amsterdam" class="w-full p-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-indigo-500">
           </div>
           <div>
@@ -776,8 +775,9 @@
 
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div>
-            <label class="block font-semibold text-slate-700 mb-1">LinkedIn Link</label>
-            <input type="url" id="job-linkedin-input" placeholder="https://www.linkedin.com/jobs/view/..." class="w-full p-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-indigo-500">
+            <label class="block font-semibold text-slate-700 mb-1">Job Posting Link <span class="font-normal text-slate-400">(LinkedIn, Indeed, Glassdoor…)</span></label>
+            <input type="url" id="job-posting-input" oninput="handlePostingLinkInput()" placeholder="Paste the job posting URL" class="w-full p-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-indigo-500">
+            <p id="job-posting-hint" class="text-[10px] text-emerald-600 mt-0.5 hidden"></p>
           </div>
           <div>
             <label class="block font-semibold text-slate-700 mb-1">Company's Career Site Link</label>
@@ -1158,6 +1158,32 @@
           <button type="submit" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg font-semibold shadow">Save</button>
         </div>
       </form>
+    </div>
+  </div>
+
+  <!-- MODAL: COMPANY OVERVIEW (all jobs at one company) -->
+  <div id="modal-company" onclick="if (event.target === this) closeCompanyOverview()" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+    <div class="bg-white rounded-2xl max-w-2xl w-full max-h-[85vh] overflow-y-auto shadow-2xl border border-slate-100">
+      <div class="px-6 pt-5 pb-3 flex items-start justify-between gap-3 border-b border-slate-100">
+        <div class="min-w-0">
+          <h3 id="company-overview-name" class="text-lg font-bold text-slate-900 truncate"></h3>
+          <p id="company-overview-meta" class="text-xs text-slate-500 mt-0.5"></p>
+        </div>
+        <button onclick="closeCompanyOverview()" class="text-slate-400 hover:text-slate-700 flex-shrink-0">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+      </div>
+      <div class="px-6 py-4 text-xs">
+        <table class="w-full text-left">
+          <thead class="text-[10px] uppercase tracking-wider text-slate-400">
+            <tr><th class="pb-2 pr-3 font-semibold">Job title</th><th class="pb-2 pr-3 font-semibold">Status</th><th class="pb-2 pr-3 font-semibold">Platform</th><th class="pb-2 font-semibold">Career site</th></tr>
+          </thead>
+          <tbody id="company-overview-rows" class="divide-y divide-slate-100"></tbody>
+        </table>
+        <button id="company-overview-add" class="mt-4 text-emerald-600 hover:underline font-semibold flex items-center gap-1">
+          <i data-lucide="plus" class="w-3.5 h-3.5"></i> Add another job at this company
+        </button>
+      </div>
     </div>
   </div>
 
@@ -1837,7 +1863,7 @@
       const colorsByDay = {};
       plannerEvents().forEach(e => {
         const set = colorsByDay[e.date] || (colorsByDay[e.date] = []);
-        const color = eventColor(e);
+        const color = getCalendar(e.calendarId)?.color || NO_GROUP_COLOR; // one dot per calendar, not per group
         if (!set.includes(color)) set.push(color);
       });
       const head = ["M", "T", "W", "T", "F", "S", "S"].map(d => `<div class="text-[10px] font-semibold text-slate-400 text-center py-1">${d}</div>`).join("");
@@ -2641,11 +2667,13 @@
       const stats = getCompanyStats(name);
       const dot = stats.fullyApplied ? "bg-emerald-500" : stats.applied > 0 ? "bg-amber-500" : stats.total > 0 ? "bg-slate-400" : "bg-slate-200";
       return `
-        <span draggable="true" data-drag-company data-company="${esc(name)}" data-from="${esc(fromId)}" data-action="move-company"
-          title="Drag to another industry, or click to choose"
-          class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full border text-[11px] font-semibold cursor-grab active:cursor-grabbing select-none transition
-          ${stats.fullyApplied ? "bg-emerald-50 border-emerald-200 text-slate-400 line-through" : "bg-white border-slate-200 text-slate-700 hover:border-indigo-300"}">
-          <span class="w-1.5 h-1.5 rounded-full ${dot}"></span>${esc(name)}${stats.total > 0 ? `<span class="text-[10px] text-slate-400 no-underline">${stats.total}</span>` : ""}
+        <span draggable="true" data-drag-company data-company="${esc(name)}" data-from="${esc(fromId)}"
+          title="Click for an overview · drag to another industry"
+          class="inline-flex items-center gap-1.5 pl-2.5 pr-1 py-1 rounded-full border text-[11px] font-semibold cursor-grab active:cursor-grabbing select-none transition
+          ${stats.fullyApplied ? "bg-emerald-50 border-emerald-200 text-slate-400" : "bg-white border-slate-200 text-slate-700 hover:border-indigo-300"}">
+          <span class="w-1.5 h-1.5 rounded-full ${dot}"></span>
+          <span data-company-overview="${esc(name)}" class="cursor-pointer hover:text-indigo-700 hover:underline ${stats.fullyApplied ? "line-through" : ""}">${esc(name)}</span>${stats.total > 0 ? `<span class="text-[10px] text-slate-400">${stats.total}</span>` : ""}
+          <button type="button" data-action="move-company" data-company="${esc(name)}" data-from="${esc(fromId)}" title="Move to another industry" class="p-0.5 rounded-full text-slate-300 hover:text-indigo-600 hover:bg-indigo-50"><i data-lucide="arrow-right-left" class="w-3 h-3"></i></button>
         </span>`;
     }
 
@@ -2769,7 +2797,7 @@
                 <label class="flex items-center gap-2 font-bold text-xs min-w-0">
                   <i data-lucide="grip-vertical" class="w-3.5 h-3.5 text-slate-300 flex-shrink-0"></i>
                   <input type="checkbox" ${s.fullyApplied ? 'checked' : ''} class="w-4 h-4 rounded text-emerald-600 focus:ring-emerald-500" disabled>
-                  <span class="truncate ${s.fullyApplied ? 'line-through text-slate-400 font-normal' : 'text-slate-800 font-bold'}">${name}</span>
+                  <button type="button" data-company-overview="${name}" title="Open overview" class="truncate text-left hover:text-indigo-700 hover:underline ${s.fullyApplied ? 'line-through text-slate-400 font-normal' : 'text-slate-800 font-bold'}">${name}</button>
                 </label>
                 <button data-action="remove-company" data-company="${name}" data-from="${esc(activeInd.id)}" class="text-slate-300 hover:text-rose-600 p-1" title="Remove from this industry">
                   <i data-lucide="x-circle" class="w-3.5 h-3.5"></i>
@@ -2862,7 +2890,7 @@
             <div draggable="true" data-drag-company data-scout-card data-company="${name}" class="bg-white p-3 rounded-xl border border-slate-200 shadow-sm space-y-2 cursor-grab active:cursor-grabbing">
               <div class="flex items-start justify-between gap-2">
                 <div class="min-w-0">
-                  <div class="font-bold text-xs text-slate-800 truncate">${name}</div>
+                  <button type="button" data-company-overview="${name}" title="Open overview" class="block max-w-full font-bold text-xs text-slate-800 truncate text-left hover:text-indigo-700 hover:underline">${name}</button>
                   <div class="text-[10px] text-slate-400 truncate">${esc(c.industries.join(", "))}</div>
                 </div>
                 <button data-action="scout-move" data-company="${name}" class="p-0.5 text-slate-300 hover:text-indigo-600 flex-shrink-0" title="Move to another column"><i data-lucide="move" class="w-3.5 h-3.5"></i></button>
@@ -2876,7 +2904,7 @@
                 ${meta.careersUrl
                   ? `<a href="${esc(meta.careersUrl)}" target="_blank" rel="noopener" class="text-indigo-600 hover:underline flex items-center gap-0.5"><i data-lucide="external-link" class="w-3 h-3"></i> Careers</a>`
                   : `<button data-action="scout-link" data-company="${name}" class="text-slate-400 hover:text-indigo-600 flex items-center gap-0.5"><i data-lucide="link" class="w-3 h-3"></i> Add careers link</button>`}
-                <a href="https://www.linkedin.com/jobs/search/?keywords=${q}&location=Netherlands" target="_blank" rel="noopener" class="text-blue-600 hover:underline flex items-center gap-0.5"><i data-lucide="linkedin" class="w-3 h-3"></i> Jobs NL</a>
+                <a href="https://www.linkedin.com/jobs/search/?keywords=${q}&location=Netherlands" target="_blank" rel="noopener" class="text-blue-600 hover:underline flex items-center gap-0.5">${LINKEDIN_ICON} Jobs NL</a>
                 <button data-action="scout-note" data-company="${name}" class="text-slate-500 hover:text-indigo-600 flex items-center gap-0.5"><i data-lucide="sticky-note" class="w-3 h-3"></i> Note</button>
                 <button data-action="add-job" data-company="${name}" class="text-emerald-600 hover:underline flex items-center gap-0.5 ml-auto"><i data-lucide="plus" class="w-3 h-3"></i> Job</button>
               </div>
@@ -3394,11 +3422,11 @@
         const tr = document.createElement("tr");
         tr.className = "hover:bg-slate-50/80 transition";
         tr.innerHTML = `
-          <td class="py-2.5 px-4 font-bold text-slate-800">${esc(job.company)}</td>
+          <td class="py-2.5 px-4">${renderCompanyLink(job.company)}</td>
           <td class="py-2.5 px-4">${renderJobTitleLink(job)}</td>
           <td class="py-2.5 px-4">${renderCityBadge(job.city)}</td>
           <td class="py-2.5 px-4">${renderLangBadge(job.lang)}</td>
-          <td class="py-2.5 px-4 text-slate-500">${esc(job.source || 'LinkedIn')}</td>
+          <td class="py-2.5 px-4 whitespace-nowrap">${renderPlatformBadge(job)}</td>
           <td class="py-2.5 px-4">${renderStatusBadge(job.status)}</td>
           <td class="py-2.5 px-4 text-slate-500">${esc(formatDateDMY(job.appliedDate) || '-')}</td>
           <td class="py-2.5 px-4 text-right">
@@ -3407,6 +3435,7 @@
         `;
         tbody.appendChild(tr);
       });
+      lucide.createIcons();
     }
 
     /* ==========================================================================
@@ -3463,7 +3492,7 @@
       const currentVal = citySelect.value;
       const cities = [...new Set(state.applications.map(a => a.city).filter(Boolean))];
 
-      citySelect.innerHTML = `<option value="ALL">All Cities</option>`;
+      citySelect.innerHTML = `<option value="ALL">All Locations</option>`;
       cities.forEach(c => {
         const opt = document.createElement("option");
         opt.value = c;
@@ -3478,7 +3507,7 @@
       tbody.innerHTML = "";
 
       if (jobs.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="13" class="py-8 text-center text-slate-400 italic">No applications match your filter. Click "+ Add Application" to create one.</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="12" class="py-8 text-center text-slate-400 italic">No applications match your filter. Click "+ Add Application" to create one.</td></tr>`;
         return;
       }
 
@@ -3486,34 +3515,24 @@
         const tr = document.createElement("tr");
         tr.className = "group hover:bg-slate-50 border-b border-slate-100 transition";
         tr.innerHTML = `
-          <td class="py-2.5 px-3 sticky left-0 z-10 bg-white group-hover:bg-slate-50 border-r border-slate-200 shadow-[2px_0_4px_-2px_rgba(0,0,0,0.15)] text-center transition">
-            <div class="flex items-center justify-center space-x-2">
-              <button onclick="openJobModal('${job.id}')" class="p-1 text-slate-500 hover:text-indigo-600 rounded hover:bg-slate-200/60" title="Edit Application">
-                <i data-lucide="edit-3" class="w-4 h-4"></i>
-              </button>
-              <button onclick="deleteJob('${job.id}')" class="p-1 text-slate-400 hover:text-rose-600 rounded hover:bg-slate-200/60" title="Delete">
-                <i data-lucide="trash-2" class="w-4 h-4"></i>
-              </button>
-            </div>
+          <td class="py-2.5 px-2 sticky left-0 z-10 bg-white group-hover:bg-slate-50 border-r border-slate-200 shadow-[2px_0_4px_-2px_rgba(0,0,0,0.15)] text-center transition">
+            <button onclick="deleteJob('${job.id}')" class="p-1 text-slate-300 hover:text-rose-600 rounded hover:bg-slate-200/60" title="Delete application">
+              <i data-lucide="trash-2" class="w-4 h-4"></i>
+            </button>
           </td>
-          <td class="py-2.5 px-3 font-bold text-slate-800 whitespace-nowrap">${esc(job.company)}</td>
-          <td class="py-2.5 px-3 min-w-[180px] max-w-[280px] whitespace-normal break-words">${renderJobTitleLink(job)}</td>
-          <td class="py-2.5 px-3 whitespace-nowrap">${renderStatusSelectDropdown(job)}</td>
-          <td class="py-2.5 px-3 whitespace-nowrap">${renderPriorityBadge(job.priority)}</td>
-          <td class="py-2.5 px-3 whitespace-nowrap">${renderMatchBadge(job.linkedinMatch)}</td>
-          <td class="py-2.5 px-3 whitespace-nowrap">${renderCityBadge(job.city)}</td>
-          <td class="py-2.5 px-3 whitespace-nowrap">${renderLangBadge(job.lang)}</td>
-          <td class="py-2.5 px-3 whitespace-nowrap">
-            <span class="bg-blue-50 text-blue-700 px-2 py-0.5 rounded text-[11px] font-semibold border border-blue-200/50">${esc(job.source || 'LinkedIn')}</span>
-          </td>
-          <td class="py-2.5 px-3 text-slate-500 whitespace-nowrap">${esc(formatDateDMY(job.appliedDate)) || '<span class="text-slate-300">dd/mm/yyyy</span>'}</td>
-          <td class="py-2.5 px-3 whitespace-nowrap">
-            ${job.linkedinUrl ? `<a href="${esc(job.linkedinUrl)}" target="_blank" rel="noopener" class="text-blue-600 hover:underline flex items-center gap-1 font-medium"><i data-lucide="linkedin" class="w-3.5 h-3.5"></i> LinkedIn</a>` : '<span class="text-slate-300">-</span>'}
-          </td>
-          <td class="py-2.5 px-3 whitespace-nowrap">
+          <td class="py-2.5 px-2 whitespace-nowrap">${renderPlatformBadge(job)}</td>
+          <td class="py-2.5 px-2 whitespace-nowrap">
             ${job.careerSiteUrl ? `<a href="${esc(job.careerSiteUrl)}" target="_blank" rel="noopener" class="text-indigo-600 hover:underline flex items-center gap-1 text-[11px]"><i data-lucide="external-link" class="w-3 h-3"></i> Career Site</a>` : '<span class="text-slate-300">-</span>'}
           </td>
-          <td class="py-2.5 px-3 whitespace-nowrap">
+          <td class="py-2.5 px-2 whitespace-nowrap">${renderCityBadge(job.city)}</td>
+          <td class="py-2.5 px-2 whitespace-nowrap">${renderCompanyLink(job.company)}</td>
+          <td class="py-2.5 px-2 whitespace-nowrap">${renderJobTitleLink(job, true)}</td>
+          <td class="py-2.5 px-2 whitespace-nowrap">${renderStatusSelectDropdown(job)}</td>
+          <td class="py-2.5 px-2 whitespace-nowrap">${renderPriorityBadge(job.priority, true)}</td>
+          <td class="py-2.5 px-2 whitespace-nowrap">${renderMatchBadge(job.linkedinMatch, true)}</td>
+          <td class="py-2.5 px-2 whitespace-nowrap">${renderLangBadge(job.lang)}</td>
+          <td class="py-2.5 px-2 text-slate-500 whitespace-nowrap">${esc(formatDateDMY(job.appliedDate)) || '<span class="text-slate-300">dd/mm/yyyy</span>'}</td>
+          <td class="py-2.5 px-2 whitespace-nowrap">
             <div class="flex items-center space-x-1.5">
               <span title="CV Sent" class="px-1.5 py-0.5 rounded text-[10px] font-semibold ${job.tasks?.cv ? 'bg-emerald-100 text-emerald-800' : 'bg-slate-100 text-slate-400'}">CV</span>
               <span title="Cover Letter Ready" class="px-1.5 py-0.5 rounded text-[10px] font-semibold ${job.tasks?.cl ? 'bg-emerald-100 text-emerald-800' : 'bg-slate-100 text-slate-400'}">CL</span>
@@ -3574,8 +3593,72 @@
     }
 
     /* Badge Helper Formatters */
-    function renderJobTitleLink(job) {
-      return `<button type="button" onclick="openJobModal('${job.id}')" title="Open application details" class="text-left font-semibold text-indigo-700 hover:text-indigo-900 hover:underline">${esc(job.title)}</button>`;
+    function renderCompanyLink(company) {
+      return `<button type="button" data-company-overview="${esc(company)}" title="See all jobs at ${esc(company)}" class="font-bold text-slate-800 hover:text-indigo-700 hover:underline decoration-dotted underline-offset-2 text-left">${esc(company)}</button>`;
+    }
+
+    function openCompanyOverview(company) {
+      const n = normName(company);
+      const jobs = state.applications
+        .filter(a => normName(a.company) === n)
+        .sort((a, b) => (a.title || "").localeCompare(b.title || "", undefined, { numeric: true, sensitivity: "base" }));
+      const industries = state.industries.filter(ind => ind.companies.some(c => normName(c) === n)).map(ind => ind.name);
+      const applied = jobs.filter(j => !["Wishlist", "Closed"].includes(j.status)).length;
+
+      document.getElementById("company-overview-name").innerText = company;
+      document.getElementById("company-overview-meta").innerText =
+        `${jobs.length} job${jobs.length === 1 ? "" : "s"} · ${applied} applied · ${industries.length ? industries.join(", ") : "No industry yet"}`;
+      document.getElementById("company-overview-rows").innerHTML = jobs.map(job => `
+        <tr class="hover:bg-slate-50">
+          <td class="py-2 pr-3"><span class="flex items-center gap-2"><span class="w-1.5 h-1.5 rounded-full bg-slate-400 flex-shrink-0"></span>${renderJobTitleLink(job, true)}</span></td>
+          <td class="py-2 pr-3 whitespace-nowrap">${renderStatusBadge(job.status)}</td>
+          <td class="py-2 pr-3 whitespace-nowrap">${renderPlatformBadge(job)}</td>
+          <td class="py-2 whitespace-nowrap">${job.careerSiteUrl
+            ? `<a href="${esc(job.careerSiteUrl)}" target="_blank" rel="noopener" class="text-indigo-600 hover:underline inline-flex items-center gap-1 text-[11px] font-semibold"><i data-lucide="external-link" class="w-3 h-3"></i> Career Site</a>`
+            : '<span class="text-slate-300">-</span>'}</td>
+        </tr>`).join("") || `<tr><td colspan="4" class="py-6 text-center text-slate-400 italic">No jobs logged for this company yet.</td></tr>`;
+      document.getElementById("company-overview-add").onclick = () => { closeCompanyOverview(); quickAddJobForCompany(company); };
+      document.getElementById("modal-company").classList.remove("hidden");
+      lucide.createIcons();
+    }
+
+    function closeCompanyOverview() {
+      document.getElementById("modal-company").classList.add("hidden");
+    }
+
+    function renderJobTitleLink(job, clip = false) {
+      return `<button type="button" onclick="openJobModal('${job.id}')" title="${esc(job.title)}" class="text-left font-semibold text-indigo-700 hover:text-indigo-900 hover:underline ${clip ? "block max-w-[260px] truncate" : ""}">${esc(job.title)}</button>`;
+    }
+
+    /* Job posting link → platform. The posting URL decides the platform when it is a known job board. */
+    // Lucide no longer ships brand logos, so the LinkedIn mark is inlined
+    const LINKEDIN_ICON = `<svg viewBox="0 0 24 24" class="w-3 h-3 flex-shrink-0" fill="currentColor" aria-hidden="true"><path d="M20.45 20.45h-3.56v-5.57c0-1.33-.02-3.04-1.85-3.04-1.85 0-2.14 1.45-2.14 2.94v5.67H9.34V9h3.42v1.56h.05c.48-.9 1.64-1.85 3.37-1.85 3.6 0 4.27 2.37 4.27 5.46v6.28zM5.34 7.43a2.06 2.06 0 1 1 0-4.13 2.06 2.06 0 0 1 0 4.13zM7.12 20.45H3.56V9h3.56v11.45zM22.22 0H1.77C.79 0 0 .77 0 1.73v20.54C0 23.23.79 24 1.77 24h20.45c.98 0 1.78-.77 1.78-1.73V1.73C24 .77 23.2 0 22.22 0z"/></svg>`;
+    const PLATFORM_LABELS = { Linkedin: "LinkedIn", Indeed: "Indeed", Glassdoor: "Glassdoor", "Career Site": "Career Site", Referral: "Referral / Other" };
+    const PLATFORM_DOMAINS = [
+      [/(^|\.)linkedin\./i, "Linkedin"],
+      [/(^|\.)indeed\./i, "Indeed"],
+      [/(^|\.)glassdoor\./i, "Glassdoor"]
+    ];
+
+    function detectPlatform(url) {
+      let host;
+      try { host = new URL(url.trim()).hostname; } catch (e) { return null; }
+      const match = PLATFORM_DOMAINS.find(([re]) => re.test(host));
+      return match ? match[1] : null;
+    }
+
+    // Older records stored the posting link as linkedinUrl
+    function getPostingUrl(job) { return job.postingUrl || job.linkedinUrl || ""; }
+
+    function renderPlatformBadge(job) {
+      const label = PLATFORM_LABELS[job.source] || job.source || "LinkedIn";
+      const icon = job.source === "Linkedin" ? LINKEDIN_ICON
+        : `<i data-lucide="${job.source === "Career Site" ? "building-2" : "briefcase"}" class="w-3 h-3"></i>`;
+      const url = getPostingUrl(job);
+      const cls = "inline-flex items-center gap-1 bg-blue-50 text-blue-700 px-2 py-0.5 rounded text-[11px] font-semibold border border-blue-200/50";
+      return url
+        ? `<a href="${esc(url)}" target="_blank" rel="noopener" title="Open job posting" class="${cls} hover:bg-blue-100 hover:underline">${icon}${esc(label)}<i data-lucide="external-link" class="w-2.5 h-2.5 opacity-60"></i></a>`
+        : `<span class="${cls}">${icon}${esc(label)}</span>`;
     }
 
     function renderCityBadge(city) {
@@ -3589,17 +3672,17 @@
       return `<span class="${bg} border px-1.5 py-0.5 rounded text-[10px] font-bold">${esc(lang)}</span>`;
     }
 
-    function renderPriorityBadge(priority) {
+    function renderPriorityBadge(priority, short = false) {
       if (!priority) return '<span class="text-slate-300">-</span>';
       const map = {
         High: 'bg-rose-100 text-rose-800 border-rose-200',
         Medium: 'bg-amber-100 text-amber-800 border-amber-200',
         Low: 'bg-slate-100 text-slate-600 border-slate-200'
       };
-      return `<span class="${map[priority] || map.Low} border px-2 py-0.5 rounded-full text-[10px] font-bold">${esc(priority)} priority</span>`;
+      return `<span class="${map[priority] || map.Low} border px-2 py-0.5 rounded-full text-[10px] font-bold">${esc(priority)}${short ? "" : " priority"}</span>`;
     }
 
-    function renderMatchBadge(match) {
+    function renderMatchBadge(match, short = false) {
       if (!match) return '<span class="text-slate-300">-</span>';
       const map = {
         Top: 'bg-emerald-600 text-white border-emerald-700',
@@ -3607,7 +3690,7 @@
         Medium: 'bg-sky-100 text-sky-800 border-sky-200',
         Low: 'bg-slate-100 text-slate-600 border-slate-200'
       };
-      return `<span class="${map[match] || map.Low} border px-2 py-0.5 rounded-full text-[10px] font-bold">${esc(match)} match</span>`;
+      return `<span class="${map[match] || map.Low} border px-2 py-0.5 rounded-full text-[10px] font-bold">${esc(match)}${short ? "" : " match"}</span>`;
     }
 
     function renderStatusBadge(status) {
@@ -3743,10 +3826,12 @@
     }
 
     function openJobModal(id = null) {
+      closeCompanyOverview();
       const modal = document.getElementById("modal-job");
       const form = document.getElementById("form-job");
       form.reset();
       jobModalPending = {};
+      document.getElementById("job-posting-hint").classList.add("hidden");
 
       const job = id ? state.applications.find(a => a.id === id) : null;
       if (job) {
@@ -3760,7 +3845,7 @@
         document.getElementById("job-status-input").value = job.status || 'Applied';
         document.getElementById("job-priority-input").value = job.priority || '';
         document.getElementById("job-match-input").value = job.linkedinMatch || '';
-        document.getElementById("job-linkedin-input").value = job.linkedinUrl || '';
+        document.getElementById("job-posting-input").value = getPostingUrl(job);
         document.getElementById("job-careersite-input").value = job.careerSiteUrl || '';
         setDateField("job-date-input", job.appliedDate || '');
         document.getElementById("job-salary-input").value = job.salary || '';
@@ -3790,6 +3875,16 @@
 
       modal.classList.remove("hidden");
       lucide.createIcons();
+    }
+
+    function handlePostingLinkInput() {
+      const platform = detectPlatform(document.getElementById("job-posting-input").value);
+      const hint = document.getElementById("job-posting-hint");
+      if (platform) {
+        document.getElementById("job-source-input").value = platform;
+        hint.innerText = `Platform set to ${PLATFORM_LABELS[platform]}`;
+      }
+      hint.classList.toggle("hidden", !platform);
     }
 
     function closeJobModal() {
@@ -3884,7 +3979,7 @@
         status: document.getElementById("job-status-input").value,
         priority: document.getElementById("job-priority-input").value,
         linkedinMatch: document.getElementById("job-match-input").value,
-        linkedinUrl: document.getElementById("job-linkedin-input").value,
+        postingUrl: document.getElementById("job-posting-input").value.trim(),
         careerSiteUrl: document.getElementById("job-careersite-input").value,
         appliedDate,
         salary: document.getElementById("job-salary-input").value,
@@ -3900,6 +3995,7 @@
         clTemplateId: document.getElementById("job-cl-template").value,
         notes: document.getElementById("job-notes-input").value
       };
+      delete jobData.linkedinUrl; // replaced by postingUrl
       // Recruiter contact fields are no longer collected
       delete jobData.email;
       delete jobData.phone;
@@ -4314,7 +4410,7 @@
       };
       tbody.innerHTML = jobs.map(job => `
         <tr class="hover:bg-slate-50/80 transition">
-          <td class="py-2.5 px-4 font-bold text-slate-800">${esc(job.company)}</td>
+          <td class="py-2.5 px-4">${renderCompanyLink(job.company)}</td>
           <td class="py-2.5 px-4">${renderJobTitleLink(job)}</td>
           <td class="py-2.5 px-4 text-slate-500 whitespace-nowrap">${esc(formatDateDMY(job.appliedDate) || '-')}</td>
           <td class="py-2.5 px-4">${cell(job, "cv")}</td>
@@ -4564,6 +4660,10 @@
       initDateFields();
       initPlannerDrag();
       initIndustryInteractions();
+      document.addEventListener("click", e => {
+        const link = e.target.closest("[data-company-overview]");
+        if (link) openCompanyOverview(link.dataset.companyOverview);
+      });
       ["cv", "cl"].forEach(kind => {
         document.getElementById(`job-${kind}-latex`).addEventListener("input", () => refreshJobDocUI(kind));
       });
