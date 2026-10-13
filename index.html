@@ -557,7 +557,7 @@
             </div>
             <div>
               <h2 class="text-base font-bold text-slate-900">AI Job Spec Extractor (Gemini)</h2>
-              <p class="text-xs text-slate-500">Extracts Company, Position, City, Language (EN/NL), and Salary automatically.</p>
+              <p class="text-xs text-slate-500">Paste a job link (LinkedIn or a career site), paste text, or upload a PDF — fills Company, Position, City, Language, Salary and the posting link.</p>
             </div>
           </div>
           <span id="ai-status-badge" class="text-[10px] bg-slate-100 text-slate-600 px-2.5 py-1 rounded-full font-semibold">Ready</span>
@@ -568,12 +568,18 @@
           <!-- Left: Input & Upload -->
           <div class="space-y-4">
             <div>
-              <label class="block text-xs font-semibold text-slate-700 mb-1">Method 1: Paste Raw Job Description Text</label>
-              <textarea id="ai-input-text" rows="10" placeholder="Copy-paste job posting text from LinkedIn, Indeed, Glassdoor, or company website here..." class="w-full p-3 text-xs bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 font-mono"></textarea>
+              <label class="block text-xs font-semibold text-slate-700 mb-1">Method 1: Paste Job Posting Link</label>
+              <input type="url" id="ai-input-url" placeholder="https://www.linkedin.com/jobs/view/... or a career site job page" onkeydown="if (event.key === 'Enter') runAIExtraction()" class="w-full p-2.5 text-xs bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500">
+              <p class="text-[10px] text-slate-400 mt-1">Some sites (Indeed, Glassdoor) block automated reading — use Method 3 for those. If you also paste text or upload a file, that text is used and the link is just saved.</p>
             </div>
 
             <div>
-              <label class="block text-xs font-semibold text-slate-700 mb-1">Method 2: Upload PDF / Saved HTML File</label>
+              <label class="block text-xs font-semibold text-slate-700 mb-1">Method 2: Paste Raw Job Description Text</label>
+              <textarea id="ai-input-text" rows="7" placeholder="Copy-paste job posting text from LinkedIn, Indeed, Glassdoor, or company website here..." class="w-full p-3 text-xs bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 font-mono"></textarea>
+            </div>
+
+            <div>
+              <label class="block text-xs font-semibold text-slate-700 mb-1">Method 3: Upload PDF (print of the page) / Saved HTML File</label>
               <div class="flex items-center justify-center w-full">
                 <label class="flex flex-col items-center justify-center w-full h-24 border-2 border-slate-300 border-dashed rounded-xl cursor-pointer bg-slate-50 hover:bg-slate-100 transition">
                   <div class="flex flex-col items-center justify-center pt-2 pb-2">
@@ -776,7 +782,10 @@
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div>
             <label class="block font-semibold text-slate-700 mb-1">Job Posting Link <span class="font-normal text-slate-400">(LinkedIn, Indeed, Glassdoor…)</span></label>
-            <input type="url" id="job-posting-input" oninput="handlePostingLinkInput()" placeholder="Paste the job posting URL" class="w-full p-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-indigo-500">
+            <div class="flex gap-1.5">
+              <input type="url" id="job-posting-input" oninput="handlePostingLinkInput()" placeholder="Paste the job posting URL" class="flex-1 min-w-0 p-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-indigo-500">
+              <button type="button" id="btn-job-autofill" onclick="autofillJobFromLink()" title="Read the posting (or career site) link and fill the empty fields" class="flex-shrink-0 px-2.5 bg-amber-50 hover:bg-amber-100 text-amber-700 border border-amber-200 rounded-lg font-semibold text-[11px] flex items-center gap-1"><i data-lucide="sparkles" class="w-3 h-3"></i> Auto-fill</button>
+            </div>
             <p id="job-posting-hint" class="text-[10px] text-emerald-600 mt-0.5 hidden"></p>
           </div>
           <div>
@@ -1066,6 +1075,8 @@
       </div>
       <form onsubmit="handleEventFormSubmit(event)" class="p-6 space-y-4 text-xs">
         <input type="hidden" id="event-id">
+        <input type="hidden" id="event-job-id">
+        <div id="event-job-link" class="hidden flex items-center justify-between gap-2 bg-indigo-50 border border-indigo-100 text-indigo-800 rounded-lg px-3 py-2"></div>
         <div>
           <label class="block font-semibold text-slate-700 mb-1">Task / Event *</label>
           <input type="text" id="event-title" required placeholder="e.g. Apply to 3 consulting roles" class="w-full p-2.5 border border-slate-200 rounded-lg focus:ring-2 focus:ring-indigo-500">
@@ -1125,6 +1136,11 @@
           <label class="block font-semibold text-slate-700 mb-1">Notes</label>
           <textarea id="event-notes" rows="2" class="w-full p-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-indigo-500"></textarea>
         </div>
+        <label class="flex items-center gap-2 cursor-pointer select-none">
+          <input type="checkbox" id="event-done" class="rounded text-indigo-600">
+          <span class="font-semibold text-slate-700">Done</span>
+          <span id="event-done-hint" class="text-[10px] text-slate-400 hidden">(also marks a Wishlist application as Applied)</span>
+        </label>
         <div class="pt-3 border-t border-slate-100 flex items-center justify-between gap-2">
           <div class="flex items-center gap-1">
             <button type="button" id="btn-event-delete" onclick="deleteEventFromModal()" class="px-3 py-2 text-rose-600 hover:bg-rose-50 rounded-lg font-semibold">Delete</button>
@@ -1179,7 +1195,7 @@
       <div class="px-6 py-4 text-xs">
         <table class="w-full text-left">
           <thead class="text-[10px] uppercase tracking-wider text-slate-400">
-            <tr><th class="pb-2 pr-3 font-semibold">Job title</th><th class="pb-2 pr-3 font-semibold">Status</th><th class="pb-2 pr-3 font-semibold">Platform</th><th class="pb-2 font-semibold">Career site</th></tr>
+            <tr><th class="pb-2 pr-3 font-semibold">Job title</th><th class="pb-2 pr-3 font-semibold">Status</th><th class="pb-2 pr-3 font-semibold">Platform</th><th class="pb-2 pr-3 font-semibold">Career site</th><th class="pb-2 font-semibold">Priority</th></tr>
           </thead>
           <tbody id="company-overview-rows" class="divide-y divide-slate-100"></tbody>
         </table>
@@ -1845,11 +1861,12 @@
             const cat = getCategory(e.catId);
             const cal = getCalendar(e.calendarId);
             return `
-              <div class="flex items-start gap-2 p-2 rounded-lg hover:bg-slate-50 border border-transparent hover:border-slate-200">
+              <div class="flex items-start gap-2 p-2 rounded-lg hover:bg-slate-50 border border-transparent hover:border-slate-200 ${e.done ? "opacity-60" : ""}">
                 <span class="w-1 self-stretch rounded flex-shrink-0" style="background:${esc(eventColor(e))}"></span>
+                <input type="checkbox" ${e.done ? "checked" : ""} onchange="toggleEventDone('${e.id}', this.checked)" title="Mark as done" class="mt-0.5 rounded text-indigo-600 flex-shrink-0 cursor-pointer">
                 <div class="min-w-0 flex-1 space-y-0.5">
                   <button type="button" onclick="openEventModal('${e.id}')" class="block w-full text-left">
-                    <span class="block font-semibold text-slate-800 truncate">${esc(e.title)}</span>
+                    <span class="block font-semibold text-slate-800 truncate ${e.done ? "line-through" : ""}">${esc(e.title)}</span>
                     <span class="block text-[11px] text-slate-500">${esc(e.start)}–${esc(e.end)} · ${esc(cat ? cat.name : (cal ? cal.name : ""))}</span>
                   </button>
                   ${locationLinkHTML(e.location)}
@@ -1897,7 +1914,7 @@
         const events = eventsOn(d);
         const bars = events.slice(0, MAX_BARS).map(e => {
           const color = eventColor(e);
-          return `<div data-event="${e.id}" data-month-event="${e.id}" draggable="true" title="${esc(e.start)}–${esc(e.end)} ${esc(e.title)} · drag to another day" class="truncate rounded px-1.5 py-0.5 text-[10px] font-semibold leading-tight hover:brightness-95 cursor-grab"
+          return `<div data-event="${e.id}" data-month-event="${e.id}" draggable="true" title="${esc(e.start)}–${esc(e.end)} ${esc(e.title)} · drag to another day" class="truncate rounded px-1.5 py-0.5 text-[10px] font-semibold leading-tight hover:brightness-95 cursor-grab ${e.done ? "line-through opacity-60" : ""}"
             style="background:${hexToRgba(color, 0.2)};border-left:3px solid ${esc(color)};color:#0f172a"><span class="text-slate-500 font-medium">${esc(e.start)}</span> ${esc(e.title)}</div>`;
         }).join("");
         const more = events.length > MAX_BARS ? `<div class="text-[10px] text-slate-500 font-semibold px-1">+${events.length - MAX_BARS} more</div>` : "";
@@ -1958,7 +1975,7 @@
           const color = eventColor(item.e);
           const loc = (item.e.location || "").trim();
           html += `
-            <div data-event="${item.e.id}" data-timed title="${esc(item.e.title)} (${esc(item.e.start)}–${esc(item.e.end)})${loc ? " · " + esc(loc) : ""} · drag to move" class="absolute rounded-md px-1.5 py-0.5 overflow-hidden text-[11px] leading-tight shadow-sm hover:shadow-md hover:z-10 cursor-grab active:cursor-grabbing touch-none select-none"
+            <div data-event="${item.e.id}" data-timed title="${esc(item.e.title)} (${esc(item.e.start)}–${esc(item.e.end)})${loc ? " · " + esc(loc) : ""} · drag to move" class="absolute rounded-md px-1.5 py-0.5 overflow-hidden text-[11px] leading-tight shadow-sm hover:shadow-md hover:z-10 cursor-grab active:cursor-grabbing touch-none select-none ${item.e.done ? "line-through opacity-60" : ""}"
               style="top:${top}px;height:${height}px;left:calc(${item.lane * width}% + 2px);width:calc(${width}% - 4px);background:${hexToRgba(color, 0.2)};border-left:3px solid ${esc(color)};color:#0f172a">
               <div class="font-semibold truncate">${(item.e.attachments || []).length ? `<i data-lucide="paperclip" class="w-2.5 h-2.5 inline -mt-0.5"></i> ` : ""}${esc(item.e.title)}</div>
               ${height > 30 ? `<div class="text-[10px] text-slate-600 truncate font-mono">${esc(item.e.start)}–${esc(item.e.end)}</div>` : ""}
@@ -2010,6 +2027,102 @@
       if (!day) return;
       setPlannerDate(day.dataset.miniday);
       renderPlanner(state.plannerView !== "month");
+    }
+
+    /* ---- Plan an application: push a job into the planner as an "Apply …" block ---- */
+    // Job titles are numbered by hand, e.g. "20. Project Management" → "20"
+    function jobCode(job) {
+      const m = String(job.title || "").match(/^\s*(\d+)\s*[.)]/);
+      return m ? m[1] : "";
+    }
+
+    function applyBlockTitle(job) {
+      const code = jobCode(job);
+      return `Apply ${(job.company || "").trim() || "company"}${code ? ` (${code})` : ""}`;
+    }
+
+    // The "Look for job" group, even if it was renamed or recoloured later
+    function applyGroupId() {
+      const cats = state.planner.categories;
+      return (cats.find(c => c.id === "cat-jobs") || cats.find(c => /job|apply|sollicit/i.test(c.name)) || {}).id || defaultGroupFor(state.planner.calendars[0]?.id);
+    }
+
+    // First free hour on that day from 09:00, so new blocks don't stack on existing ones
+    function nextFreeSlot(date, minutes = 60) {
+      let start = 9 * 60;
+      eventsOn(date).forEach(e => {
+        const s = timeToMin(e.start), en = timeToMin(e.end);
+        if (s < start + minutes && en > start) start = en;
+      });
+      if (start + minutes > 24 * 60) start = 9 * 60;
+      return { start: minToTime(start), end: minToTime(start + minutes) };
+    }
+
+    function jobPlanBlocks(job) {
+      return state.planner.events.filter(e => e.jobId === job.id).sort((a, b) => (a.date + a.start).localeCompare(b.date + b.start));
+    }
+
+    // The block a job's calendar button points at: the next open one, else the latest
+    function jobPlanBlock(job) {
+      const blocks = jobPlanBlocks(job);
+      return blocks.find(e => !e.done && e.date >= todayISO()) || blocks.find(e => !e.done) || blocks[blocks.length - 1] || null;
+    }
+
+    function renderPlanApplyButton(job) {
+      const block = jobPlanBlock(job);
+      if (!block) {
+        return `<button type="button" onclick="planJobApplication('${job.id}')" title="Plan when to apply (adds a block to the planner)" class="p-1 text-slate-300 hover:text-indigo-600 rounded hover:bg-indigo-50 flex-shrink-0"><i data-lucide="calendar-plus" class="w-3.5 h-3.5"></i></button>`;
+      }
+      const overdue = !block.done && block.date < todayISO();
+      const tone = block.done ? "text-emerald-700 bg-emerald-50 border-emerald-200" : overdue ? "text-rose-700 bg-rose-50 border-rose-200" : "text-indigo-700 bg-indigo-50 border-indigo-200";
+      return `<button type="button" onclick="planJobApplication('${job.id}')" title="${esc(block.title)} · ${esc(formatDateDMY(block.date))} ${esc(block.start)}–${esc(block.end)}${block.done ? " · done" : overdue ? " · overdue" : ""}" class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded border text-[10px] font-semibold flex-shrink-0 ${tone}"><i data-lucide="${block.done ? "calendar-check" : "calendar-clock"}" class="w-3 h-3"></i>${esc(formatDateDMY(block.date).slice(0, 5))}</button>`;
+    }
+
+    function planJobApplication(jobId) {
+      const job = state.applications.find(a => a.id === jobId);
+      if (!job) return;
+      closeCompanyOverview();
+      const existing = jobPlanBlock(job);
+      if (existing) { openEventModal(existing.id); return; }
+      const date = addDays(todayISO(), 1);
+      const link = getPostingUrl(job) || job.careerSiteUrl || "";
+      openEventModal(null, {
+        jobId,
+        title: applyBlockTitle(job),
+        date,
+        ...nextFreeSlot(date),
+        calendarId: state.planner.calendars[0]?.id,
+        catId: applyGroupId(),
+        notes: [job.title, link].filter(Boolean).join("\n")
+      });
+    }
+
+    function renderEventJobLink(jobId) {
+      const el = document.getElementById("event-job-link");
+      const job = jobId && state.applications.find(a => a.id === jobId);
+      el.classList.toggle("hidden", !job);
+      el.innerHTML = job ? `
+        <span class="truncate"><i data-lucide="briefcase" class="w-3.5 h-3.5 inline -mt-0.5"></i> <strong>${esc(job.company)}</strong> · ${esc(job.title)}</span>
+        <button type="button" onclick="closeEventModal(); openJobModal('${job.id}')" class="font-semibold hover:underline flex-shrink-0">Open application</button>` : "";
+    }
+
+    // Finishing an "Apply …" block means the application went out
+    function markLinkedJobApplied(ev) {
+      const job = ev.jobId && state.applications.find(a => a.id === ev.jobId);
+      if (!job || job.status !== "Wishlist") return;
+      job.status = "Applied";
+      if (!job.appliedDate) job.appliedDate = ev.date <= todayISO() ? ev.date : todayISO();
+      showToast(`${job.company} marked as Applied.`);
+    }
+
+    function toggleEventDone(id, done) {
+      const ev = state.planner.events.find(e => e.id === id);
+      if (!ev) return;
+      ev.done = done;
+      if (done) markLinkedJobApplied(ev);
+      saveState();
+      renderPlanner();
+      if (ev.jobId) { renderApplications(); renderDashboard(); }
     }
 
     /* ---- Add / edit block modal ---- */
@@ -2122,21 +2235,29 @@
       eventModalPending = { add: [], remove: new Set() };
       eventGroupTouched = false;
 
-      document.getElementById("modal-event-title").innerHTML = `<i data-lucide="${ev ? "calendar-check" : "calendar-plus"}" class="w-4 h-4 text-sky-400"></i> ${ev ? "Edit Block" : "Add Block"}`;
+      const jobId = ev ? (ev.jobId || "") : (defaults.jobId || "");
+      const heading = ev ? "Edit Block" : (jobId ? "Plan Application" : "Add Block");
+      document.getElementById("modal-event-title").innerHTML = `<i data-lucide="${ev ? "calendar-check" : "calendar-plus"}" class="w-4 h-4 text-sky-400"></i> ${heading}`;
       document.getElementById("event-id").value = ev ? ev.id : "";
-      document.getElementById("event-title").value = ev ? ev.title : "";
+      document.getElementById("event-job-id").value = jobId;
+      document.getElementById("event-done").checked = Boolean(ev && ev.done);
+      document.getElementById("event-done-hint").classList.toggle("hidden", !jobId);
+      renderEventJobLink(jobId);
+      document.getElementById("event-title").value = ev ? ev.title : (defaults.title || "");
       setDateField("event-date", ev ? ev.date : (defaults.date || state.plannerDate || todayISO()));
       document.getElementById("event-start").value = ev ? ev.start : (defaults.start || "09:00");
       document.getElementById("event-end").value = ev ? ev.end : (defaults.end || "10:00");
       document.getElementById("event-location").value = ev ? (ev.location || "") : "";
-      document.getElementById("event-notes").value = ev ? (ev.notes || "") : "";
+      document.getElementById("event-notes").value = ev ? (ev.notes || "") : (defaults.notes || "");
       document.getElementById("btn-event-delete").classList.toggle("hidden", !ev);
       document.getElementById("btn-event-duplicate").classList.toggle("hidden", !ev);
 
       const calSelect = document.getElementById("event-calendar");
       calSelect.innerHTML = state.planner.calendars.map(c => `<option value="${esc(c.id)}">${esc(c.name)}</option>`).join("");
-      calSelect.value = ev ? ev.calendarId : (state.lastCalendarId && getCalendar(state.lastCalendarId) ? state.lastCalendarId : state.planner.calendars[0].id);
-      renderEventCategoryPicker(ev ? ev.catId : defaultGroupFor(calSelect.value));
+      calSelect.value = ev ? ev.calendarId
+        : (defaults.calendarId && getCalendar(defaults.calendarId)) ? defaults.calendarId
+        : (state.lastCalendarId && getCalendar(state.lastCalendarId) ? state.lastCalendarId : state.planner.calendars[0].id);
+      renderEventCategoryPicker(ev ? ev.catId : ("catId" in defaults ? defaults.catId : defaultGroupFor(calSelect.value)));
       renderEventAttachments();
       updateEventDurationLabel();
       closeTimeMenu();
@@ -2195,9 +2316,13 @@
         end,
         location: document.getElementById("event-location").value.trim(),
         notes: document.getElementById("event-notes").value,
+        jobId: document.getElementById("event-job-id").value || undefined,
+        done: document.getElementById("event-done").checked,
         attachments
       };
       if (existing) Object.assign(existing, data); else state.planner.events.push(data);
+      if (data.done) markLinkedJobApplied(data);
+      if (data.jobId) renderApplications();
       state.lastCalendarId = data.calendarId;
       setPlannerDate(data.date);
       saveState();
@@ -3580,9 +3705,9 @@
           </td>
           <td class="py-2.5 px-2 whitespace-nowrap">${renderCityBadge(job.city)}</td>
           <td class="py-2.5 px-2 whitespace-nowrap">${renderCompanyLink(job.company)}</td>
-          <td class="py-2.5 px-2 whitespace-nowrap">${renderJobTitleLink(job, true)}</td>
+          <td class="py-2.5 px-2 whitespace-nowrap"><span class="flex items-center gap-1.5">${renderJobTitleLink(job, true)}${renderPlanApplyButton(job)}</span></td>
           <td class="py-2.5 px-2 whitespace-nowrap">${renderStatusSelectDropdown(job)}</td>
-          <td class="py-2.5 px-2 whitespace-nowrap">${renderPriorityBadge(job.priority, true)}</td>
+          <td class="py-2.5 px-2 whitespace-nowrap">${renderPrioritySelectDropdown(job)}</td>
           <td class="py-2.5 px-2 whitespace-nowrap">${renderMatchBadge(job.linkedinMatch, true)}</td>
           <td class="py-2.5 px-2 whitespace-nowrap">${renderLangBadge(job.lang)}</td>
           <td class="py-2.5 px-2 text-slate-500 whitespace-nowrap">${esc(formatDateDMY(job.appliedDate)) || '<span class="text-slate-300">dd/mm/yyyy</span>'}</td>
@@ -3664,13 +3789,14 @@
         `${jobs.length} job${jobs.length === 1 ? "" : "s"} · ${applied} applied · ${industries.length ? industries.join(", ") : "No industry yet"}`;
       document.getElementById("company-overview-rows").innerHTML = jobs.map(job => `
         <tr class="hover:bg-slate-50">
-          <td class="py-2 pr-3"><span class="flex items-center gap-2"><span class="w-1.5 h-1.5 rounded-full bg-slate-400 flex-shrink-0"></span>${renderJobTitleLink(job, true)}</span></td>
+          <td class="py-2 pr-3"><span class="flex items-center gap-2"><span class="w-1.5 h-1.5 rounded-full bg-slate-400 flex-shrink-0"></span>${renderJobTitleLink(job, true)}${renderPlanApplyButton(job)}</span></td>
           <td class="py-2 pr-3 whitespace-nowrap">${renderStatusBadge(job.status)}</td>
           <td class="py-2 pr-3 whitespace-nowrap">${renderPlatformBadge(job)}</td>
-          <td class="py-2 whitespace-nowrap">${job.careerSiteUrl
+          <td class="py-2 pr-3 whitespace-nowrap">${job.careerSiteUrl
             ? `<a href="${esc(job.careerSiteUrl)}" target="_blank" rel="noopener" class="text-indigo-600 hover:underline inline-flex items-center gap-1 text-[11px] font-semibold"><i data-lucide="external-link" class="w-3 h-3"></i> Career Site</a>`
             : '<span class="text-slate-300">-</span>'}</td>
-        </tr>`).join("") || `<tr><td colspan="4" class="py-6 text-center text-slate-400 italic">No jobs logged for this company yet.</td></tr>`;
+          <td class="py-2 whitespace-nowrap">${renderPrioritySelectDropdown(job)}</td>
+        </tr>`).join("") || `<tr><td colspan="5" class="py-6 text-center text-slate-400 italic">No jobs logged for this company yet.</td></tr>`;
       document.getElementById("company-overview-add").onclick = () => { closeCompanyOverview(); quickAddJobForCompany(company); };
       document.getElementById("modal-company").classList.remove("hidden");
       lucide.createIcons();
@@ -3779,6 +3905,34 @@
           <option value="Closed" ${job.status === 'Closed' ? 'selected' : ''}>Closed</option>
         </select>
       `;
+    }
+
+    const PRIORITY_SELECT_STYLES = {
+      High: "bg-rose-50 border-rose-200 text-rose-800",
+      Medium: "bg-amber-50 border-amber-200 text-amber-800",
+      Low: "bg-slate-50 border-slate-200 text-slate-600",
+      "": "bg-white border-slate-200 text-slate-400"
+    };
+    const PRIORITY_SELECT_BASE = "text-[11px] font-semibold border rounded-lg px-2 py-1 focus:ring-1 focus:ring-indigo-500";
+
+    function renderPrioritySelectDropdown(job) {
+      const current = job.priority || "";
+      const opts = [["", "–"], ["High", "High"], ["Medium", "Medium"], ["Low", "Low"]];
+      return `
+        <select onchange="updateJobPriority('${job.id}', this)" title="Apply priority" class="${PRIORITY_SELECT_BASE} ${PRIORITY_SELECT_STYLES[current] || PRIORITY_SELECT_STYLES.Low}">
+          ${opts.map(([v, label]) => `<option value="${v}" ${current === v ? 'selected' : ''}>${label}</option>`).join("")}
+        </select>
+      `;
+    }
+
+    function updateJobPriority(id, select) {
+      const job = state.applications.find(a => a.id === id);
+      if (!job) return;
+      job.priority = select.value;
+      saveState();
+      renderApplications();
+      // The company overview popup stays open, so restyle its select in place
+      select.className = `${PRIORITY_SELECT_BASE} ${PRIORITY_SELECT_STYLES[job.priority]}`;
     }
 
     function updateJobStatus(id, newStatus) {
@@ -4256,11 +4410,20 @@
     /* ==========================================================================
        8. AI SMART EXTRACTOR (GEMINI API INTEGRATION)
        ========================================================================== */
+    // Printed pages usually carry their URL in the header/footer or as link annotations
+    function pickPostingUrl(urls) {
+      const clean = [...new Set(urls.map(u => u.replace(/[).,;]+$/, "")))].filter(u => /^https?:\/\//i.test(u));
+      return clean.find(u => detectPlatform(u) && /job|view|vacanc|career/i.test(u))
+        || clean.find(u => /job|vacanc|vacature|career|werken/i.test(u))
+        || "";
+    }
+
     async function handleAIFileUpload(event) {
       const file = event.target.files[0];
       if (!file) return;
 
       document.getElementById("ai-file-name").innerText = `Uploaded file: ${file.name}`;
+      const foundUrls = [];
 
       if (file.type === "application/pdf") {
         try {
@@ -4271,7 +4434,10 @@
             const page = await pdf.getPage(i);
             const textContent = await page.getTextContent();
             extractedText += textContent.items.map(item => item.str).join(" ") + "\n";
+            const annotations = await page.getAnnotations().catch(() => []);
+            foundUrls.push(...annotations.map(an => an.url).filter(Boolean));
           }
+          foundUrls.push(...(extractedText.match(/https?:\/\/[^\s"<>]+/g) || []));
           state.uploadedFileText = extractedText;
           document.getElementById("ai-input-text").value = extractedText;
         } catch (err) {
@@ -4279,20 +4445,50 @@
           showToast("Could not parse PDF. Please paste text directly.");
         }
       } else {
-        const reader = new FileReader();
-        reader.onload = function(e) {
-          state.uploadedFileText = e.target.result;
-          document.getElementById("ai-input-text").value = e.target.result;
-        };
-        reader.readAsText(file);
+        const content = await file.text();
+        foundUrls.push(...(content.match(/https?:\/\/[^\s"'<>]+/g) || []));
+        state.uploadedFileText = content;
+        document.getElementById("ai-input-text").value = content;
       }
+
+      const urlInput = document.getElementById("ai-input-url");
+      const url = pickPostingUrl(foundUrls);
+      if (url && !urlInput.value.trim()) urlInput.value = url;
+      event.target.value = "";
+    }
+
+    function setAIStatus(text, tone) {
+      const tones = {
+        busy: "bg-amber-100 text-amber-800",
+        ok: "bg-emerald-100 text-emerald-800",
+        warn: "bg-blue-100 text-blue-800",
+        error: "bg-rose-100 text-rose-800"
+      };
+      const badge = document.getElementById("ai-status-badge");
+      badge.innerText = text;
+      badge.title = text;
+      badge.className = `text-[10px] ${tones[tone]} px-2 py-0.5 rounded-full font-semibold max-w-[260px] truncate`;
+    }
+
+    async function requestJobExtraction({ url = "", text = "" }) {
+      const response = await fetch("/api/extract-job", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ url, text })
+      });
+      const parsed = await response.json().catch(() => null);
+      if (!response.ok || !parsed || parsed.error) {
+        throw new Error(parsed?.error || `Extractor unavailable (HTTP ${response.status}).`);
+      }
+      return parsed;
     }
 
     async function runAIExtraction() {
       const MAX_INPUT_CHARS = 15000;
-      let textInput = document.getElementById("ai-input-text").value;
-      if (!textInput.trim()) {
-        showToast("Please paste job posting text or upload a document first.");
+      const url = document.getElementById("ai-input-url").value.trim();
+      let textInput = document.getElementById("ai-input-text").value.trim();
+      if (!textInput && !url) {
+        showToast("Paste a job link or job text, or upload a document first.");
         return;
       }
       if (textInput.length > MAX_INPUT_CHARS) {
@@ -4301,36 +4497,27 @@
       }
 
       const btn = document.getElementById("btn-run-ai");
-      const statusBadge = document.getElementById("ai-status-badge");
       btn.disabled = true;
-      btn.innerHTML = `<i data-lucide="loader-2" class="w-4 h-4 animate-spin"></i> Extracting with Gemini AI...`;
-      statusBadge.innerText = "Processing...";
-      statusBadge.className = "text-[10px] bg-amber-100 text-amber-800 px-2 py-0.5 rounded-full font-semibold";
+      btn.innerHTML = `<i data-lucide="loader-2" class="w-4 h-4 animate-spin"></i> ${textInput ? "Extracting with Gemini AI..." : "Reading the link..."}`;
+      lucide.createIcons();
+      setAIStatus("Processing...", "busy");
 
       try {
-        const response = await fetch("/api/extract-job", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ text: textInput })
-        });
-
-        const parsed = await response.json();
-
-        if (response.ok && parsed && !parsed.error) {
-          state.aiExtractedData = parsed;
-          renderAIExtractedOutput(parsed);
-          statusBadge.innerText = "Successfully Extracted";
-          statusBadge.className = "text-[10px] bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded-full font-semibold";
-        } else {
-          throw new Error(parsed?.error || "Invalid response format from AI");
-        }
+        const parsed = await requestJobExtraction({ url, text: textInput });
+        state.aiExtractedData = parsed;
+        renderAIExtractedOutput(parsed);
+        setAIStatus(parsed.via === "structured" ? "Filled from page data" : "Successfully Extracted", parsed.via === "structured" ? "warn" : "ok");
+        saveAIExtractedJob();
       } catch (err) {
-        console.warn("AI API Fallback engaged:", err);
-        const fallback = fallbackRuleParser(textInput);
-        state.aiExtractedData = fallback;
-        renderAIExtractedOutput(fallback);
-        statusBadge.innerText = "Parsed (Rule Fallback)";
-        statusBadge.className = "text-[10px] bg-blue-100 text-blue-800 px-2 py-0.5 rounded-full font-semibold";
+        console.warn("AI extraction failed:", err);
+        setAIStatus(err.message, "error");
+        if (textInput) {
+          const fallback = fallbackRuleParser(textInput, url);
+          state.aiExtractedData = fallback;
+          renderAIExtractedOutput(fallback, err.message);
+        } else {
+          showToast(err.message);
+        }
       } finally {
         btn.disabled = false;
         btn.innerHTML = `<i data-lucide="wand2" class="w-4 h-4"></i> Parse Job Posting with Gemini AI`;
@@ -4338,22 +4525,32 @@
       }
     }
 
-    function fallbackRuleParser(text) {
-      const lang = text.toLowerCase().includes("dutch") || text.toLowerCase().includes("nederlands") ? "NL" : "EN";
+    // Best-effort guesses when Gemini is unreachable; blanks beat made-up values
+    function fallbackRuleParser(text, url = "") {
+      const lower = text.toLowerCase();
+      const firstLine = (text.split(/\n+/).map(l => l.trim()).find(Boolean) || "").slice(0, 80);
+      const after = re => { const m = text.match(re); return m ? m[1].trim().split(/\s{2,}|\n/)[0] : ""; };
+      const knownCities = ["Amsterdam", "Rotterdam", "Den Haag", "The Hague", "Utrecht", "Eindhoven", "Leiden", "Delft", "Groningen", "Haarlem", "Amstelveen", "Hoofddorp", "Jakarta", "Remote"];
+      const board = detectPlatform(url);
       return {
-        company: "Target Company",
-        title: "Job Position",
-        city: "Amsterdam",
-        lang: lang,
-        source: "Linkedin",
-        salary: "",
-        summary: text.substring(0, 180) + "..."
+        company: after(/(?:company|bedrijf|organisation|organization)\s*[:\-]\s*([^\n]+)/i),
+        title: after(/(?:job title|position|functie|vacature)\s*[:\-]\s*([^\n]+)/i) || firstLine,
+        city: knownCities.find(c => lower.includes(c.toLowerCase())) || "",
+        lang: /\b(nederlands|dutch|wij zoeken|vacature)\b/.test(lower) ? "NL" : "EN",
+        source: board || (url ? "Career Site" : ""),
+        salary: after(/(€\s?[\d.,]+k?\s*(?:-|–|to|tot)\s*€?\s?[\d.,]+k?)/i),
+        summary: text.substring(0, 180) + "...",
+        postingUrl: board ? url : "",
+        careerSiteUrl: url && !board ? url : ""
       };
     }
 
-    function renderAIExtractedOutput(parsed) {
+    function renderAIExtractedOutput(parsed, errorMsg = "") {
       const cont = document.getElementById("ai-extracted-fields");
+      const link = parsed.postingUrl || parsed.careerSiteUrl;
       cont.innerHTML = `
+        ${errorMsg ? `<div class="bg-rose-50 border border-rose-200 text-rose-700 p-2.5 rounded-lg text-[11px]"><strong>Gemini failed:</strong> ${esc(errorMsg)}<br>Showing a rough rule-based guess — check the fields before saving.</div>` : ""}
+        ${parsed.warning ? `<div class="bg-blue-50 border border-blue-200 text-blue-700 p-2.5 rounded-lg text-[11px]">Filled from the page's structured job data because Gemini failed: ${esc(parsed.warning)}</div>` : ""}
         <div class="space-y-2 bg-white p-3 rounded-lg border border-slate-200">
           <div><strong class="text-slate-500">Position:</strong> <span class="text-slate-900 font-bold">${esc(parsed.title || '-')}</span></div>
           <div><strong class="text-slate-500">Company:</strong> <span class="text-slate-900 font-bold">${esc(parsed.company || '-')}</span></div>
@@ -4361,6 +4558,8 @@
             <div><strong class="text-slate-500">City:</strong> ${renderCityBadge(parsed.city)}</div>
             <div><strong class="text-slate-500">Lang:</strong> ${renderLangBadge(parsed.lang)}</div>
           </div>
+          <div><strong class="text-slate-500">Platform:</strong> ${esc(PLATFORM_LABELS[parsed.source] || parsed.source || '-')}</div>
+          <div class="truncate"><strong class="text-slate-500">${parsed.postingUrl ? "Posting link" : "Career site link"}:</strong> ${link ? `<a href="${esc(link)}" target="_blank" rel="noopener" class="text-indigo-600 hover:underline">${esc(link)}</a>` : '-'}</div>
           <div><strong class="text-slate-500">Salary:</strong> <span class="text-emerald-700 font-semibold">${esc(parsed.salary || 'Not specified')}</span></div>
           <div><strong class="text-slate-500">Summary:</strong> <p class="text-slate-600 mt-0.5 text-[11px] leading-relaxed">${esc(parsed.summary || '')}</p></div>
         </div>
@@ -4369,17 +4568,53 @@
       document.getElementById("ai-actions-container").classList.remove("hidden");
     }
 
+    // Writes extracted fields into the open application form; onlyEmpty keeps what's already typed
+    function fillJobFormFromExtraction(d, onlyEmpty = false) {
+      const set = (id, value) => {
+        const el = document.getElementById(id);
+        if (!value || (onlyEmpty && el.value.trim())) return;
+        el.value = value;
+      };
+      set("job-title-input", d.title);
+      set("job-company-input", d.company);
+      set("job-city-input", d.city);
+      set("job-salary-input", d.salary);
+      set("job-notes-input", d.summary);
+      set("job-posting-input", d.postingUrl);
+      set("job-careersite-input", d.careerSiteUrl);
+      if (["EN", "NL", "ID"].includes(d.lang)) document.getElementById("job-lang-input").value = d.lang;
+      if (PLATFORM_LABELS[d.source]) document.getElementById("job-source-input").value = d.source;
+      if (d.postingUrl) handlePostingLinkInput();
+    }
+
     function saveAIExtractedJob() {
       if (!state.aiExtractedData) return;
-      const d = state.aiExtractedData;
-
       openJobModal();
-      document.getElementById("job-title-input").value = d.title || '';
-      document.getElementById("job-company-input").value = d.company || '';
-      document.getElementById("job-city-input").value = d.city || '';
-      document.getElementById("job-lang-input").value = d.lang || 'EN';
-      document.getElementById("job-salary-input").value = d.salary || '';
-      document.getElementById("job-notes-input").value = d.summary || '';
+      fillJobFormFromExtraction(state.aiExtractedData);
+    }
+
+    // "Auto-fill" button in the application form: reads the posting (or career site) link
+    async function autofillJobFromLink() {
+      const url = document.getElementById("job-posting-input").value.trim() || document.getElementById("job-careersite-input").value.trim();
+      if (!url) {
+        showToast("Paste the job posting link first.");
+        return;
+      }
+      const btn = document.getElementById("btn-job-autofill");
+      btn.disabled = true;
+      btn.innerHTML = `<i data-lucide="loader-2" class="w-3 h-3 animate-spin"></i> Reading...`;
+      lucide.createIcons();
+      try {
+        const parsed = await requestJobExtraction({ url });
+        fillJobFormFromExtraction(parsed, true);
+        showToast(parsed.via === "structured" ? "Filled from page data (Gemini unavailable)." : "Filled the empty fields from the link.");
+      } catch (err) {
+        showToast(err.message);
+      } finally {
+        btn.disabled = false;
+        btn.innerHTML = `<i data-lucide="sparkles" class="w-3 h-3"></i> Auto-fill`;
+        lucide.createIcons();
+      }
     }
 
     /* ==========================================================================

@@ -7,8 +7,9 @@ Smart Extractor that pulls structured fields out of a pasted or uploaded job pos
 
 The app is a single static page ([index.html](index.html)) with two small server-side API routes:
 
-- [api/extract-job.js](api/extract-job.js) proxies requests to the Gemini API so the API key never
-  reaches the browser.
+- [api/extract-job.js](api/extract-job.js) reads a job posting link (LinkedIn via its public guest page,
+  career sites via their schema.org JobPosting data) or pasted/PDF text, and proxies it to the Gemini API
+  so the API key never reaches the browser.
 - [api/compile-latex.js](api/compile-latex.js) compiles an application's CV / cover letter LaTeX to
   PDF via the free public TeX Live service at [texlive.net](https://texlive.net) (it has no CORS, so
   the browser can't call it directly). No API key needed.
@@ -54,6 +55,7 @@ and automatically fall back to the built-in rule-based parser.
 |-------------------|----------|-------------------------------------------------------------------------------|
 | `GEMINI_API_KEY`  | Yes      | Your Gemini API key. Used server-side only, never sent to the browser.        |
 | `GEMINI_MODEL`    | No       | Gemini model name to call (e.g. `gemini-2.0-flash`). Defaults to a built-in model if unset. |
+| `GEMINI_FALLBACK_MODELS` | No | Comma-separated models tried when the main one is busy (503/429). Defaults to `gemini-2.5-flash,gemini-2.5-flash-lite`. |
 
 Never commit a real `.env` file — it's excluded via `.gitignore`. `.env.example` contains only
 placeholder variable names.
