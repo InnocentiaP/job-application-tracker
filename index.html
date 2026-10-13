@@ -2038,7 +2038,7 @@
 
     function applyBlockTitle(job) {
       const code = jobCode(job);
-      return `Apply ${(job.company || "").trim() || "company"}${code ? ` (${code})` : ""}`;
+      return `Apply ${code ? `(${code}) ` : ""}${(job.company || "").trim() || "company"}`;
     }
 
     // The "Look for job" group, even if it was renamed or recoloured later
@@ -3705,7 +3705,7 @@
           </td>
           <td class="py-2.5 px-2 whitespace-nowrap">${renderCityBadge(job.city)}</td>
           <td class="py-2.5 px-2 whitespace-nowrap">${renderCompanyLink(job.company)}</td>
-          <td class="py-2.5 px-2 whitespace-nowrap"><span class="flex items-center gap-1.5">${renderJobTitleLink(job, true)}${renderPlanApplyButton(job)}</span></td>
+          <td class="py-2.5 px-2 whitespace-nowrap"><span class="flex items-center justify-between gap-3">${renderJobTitleLink(job, true)}${renderPlanApplyButton(job)}</span></td>
           <td class="py-2.5 px-2 whitespace-nowrap">${renderStatusSelectDropdown(job)}</td>
           <td class="py-2.5 px-2 whitespace-nowrap">${renderPrioritySelectDropdown(job)}</td>
           <td class="py-2.5 px-2 whitespace-nowrap">${renderMatchBadge(job.linkedinMatch, true)}</td>
