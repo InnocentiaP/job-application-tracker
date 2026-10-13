@@ -1126,7 +1126,10 @@
           <textarea id="event-notes" rows="2" class="w-full p-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-indigo-500"></textarea>
         </div>
         <div class="pt-3 border-t border-slate-100 flex items-center justify-between gap-2">
-          <button type="button" id="btn-event-delete" onclick="deleteEventFromModal()" class="px-3 py-2 text-rose-600 hover:bg-rose-50 rounded-lg font-semibold">Delete</button>
+          <div class="flex items-center gap-1">
+            <button type="button" id="btn-event-delete" onclick="deleteEventFromModal()" class="px-3 py-2 text-rose-600 hover:bg-rose-50 rounded-lg font-semibold">Delete</button>
+            <button type="button" id="btn-event-duplicate" onclick="duplicateEventFromModal()" title="Make a copy of this block (tip: Alt + drag a block to copy it)" class="px-3 py-2 text-slate-600 hover:bg-slate-100 rounded-lg font-semibold flex items-center gap-1"><i data-lucide="copy" class="w-3.5 h-3.5"></i> Duplicate</button>
+          </div>
           <div class="flex gap-2 ml-auto">
             <button type="button" onclick="closeEventModal()" class="px-4 py-2 border border-slate-200 text-slate-600 rounded-lg hover:bg-slate-100">Cancel</button>
             <button type="submit" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg font-semibold shadow">Save</button>
@@ -2128,6 +2131,7 @@
       document.getElementById("event-location").value = ev ? (ev.location || "") : "";
       document.getElementById("event-notes").value = ev ? (ev.notes || "") : "";
       document.getElementById("btn-event-delete").classList.toggle("hidden", !ev);
+      document.getElementById("btn-event-duplicate").classList.toggle("hidden", !ev);
 
       const calSelect = document.getElementById("event-calendar");
       calSelect.innerHTML = state.planner.calendars.map(c => `<option value="${esc(c.id)}">${esc(c.name)}</option>`).join("");
@@ -2199,6 +2203,38 @@
       saveState();
       closeEventModal();
       renderPlanner();
+    }
+
+    // Copy a block (and its attachment files) with optional changes, e.g. a new date
+    async function duplicateEvent(ev, overrides = {}) {
+      const id = `evt-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`;
+      const attachments = [];
+      for (const [i, a] of (ev.attachments || []).entries()) {
+        try {
+          const record = await FileStore.get(`evt:${ev.id}:${a.id}`);
+          if (!record) continue;
+          const attId = `att-${Date.now()}-${i}`;
+          await FileStore.put(`evt:${id}:${attId}`, { ...record, savedAt: Date.now() });
+          attachments.push({ ...a, id: attId });
+        } catch (e) {
+          console.warn("Could not copy attachment:", e);
+        }
+      }
+      const { attachments: _ignored, ...fields } = ev;
+      const copy = { ...JSON.parse(JSON.stringify(fields)), ...overrides, id, attachments };
+      state.planner.events.push(copy);
+      saveState();
+      return copy;
+    }
+
+    async function duplicateEventFromModal() {
+      const ev = currentModalEvent();
+      if (!ev) return;
+      const copy = await duplicateEvent(ev);
+      setPlannerDate(copy.date);
+      renderPlanner();
+      openEventModal(copy.id); // edit the copy right away (e.g. change its date)
+      showToast("Block duplicated. Adjust the date or time of the copy and save.");
     }
 
     async function deleteEventFromModal() {
@@ -2515,6 +2551,8 @@
           drag.preview.style.background = hexToRgba(eventColor(drag.ev), 0.35);
         }
         e.preventDefault();
+        drag.copy = e.altKey && drag.mode === "move";
+        drag.block.classList.toggle("opacity-30", !drag.copy);
 
         // Auto-scroll near the top/bottom edge of the calendar
         const scroll = document.getElementById("planner-scroll");
@@ -2539,7 +2577,7 @@
         const visStart = Math.max(start, PLANNER_START_HOUR * 60);
         drag.preview.style.top = `${(visStart - PLANNER_START_HOUR * 60) / 60 * HOUR_PX}px`;
         drag.preview.style.height = `${Math.max(18, (end - visStart) / 60 * HOUR_PX - 2)}px`;
-        drag.preview.innerHTML = `<span class="font-mono">${minToTime(start)}–${minToTime(end)}</span> <span class="font-sans font-normal text-slate-700">(${formatDuration(end - start)})</span>`;
+        drag.preview.innerHTML = `${drag.copy ? '<span class="font-sans">Copy · </span>' : ""}<span class="font-mono">${minToTime(start)}–${minToTime(end)}</span> <span class="font-sans font-normal text-slate-700">(${formatDuration(end - start)})</span>`;
         if (drag.preview.parentElement !== col) col.appendChild(drag.preview);
       }, { passive: false });
 
@@ -2553,6 +2591,14 @@
         if (e.type === "pointercancel" || !drag.target) { renderPlanner(); return; }
         const { date, start, end } = drag.target;
         const changed = date !== drag.ev.date || minToTime(start) !== drag.ev.start || minToTime(end) !== drag.ev.end;
+        if (changed && (drag.copy || e.altKey) && drag.mode === "move") {
+          duplicateEvent(drag.ev, { date, start: minToTime(start), end: minToTime(end) }).then(copy => {
+            setPlannerDate(date);
+            renderPlanner();
+            showToast(`Copied ${copy.title} to ${formatDateDMY(date)}, ${copy.start}–${copy.end}`);
+          });
+          return;
+        }
         if (changed) {
           drag.ev.date = date;
           drag.ev.start = minToTime(start);
@@ -2571,13 +2617,14 @@
         const bar = e.target.closest && e.target.closest("[data-month-event]");
         if (!bar) return;
         e.dataTransfer.setData("text/plain", bar.dataset.monthEvent);
-        e.dataTransfer.effectAllowed = "move";
-        setTimeout(() => bar.classList.add("opacity-30"), 0);
+        e.dataTransfer.effectAllowed = "copyMove";
+        if (!e.altKey) setTimeout(() => bar.classList.add("opacity-30"), 0);
       });
       grid.addEventListener("dragover", e => {
         const cell = e.target.closest && e.target.closest("[data-monthday]");
         if (!cell) return;
         e.preventDefault();
+        e.dataTransfer.dropEffect = e.altKey ? "copy" : "move";
         if (!cell.classList.contains("drop-active")) {
           grid.querySelectorAll(".drop-active").forEach(el => el.classList.remove("drop-active"));
           cell.classList.add("drop-active");
@@ -2592,6 +2639,13 @@
         e.preventDefault();
         plannerDragEndedAt = Date.now();
         const ev = state.planner.events.find(x => x.id === e.dataTransfer.getData("text/plain"));
+        if (ev && e.altKey) {
+          duplicateEvent(ev, { date: cell.dataset.monthday }).then(copy => {
+            renderPlanner();
+            showToast(`Copied ${copy.title} to ${formatDateDMY(copy.date)}`);
+          });
+          return;
+        }
         if (ev && ev.date !== cell.dataset.monthday) {
           ev.date = cell.dataset.monthday;
           saveState();
