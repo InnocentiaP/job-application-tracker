@@ -119,7 +119,7 @@
   <!-- Main Content Container -->
   <main class="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6">
 
-    <!-- SECTION 0: DAILY PLANNER -->
+    <!-- SECTION 0: PLANNER -->
     <section id="view-planner" class="space-y-4">
       <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm flex flex-wrap items-center justify-between gap-3">
         <div class="flex items-center gap-2">
@@ -136,10 +136,8 @@
           <div class="flex items-center bg-slate-100 p-0.5 rounded-lg border border-slate-200">
             <button id="btn-planner-day" onclick="setPlannerView('day')" class="px-2.5 py-1 rounded text-xs font-semibold">Day</button>
             <button id="btn-planner-week" onclick="setPlannerView('week')" class="px-2.5 py-1 rounded text-xs font-semibold">Week</button>
+            <button id="btn-planner-month" onclick="setPlannerView('month')" class="px-2.5 py-1 rounded text-xs font-semibold">Month</button>
           </div>
-          <button onclick="openCategoryModal()" class="px-3 py-1.5 text-xs font-semibold bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-300 rounded-lg flex items-center gap-1.5">
-            <i data-lucide="palette" class="w-3.5 h-3.5 text-indigo-600"></i> Groups
-          </button>
           <button onclick="openEventModal()" class="px-3 py-1.5 text-xs font-semibold bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg flex items-center gap-1.5 shadow-sm">
             <i data-lucide="plus" class="w-3.5 h-3.5"></i> Add Block
           </button>
@@ -148,15 +146,43 @@
 
       <div class="grid grid-cols-1 lg:grid-cols-4 gap-4">
         <aside class="space-y-4">
+          <!-- Mini month: quick navigation -->
+          <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
+            <div class="flex items-center justify-between mb-2">
+              <span id="mini-month-label" class="text-xs font-bold text-slate-800"></span>
+              <div class="flex items-center gap-0.5">
+                <button onclick="miniMonthShift(-1)" class="p-1 rounded hover:bg-slate-100" title="Previous month"><i data-lucide="chevron-left" class="w-3.5 h-3.5"></i></button>
+                <button onclick="miniMonthShift(1)" class="p-1 rounded hover:bg-slate-100" title="Next month"><i data-lucide="chevron-right" class="w-3.5 h-3.5"></i></button>
+              </div>
+            </div>
+            <div id="mini-month-grid"></div>
+          </div>
+
+          <!-- Calendars (iCal style: colour + show/hide) -->
+          <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
+            <div class="flex items-center justify-between mb-3">
+              <h3 class="text-xs font-bold text-slate-800 flex items-center gap-1.5">
+                <i data-lucide="calendar-range" class="w-4 h-4 text-indigo-600"></i> Calendars
+              </h3>
+              <button onclick="openCalendarModal()" class="text-[11px] font-semibold text-indigo-600 hover:underline">Edit</button>
+            </div>
+            <div id="planner-calendars" class="space-y-1.5 text-xs"></div>
+          </div>
+
+          <!-- Groups with planned hours -->
           <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
             <div class="flex items-center justify-between mb-3">
               <h3 class="text-xs font-bold text-slate-800 flex items-center gap-1.5">
                 <i data-lucide="tags" class="w-4 h-4 text-indigo-600"></i> Groups
               </h3>
-              <span id="planner-legend-caption" class="text-[10px] text-slate-400">Planned hours</span>
+              <div class="flex items-center gap-2">
+                <span id="planner-legend-caption" class="text-[10px] text-slate-400">Planned hours</span>
+                <button onclick="openCategoryModal()" class="text-[11px] font-semibold text-indigo-600 hover:underline">Edit</button>
+              </div>
             </div>
             <div id="planner-legend" class="space-y-1.5 text-xs"></div>
           </div>
+
           <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
             <h3 id="planner-agenda-title" class="text-xs font-bold text-slate-800 mb-3 flex items-center gap-1.5"></h3>
             <div id="planner-agenda" class="space-y-1.5 text-xs"></div>
@@ -736,7 +762,11 @@
           </div>
           <div>
             <label class="block font-semibold text-slate-700 mb-1">Applied Date</label>
-            <input type="date" id="job-date-input" class="w-full p-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-indigo-500">
+            <div class="relative">
+              <input type="text" id="job-date-input-display" data-date-for="job-date-input" placeholder="DD/MM/YYYY" inputmode="numeric" maxlength="10" autocomplete="off" class="w-full p-2 pr-8 border border-slate-200 rounded-lg focus:ring-2 focus:ring-indigo-500">
+              <button type="button" data-date-picker="job-date-input" tabindex="-1" class="absolute right-1.5 top-1/2 -translate-y-1/2 p-1 text-slate-400 hover:text-indigo-600" title="Pick a date"><i data-lucide="calendar" class="w-3.5 h-3.5"></i></button>
+              <input type="date" id="job-date-input" tabindex="-1" aria-hidden="true" class="absolute right-0 bottom-0 w-px h-px opacity-0 pointer-events-none">
+            </div>
           </div>
           <div>
             <label class="block font-semibold text-slate-700 mb-1">Salary Range</label>
@@ -1025,8 +1055,8 @@
 
   <!-- MODAL 7: PLANNER BLOCK -->
   <div id="modal-event" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
-    <div class="bg-white rounded-2xl max-w-md w-full shadow-2xl border border-slate-100 overflow-hidden">
-      <div class="bg-slate-900 text-white px-6 py-4 flex items-center justify-between">
+    <div class="bg-white rounded-2xl max-w-lg w-full max-h-[90vh] overflow-y-auto shadow-2xl border border-slate-100">
+      <div class="bg-slate-900 text-white px-6 py-4 flex items-center justify-between sticky top-0 z-10">
         <h3 id="modal-event-title" class="text-sm font-bold flex items-center gap-2">
           <i data-lucide="calendar-plus" class="w-4 h-4 text-sky-400"></i> Add Block
         </h3>
@@ -1037,8 +1067,12 @@
       <form onsubmit="handleEventFormSubmit(event)" class="p-6 space-y-4 text-xs">
         <input type="hidden" id="event-id">
         <div>
-          <label class="block font-semibold text-slate-700 mb-1">Task *</label>
+          <label class="block font-semibold text-slate-700 mb-1">Task / Event *</label>
           <input type="text" id="event-title" required placeholder="e.g. Apply to 3 consulting roles" class="w-full p-2.5 border border-slate-200 rounded-lg focus:ring-2 focus:ring-indigo-500">
+        </div>
+        <div>
+          <label class="block font-semibold text-slate-700 mb-1">Calendar</label>
+          <select id="event-calendar" onchange="handleEventCalendarChange()" class="w-full p-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-indigo-500"></select>
         </div>
         <div>
           <label class="block font-semibold text-slate-700 mb-1">Group</label>
@@ -1048,16 +1082,44 @@
         <div class="grid grid-cols-3 gap-3">
           <div>
             <label class="block font-semibold text-slate-700 mb-1">Date</label>
-            <input type="date" id="event-date" required class="w-full p-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-indigo-500">
+            <div class="relative">
+              <input type="text" id="event-date-display" data-date-for="event-date" placeholder="DD/MM/YYYY" inputmode="numeric" maxlength="10" autocomplete="off" class="w-full p-2 pr-8 border border-slate-200 rounded-lg focus:ring-2 focus:ring-indigo-500">
+              <button type="button" data-date-picker="event-date" tabindex="-1" class="absolute right-1.5 top-1/2 -translate-y-1/2 p-1 text-slate-400 hover:text-indigo-600" title="Pick a date"><i data-lucide="calendar" class="w-3.5 h-3.5"></i></button>
+              <input type="date" id="event-date" tabindex="-1" aria-hidden="true" class="absolute right-0 bottom-0 w-px h-px opacity-0 pointer-events-none">
+            </div>
           </div>
           <div>
-            <label class="block font-semibold text-slate-700 mb-1">Start</label>
-            <input type="time" id="event-start" required step="900" class="w-full p-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-indigo-500">
+            <label class="block font-semibold text-slate-700 mb-1">Start (24h)</label>
+            <div class="relative">
+              <input type="text" id="event-start" required inputmode="numeric" maxlength="5" placeholder="09:00" autocomplete="off" class="w-full p-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-indigo-500 font-mono">
+              <div id="event-start-menu" class="time-menu hidden absolute z-30 left-0 mt-1 w-32 max-h-56 overflow-y-auto bg-white border border-slate-200 rounded-lg shadow-lg py-1"></div>
+            </div>
           </div>
           <div>
-            <label class="block font-semibold text-slate-700 mb-1">End</label>
-            <input type="time" id="event-end" required step="900" class="w-full p-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-indigo-500">
+            <label class="block font-semibold text-slate-700 mb-1">End (24h)</label>
+            <div class="relative">
+              <input type="text" id="event-end" required inputmode="numeric" maxlength="5" placeholder="10:00" autocomplete="off" class="w-full p-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-indigo-500 font-mono">
+              <div id="event-end-menu" class="time-menu hidden absolute z-30 right-0 mt-1 w-44 max-h-56 overflow-y-auto bg-white border border-slate-200 rounded-lg shadow-lg py-1"></div>
+            </div>
           </div>
+        </div>
+        <p id="event-duration" class="text-[11px] text-slate-500 -mt-2"></p>
+        <div>
+          <label class="block font-semibold text-slate-700 mb-1">Location</label>
+          <div class="relative">
+            <i data-lucide="map-pin" class="w-3.5 h-3.5 absolute left-2.5 top-2.5 text-slate-400"></i>
+            <input type="text" id="event-location" placeholder="Address, place, or meeting link (Teams / Zoom / Meet)" class="w-full pl-8 p-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-indigo-500">
+          </div>
+        </div>
+        <div>
+          <div class="flex items-center justify-between mb-1">
+            <label class="font-semibold text-slate-700">Attachments</label>
+            <label class="cursor-pointer px-2.5 py-1 border border-slate-200 rounded-lg hover:bg-slate-50 font-semibold text-slate-600 flex items-center gap-1">
+              <i data-lucide="paperclip" class="w-3 h-3"></i> Add Files
+              <input type="file" multiple class="hidden" onchange="handleEventAttachmentUpload(event)">
+            </label>
+          </div>
+          <div id="event-attachments" class="space-y-1"></div>
         </div>
         <div>
           <label class="block font-semibold text-slate-700 mb-1">Notes</label>
@@ -1074,26 +1136,26 @@
     </div>
   </div>
 
-  <!-- MODAL 8: PLANNER GROUPS (name + colour) -->
+  <!-- MODAL 8: PLANNER GROUPS / CALENDARS (name + colour) -->
   <div id="modal-categories" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
     <div class="bg-white rounded-2xl max-w-md w-full max-h-[90vh] overflow-y-auto shadow-2xl border border-slate-100">
       <div class="bg-slate-900 text-white px-6 py-4 flex items-center justify-between sticky top-0 z-10">
         <h3 class="text-sm font-bold flex items-center gap-2">
-          <i data-lucide="palette" class="w-4 h-4 text-sky-400"></i> Planner Groups
+          <i data-lucide="palette" class="w-4 h-4 text-sky-400"></i> <span id="color-list-title">Planner Groups</span>
         </h3>
         <button onclick="closeCategoryModal()" class="text-slate-400 hover:text-white">
           <i data-lucide="x" class="w-5 h-5"></i>
         </button>
       </div>
       <form onsubmit="handleCategoryFormSubmit(event)" class="p-6 space-y-4 text-xs">
-        <p class="text-slate-500">Pick a colour and name for each group. Blocks in a deleted group turn grey.</p>
+        <p id="color-list-desc" class="text-slate-500"></p>
         <div id="category-rows" class="space-y-2"></div>
         <button type="button" onclick="addCategoryRow()" class="px-2.5 py-1.5 border border-slate-200 rounded-lg hover:bg-slate-50 font-semibold text-slate-600 flex items-center gap-1">
-          <i data-lucide="plus" class="w-3 h-3"></i> Add Group
+          <i data-lucide="plus" class="w-3 h-3"></i> <span id="color-list-add-label">Add Group</span>
         </button>
         <div class="pt-3 border-t border-slate-100 flex justify-end gap-2">
           <button type="button" onclick="closeCategoryModal()" class="px-4 py-2 border border-slate-200 text-slate-600 rounded-lg hover:bg-slate-100">Cancel</button>
-          <button type="submit" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg font-semibold shadow">Save Groups</button>
+          <button type="submit" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg font-semibold shadow">Save</button>
         </div>
       </form>
     </div>
@@ -1338,6 +1400,13 @@
       { id: "abroad", name: "No NL openings – look abroad" }
     ];
 
+    // iCal-style calendars; the first one is where job-search time blocks go by default
+    const DEFAULT_CALENDARS = [
+      { id: "cal-plan", name: "Job Search Plan", color: "#6366f1", visible: true },
+      { id: "cal-personal", name: "Personal", color: "#14b8a6", visible: true },
+      { id: "cal-events", name: "Events", color: "#f97316", visible: true }
+    ];
+
     const DEFAULT_PLANNER = {
       categories: [
         { id: "cat-break", name: "Break", color: "#94a3b8" },
@@ -1399,6 +1468,8 @@
       planner: getSavedState("job_tracker_planner", DEFAULT_PLANNER),
       plannerView: window.innerWidth < 768 ? "day" : "week",
       plannerDate: null,
+      miniMonth: null,
+      lastCalendarId: null,
       currentViewMode: "table",
       aiExtractedData: null,
       uploadedFileText: ""
@@ -1504,12 +1575,13 @@
     }
 
     /* ==========================================================================
-       2. DAILY PLANNER (calendar with editable colour groups)
+       2. PLANNER (day / week / month calendar, iCal-style calendars + colour groups)
        ========================================================================== */
     const PLANNER_START_HOUR = 6;
     const PLANNER_END_HOUR = 24;
     const HOUR_PX = 44;
     const NO_GROUP_COLOR = "#cbd5e1";
+    const MAX_ATTACHMENT_BYTES = 25 * 1024 * 1024;
 
     function pad2(n) { return String(n).padStart(2, "0"); }
     function toISODate(d) { return `${d.getFullYear()}-${pad2(d.getMonth() + 1)}-${pad2(d.getDate())}`; }
@@ -1517,36 +1589,115 @@
     function todayISO() { return toISODate(new Date()); }
     function addDays(s, n) { const d = parseISODate(s); d.setDate(d.getDate() + n); return toISODate(d); }
     function startOfWeek(s) { const d = parseISODate(s); d.setDate(d.getDate() - ((d.getDay() + 6) % 7)); return toISODate(d); }
+    function monthStart(s) { return s.slice(0, 8) + "01"; }
+    function daysInMonth(s) { const d = parseISODate(s); return new Date(d.getFullYear(), d.getMonth() + 1, 0).getDate(); }
+    function addMonths(s, n) {
+      const d = parseISODate(s);
+      const target = new Date(d.getFullYear(), d.getMonth() + n, 1);
+      target.setDate(Math.min(d.getDate(), daysInMonth(toISODate(target))));
+      return toISODate(target);
+    }
     function timeToMin(t) { const [h, m] = (t || "0:0").split(":").map(Number); return h * 60 + m; }
-    function minToTime(min) { const m = Math.max(0, Math.min(23 * 60 + 59, min)); return `${pad2(Math.floor(m / 60))}:${pad2(m % 60)}`; }
+    function minToTime(min) { const m = Math.max(0, Math.min(24 * 60, min)); return `${pad2(Math.floor(m / 60))}:${pad2(m % 60)}`; }
     function hexToRgba(hex, alpha) {
       const h = (hex || NO_GROUP_COLOR).replace("#", "");
       const n = parseInt(h.length === 3 ? h.split("").map(c => c + c).join("") : h, 16);
       return `rgba(${(n >> 16) & 255}, ${(n >> 8) & 255}, ${n & 255}, ${alpha})`;
     }
     function formatHours(min) { const h = min / 60; return `${Number.isInteger(h) ? h : h.toFixed(1)}h`; }
+    function formatBytes(n) { return n < 1024 * 1024 ? `${Math.max(1, Math.round(n / 1024))} KB` : `${(n / 1024 / 1024).toFixed(1)} MB`; }
+
+    // Accepts "9", "930", "0930", "9:30", "9.30" → "09:30". End times may be "24:00".
+    function normalizeTime(value, allowMidnightEnd = false) {
+      const v = String(value || "").trim().replace(/[.h]/g, ":");
+      let h, m;
+      if (v.includes(":")) {
+        const [a, b = "0"] = v.split(":");
+        if (!/^\d{1,2}$/.test(a) || !/^\d{1,2}$/.test(b)) return null;
+        h = Number(a); m = Number(b);
+      } else if (/^\d{1,4}$/.test(v)) {
+        h = v.length <= 2 ? Number(v) : Number(v.slice(0, -2));
+        m = v.length <= 2 ? 0 : Number(v.slice(-2));
+      } else {
+        return null;
+      }
+      if (h === 24 && m === 0 && allowMidnightEnd) return "24:00";
+      if (h > 23 || m > 59) return null;
+      return `${pad2(h)}:${pad2(m)}`;
+    }
+
+    // Older saved planners have no calendars; add defaults and put existing blocks in the first one
+    function ensurePlannerShape() {
+      const p = state.planner;
+      if (!Array.isArray(p.categories)) p.categories = [];
+      if (!Array.isArray(p.events)) p.events = [];
+      if (!Array.isArray(p.calendars) || p.calendars.length === 0) p.calendars = JSON.parse(JSON.stringify(DEFAULT_CALENDARS));
+      p.events.forEach(e => {
+        if (!p.calendars.some(c => c.id === e.calendarId)) e.calendarId = p.calendars[0].id;
+        if (!Array.isArray(e.attachments)) e.attachments = [];
+      });
+    }
 
     function getCategory(id) { return state.planner.categories.find(c => c.id === id) || null; }
+    function getCalendar(id) { return state.planner.calendars.find(c => c.id === id) || null; }
+    // A block takes its group's colour; without a group it uses its calendar's colour
+    function eventColor(e) { return getCategory(e.catId)?.color || getCalendar(e.calendarId)?.color || NO_GROUP_COLOR; }
+    function plannerEvents() { return state.planner.events.filter(e => getCalendar(e.calendarId)?.visible !== false); }
+    function eventsOn(date) {
+      return plannerEvents().filter(e => e.date === date).sort((a, b) => timeToMin(a.start) - timeToMin(b.start));
+    }
+
+    function setPlannerDate(date) {
+      state.plannerDate = date;
+      state.miniMonth = monthStart(date);
+    }
 
     function plannerVisibleDays() {
       if (state.plannerView === "day") return [state.plannerDate];
+      if (state.plannerView === "month") {
+        const first = monthStart(state.plannerDate);
+        return Array.from({ length: daysInMonth(first) }, (_, i) => addDays(first, i));
+      }
       const start = startOfWeek(state.plannerDate);
       return Array.from({ length: 7 }, (_, i) => addDays(start, i));
     }
 
+    // Full weeks (Mon–Sun) covering the month of `anchor`
+    function monthGridDays(anchor) {
+      const first = monthStart(anchor);
+      const start = startOfWeek(first);
+      const offset = (parseISODate(first).getDay() + 6) % 7;
+      const weeks = Math.ceil((offset + daysInMonth(first)) / 7);
+      return Array.from({ length: weeks * 7 }, (_, i) => addDays(start, i));
+    }
+
     function setPlannerView(view) {
       state.plannerView = view;
-      renderPlanner();
+      renderPlanner(view !== "month");
     }
 
     function plannerShift(direction) {
-      state.plannerDate = addDays(state.plannerDate, direction * (state.plannerView === "week" ? 7 : 1));
+      const v = state.plannerView;
+      setPlannerDate(v === "month" ? addMonths(state.plannerDate, direction) : addDays(state.plannerDate, direction * (v === "week" ? 7 : 1)));
       renderPlanner();
     }
 
     function plannerGoToday() {
-      state.plannerDate = todayISO();
+      setPlannerDate(todayISO());
       renderPlanner(true);
+    }
+
+    function miniMonthShift(direction) {
+      state.miniMonth = monthStart(addMonths(state.miniMonth, direction));
+      renderMiniMonth();
+    }
+
+    function toggleCalendar(id) {
+      const cal = getCalendar(id);
+      if (!cal) return;
+      cal.visible = cal.visible === false;
+      saveState();
+      renderPlanner();
     }
 
     // Assign overlapping blocks to side-by-side lanes
@@ -1576,68 +1727,169 @@
       return out;
     }
 
+    function isUrl(text) { return /^https?:\/\//i.test((text || "").trim()); }
+
+    function locationLinkHTML(location) {
+      const loc = (location || "").trim();
+      if (!loc) return "";
+      const href = isUrl(loc) ? loc : `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(loc)}`;
+      const label = isUrl(loc) ? "Open meeting link" : loc;
+      return `<a href="${esc(href)}" target="_blank" rel="noopener" title="${esc(loc)}" class="text-[11px] text-indigo-600 hover:underline inline-flex items-center gap-1 max-w-full"><i data-lucide="${isUrl(loc) ? "video" : "map-pin"}" class="w-3 h-3 flex-shrink-0"></i><span class="truncate">${esc(label)}</span></a>`;
+    }
+
     function renderPlanner(scrollToNow = false) {
-      if (!state.plannerDate) state.plannerDate = todayISO();
+      if (!state.plannerDate) setPlannerDate(todayISO());
+      if (!state.miniMonth) state.miniMonth = monthStart(state.plannerDate);
+      const view = state.plannerView;
       const days = plannerVisibleDays();
-      const today = todayISO();
 
       // Toolbar
       const fmt = (s, opts) => parseISODate(s).toLocaleDateString("en-GB", opts);
-      document.getElementById("planner-range-label").innerText = state.plannerView === "day"
-        ? fmt(days[0], { weekday: "long", day: "numeric", month: "long", year: "numeric" })
+      document.getElementById("planner-range-label").innerText =
+        view === "day" ? fmt(days[0], { weekday: "long", day: "numeric", month: "long", year: "numeric" })
+        : view === "month" ? fmt(days[0], { month: "long", year: "numeric" })
         : `${fmt(days[0], { day: "numeric", month: "short" })} – ${fmt(days[6], { day: "numeric", month: "short", year: "numeric" })}`;
       const activeCls = "px-2.5 py-1 rounded text-xs font-semibold bg-white shadow text-slate-800";
       const idleCls = "px-2.5 py-1 rounded text-xs font-semibold text-slate-500 hover:text-slate-800";
-      document.getElementById("btn-planner-day").className = state.plannerView === "day" ? activeCls : idleCls;
-      document.getElementById("btn-planner-week").className = state.plannerView === "week" ? activeCls : idleCls;
-
-      const visibleEvents = state.planner.events.filter(e => days.includes(e.date));
-
-      // Legend with planned hours per group in the visible range
-      const minutesByCat = {};
-      visibleEvents.forEach(e => {
-        const key = getCategory(e.catId) ? e.catId : "__none";
-        minutesByCat[key] = (minutesByCat[key] || 0) + Math.max(0, timeToMin(e.end) - timeToMin(e.start));
+      ["day", "week", "month"].forEach(v => {
+        document.getElementById(`btn-planner-${v}`).className = view === v ? activeCls : idleCls;
       });
-      document.getElementById("planner-legend-caption").innerText = state.plannerView === "day" ? "Planned today" : "Planned this week";
-      const legendRows = state.planner.categories.map(c => `
+
+      const rangeEvents = plannerEvents().filter(e => days.includes(e.date));
+      renderMiniMonth();
+      renderCalendarList(rangeEvents);
+      renderPlannerLegend(rangeEvents);
+      renderPlannerAgenda();
+
+      const scroll = document.getElementById("planner-scroll");
+      scroll.classList.toggle("max-h-[72vh]", view !== "month");
+      document.getElementById("planner-grid").innerHTML = view === "month" ? monthViewHTML() : timeGridHTML(days);
+
+      if (scrollToNow && view !== "month") {
+        const now = new Date();
+        const anchorHour = Math.max(PLANNER_START_HOUR, Math.min(now.getHours() - 1, PLANNER_END_HOUR - 8));
+        scroll.scrollTop = (anchorHour - PLANNER_START_HOUR) * HOUR_PX;
+      }
+      lucide.createIcons();
+    }
+
+    function minutesOf(e) { return Math.max(0, timeToMin(e.end) - timeToMin(e.start)); }
+
+    function renderCalendarList(rangeEvents) {
+      const minutes = {};
+      rangeEvents.forEach(e => { minutes[e.calendarId] = (minutes[e.calendarId] || 0) + minutesOf(e); });
+      document.getElementById("planner-calendars").innerHTML = state.planner.calendars.map(c => `
+        <label class="flex items-center justify-between gap-2 cursor-pointer">
+          <span class="flex items-center gap-2 min-w-0">
+            <input type="checkbox" ${c.visible === false ? "" : "checked"} onchange="toggleCalendar('${esc(c.id)}')" class="w-3.5 h-3.5 rounded flex-shrink-0" style="accent-color:${esc(c.color)}">
+            <span class="truncate ${c.visible === false ? "text-slate-400" : "text-slate-700"}">${esc(c.name)}</span>
+          </span>
+          <span class="text-slate-400 font-medium">${minutes[c.id] ? formatHours(minutes[c.id]) : "–"}</span>
+        </label>`).join("");
+    }
+
+    function renderPlannerLegend(rangeEvents) {
+      const minutesByCat = {};
+      rangeEvents.forEach(e => {
+        if (getCategory(e.catId)) minutesByCat[e.catId] = (minutesByCat[e.catId] || 0) + minutesOf(e);
+      });
+      const captions = { day: "Planned today", week: "Planned this week", month: "Planned this month" };
+      document.getElementById("planner-legend-caption").innerText = captions[state.plannerView];
+      document.getElementById("planner-legend").innerHTML = state.planner.categories.map(c => `
         <div class="flex items-center justify-between gap-2">
           <span class="flex items-center gap-2 min-w-0">
             <span class="w-3 h-3 rounded flex-shrink-0" style="background:${esc(c.color)}"></span>
             <span class="truncate text-slate-700">${esc(c.name)}</span>
           </span>
           <span class="text-slate-400 font-medium">${minutesByCat[c.id] ? formatHours(minutesByCat[c.id]) : "–"}</span>
-        </div>`);
-      if (minutesByCat.__none) {
-        legendRows.push(`
-          <div class="flex items-center justify-between gap-2">
-            <span class="flex items-center gap-2"><span class="w-3 h-3 rounded" style="background:${NO_GROUP_COLOR}"></span><span class="text-slate-500 italic">No group</span></span>
-            <span class="text-slate-400 font-medium">${formatHours(minutesByCat.__none)}</span>
-          </div>`);
-      }
-      document.getElementById("planner-legend").innerHTML = legendRows.join("") || `<p class="text-slate-400 italic">No groups yet.</p>`;
+        </div>`).join("") || `<p class="text-slate-400 italic">No groups yet.</p>`;
+    }
 
-      // Agenda for the selected day
+    function renderPlannerAgenda() {
       const selected = state.plannerDate;
-      document.getElementById("planner-agenda-title").innerHTML = `<i data-lucide="list-checks" class="w-4 h-4 text-indigo-600"></i> ${selected === today ? "Today" : esc(fmt(selected, { weekday: "long", day: "numeric", month: "short" }))}`;
-      const agenda = state.planner.events
-        .filter(e => e.date === selected)
-        .sort((a, b) => timeToMin(a.start) - timeToMin(b.start));
+      const label = selected === todayISO() ? "Today" : parseISODate(selected).toLocaleDateString("en-GB", { weekday: "long", day: "numeric", month: "short" });
+      document.getElementById("planner-agenda-title").innerHTML = `<i data-lucide="list-checks" class="w-4 h-4 text-indigo-600"></i> ${esc(label)}`;
+      const agenda = eventsOn(selected);
       document.getElementById("planner-agenda").innerHTML = agenda.length === 0
         ? `<p class="text-slate-400 italic">Nothing planned. Click the calendar to add a block.</p>`
         : agenda.map(e => {
             const cat = getCategory(e.catId);
+            const cal = getCalendar(e.calendarId);
             return `
-              <button type="button" onclick="openEventModal('${e.id}')" class="w-full text-left flex items-start gap-2 p-2 rounded-lg hover:bg-slate-50 border border-transparent hover:border-slate-200">
-                <span class="w-1 self-stretch rounded" style="background:${esc(cat ? cat.color : NO_GROUP_COLOR)}"></span>
-                <span class="min-w-0">
-                  <span class="block font-semibold text-slate-800 truncate">${esc(e.title)}</span>
-                  <span class="block text-[11px] text-slate-500">${esc(e.start)}–${esc(e.end)} · ${esc(cat ? cat.name : "No group")}</span>
-                </span>
-              </button>`;
+              <div class="flex items-start gap-2 p-2 rounded-lg hover:bg-slate-50 border border-transparent hover:border-slate-200">
+                <span class="w-1 self-stretch rounded flex-shrink-0" style="background:${esc(eventColor(e))}"></span>
+                <div class="min-w-0 flex-1 space-y-0.5">
+                  <button type="button" onclick="openEventModal('${e.id}')" class="block w-full text-left">
+                    <span class="block font-semibold text-slate-800 truncate">${esc(e.title)}</span>
+                    <span class="block text-[11px] text-slate-500">${esc(e.start)}–${esc(e.end)} · ${esc(cat ? cat.name : (cal ? cal.name : ""))}</span>
+                  </button>
+                  ${locationLinkHTML(e.location)}
+                  ${(e.attachments || []).length ? `<span class="text-[11px] text-slate-500 inline-flex items-center gap-1"><i data-lucide="paperclip" class="w-3 h-3"></i> ${e.attachments.length} attachment${e.attachments.length === 1 ? "" : "s"}</span>` : ""}
+                </div>
+              </div>`;
           }).join("");
+    }
 
-      // Time grid
+    function renderMiniMonth() {
+      const anchor = state.miniMonth;
+      const today = todayISO();
+      document.getElementById("mini-month-label").innerText = parseISODate(anchor).toLocaleDateString("en-GB", { month: "long", year: "numeric" });
+      const colorsByDay = {};
+      plannerEvents().forEach(e => {
+        const set = colorsByDay[e.date] || (colorsByDay[e.date] = []);
+        const color = eventColor(e);
+        if (!set.includes(color)) set.push(color);
+      });
+      const head = ["M", "T", "W", "T", "F", "S", "S"].map(d => `<div class="text-[10px] font-semibold text-slate-400 text-center py-1">${d}</div>`).join("");
+      const cells = monthGridDays(anchor).map(d => {
+        const inMonth = d.slice(0, 7) === anchor.slice(0, 7);
+        const isToday = d === today;
+        const isSelected = d === state.plannerDate;
+        const dots = (colorsByDay[d] || []).slice(0, 3).map(c => `<span class="w-1 h-1 rounded-full" style="background:${esc(c)}"></span>`).join("");
+        return `
+          <button type="button" data-miniday="${d}" class="flex flex-col items-center py-0.5 rounded-md hover:bg-slate-100 ${isSelected ? "bg-indigo-50" : ""}">
+            <span class="w-6 h-6 flex items-center justify-center rounded-full text-[11px] ${isToday ? "bg-indigo-600 text-white font-bold" : inMonth ? "text-slate-700 font-medium" : "text-slate-300"} ${isSelected && !isToday ? "ring-1 ring-indigo-400" : ""}">${parseISODate(d).getDate()}</span>
+            <span class="flex gap-0.5 h-1.5 items-center">${dots}</span>
+          </button>`;
+      }).join("");
+      document.getElementById("mini-month-grid").innerHTML = `<div class="grid grid-cols-7">${head}${cells}</div>`;
+    }
+
+    function monthViewHTML() {
+      const anchor = monthStart(state.plannerDate);
+      const today = todayISO();
+      const MAX_BARS = 3;
+      const head = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"].map(d =>
+        `<div class="text-[10px] uppercase tracking-wider font-semibold text-slate-400 text-center py-2 border-l border-slate-100 first:border-l-0">${d}</div>`).join("");
+      const cells = monthGridDays(anchor).map(d => {
+        const inMonth = d.slice(0, 7) === anchor.slice(0, 7);
+        const isToday = d === today;
+        const isSelected = d === state.plannerDate;
+        const events = eventsOn(d);
+        const bars = events.slice(0, MAX_BARS).map(e => {
+          const color = eventColor(e);
+          return `<div data-event="${e.id}" data-month-event="${e.id}" draggable="true" title="${esc(e.start)}–${esc(e.end)} ${esc(e.title)} · drag to another day" class="truncate rounded px-1.5 py-0.5 text-[10px] font-semibold leading-tight hover:brightness-95 cursor-grab"
+            style="background:${hexToRgba(color, 0.2)};border-left:3px solid ${esc(color)};color:#0f172a"><span class="text-slate-500 font-medium">${esc(e.start)}</span> ${esc(e.title)}</div>`;
+        }).join("");
+        const more = events.length > MAX_BARS ? `<div class="text-[10px] text-slate-500 font-semibold px-1">+${events.length - MAX_BARS} more</div>` : "";
+        return `
+          <div data-monthday="${d}" class="min-h-[104px] p-1 border-l border-t border-slate-100 first:border-l-0 [&:nth-child(7n+1)]:border-l-0 cursor-pointer hover:bg-slate-50 space-y-0.5 ${inMonth ? "" : "bg-slate-50/70"} ${isSelected ? "ring-2 ring-inset ring-indigo-300" : ""}">
+            <div class="flex justify-end">
+              <span class="w-6 h-6 flex items-center justify-center rounded-full text-xs font-semibold ${isToday ? "bg-indigo-600 text-white" : inMonth ? "text-slate-700" : "text-slate-300"}">${parseISODate(d).getDate()}</span>
+            </div>
+            ${bars}${more}
+          </div>`;
+      }).join("");
+      return `
+        <div class="min-w-[640px]">
+          <div class="grid grid-cols-7 sticky top-0 z-10 bg-white border-b border-slate-200">${head}</div>
+          <div class="grid grid-cols-7">${cells}</div>
+        </div>`;
+    }
+
+    function timeGridHTML(days) {
+      const today = todayISO();
+      const selected = state.plannerDate;
       const totalHeight = (PLANNER_END_HOUR - PLANNER_START_HOUR) * HOUR_PX;
       const rangeStart = PLANNER_START_HOUR * 60;
       const rangeEnd = PLANNER_END_HOUR * 60;
@@ -1659,27 +1911,30 @@
       html += `<div class="flex">`;
       html += `<div class="w-14 flex-shrink-0 relative" style="height:${totalHeight}px">`;
       for (let h = PLANNER_START_HOUR + 1; h < PLANNER_END_HOUR; h++) {
-        html += `<span class="absolute right-2 text-[10px] text-slate-400" style="top:${(h - PLANNER_START_HOUR) * HOUR_PX - 7}px">${pad2(h)}:00</span>`;
+        html += `<span class="absolute right-2 text-[10px] text-slate-400 font-mono" style="top:${(h - PLANNER_START_HOUR) * HOUR_PX - 7}px">${pad2(h)}:00</span>`;
       }
       html += `</div>`;
 
+      const visible = plannerEvents();
       days.forEach(d => {
         html += `<div data-daycol="${d}" class="flex-1 relative border-l border-slate-100 cursor-pointer ${d === today ? "bg-indigo-50/20" : ""}" style="height:${totalHeight}px;background-image:linear-gradient(to bottom,#f1f5f9 1px,transparent 1px);background-size:100% ${HOUR_PX}px">`;
 
-        layoutDayEvents(visibleEvents.filter(e => e.date === d)).forEach(item => {
+        layoutDayEvents(visible.filter(e => e.date === d)).forEach(item => {
           if (item.en <= rangeStart || item.s >= rangeEnd) return;
           const visStart = Math.max(item.s, rangeStart);
           const visEnd = Math.min(item.en, rangeEnd);
           const top = (visStart - rangeStart) / 60 * HOUR_PX;
           const height = Math.max(18, (visEnd - visStart) / 60 * HOUR_PX - 2);
           const width = 100 / item.lanes;
-          const cat = getCategory(item.e.catId);
-          const color = cat ? cat.color : NO_GROUP_COLOR;
+          const color = eventColor(item.e);
+          const loc = (item.e.location || "").trim();
           html += `
-            <div data-event="${item.e.id}" title="${esc(item.e.title)} (${esc(item.e.start)}–${esc(item.e.end)})" class="absolute rounded-md px-1.5 py-0.5 overflow-hidden text-[11px] leading-tight shadow-sm hover:shadow-md hover:z-10 transition"
+            <div data-event="${item.e.id}" data-timed title="${esc(item.e.title)} (${esc(item.e.start)}–${esc(item.e.end)})${loc ? " · " + esc(loc) : ""} · drag to move" class="absolute rounded-md px-1.5 py-0.5 overflow-hidden text-[11px] leading-tight shadow-sm hover:shadow-md hover:z-10 cursor-grab active:cursor-grabbing touch-none select-none"
               style="top:${top}px;height:${height}px;left:calc(${item.lane * width}% + 2px);width:calc(${width}% - 4px);background:${hexToRgba(color, 0.2)};border-left:3px solid ${esc(color)};color:#0f172a">
-              <div class="font-semibold truncate">${esc(item.e.title)}</div>
-              ${height > 30 ? `<div class="text-[10px] text-slate-600 truncate">${esc(item.e.start)}–${esc(item.e.end)}</div>` : ""}
+              <div class="font-semibold truncate">${(item.e.attachments || []).length ? `<i data-lucide="paperclip" class="w-2.5 h-2.5 inline -mt-0.5"></i> ` : ""}${esc(item.e.title)}</div>
+              ${height > 30 ? `<div class="text-[10px] text-slate-600 truncate font-mono">${esc(item.e.start)}–${esc(item.e.end)}</div>` : ""}
+              ${height > 46 && loc ? `<div class="text-[10px] text-slate-500 truncate">${esc(isUrl(loc) ? "Online meeting" : loc)}</div>` : ""}
+              <div data-resize class="absolute left-0 right-0 bottom-0 h-1.5 cursor-ns-resize" title="Drag to change the end time"></div>
             </div>`;
         });
 
@@ -1693,23 +1948,25 @@
         html += `</div>`;
       });
       html += `</div></div>`;
-
-      document.getElementById("planner-grid").innerHTML = html;
-
-      if (scrollToNow) {
-        const now = new Date();
-        const anchorHour = Math.max(PLANNER_START_HOUR, Math.min(now.getHours() - 1, PLANNER_END_HOUR - 8));
-        document.getElementById("planner-scroll").scrollTop = (anchorHour - PLANNER_START_HOUR) * HOUR_PX;
-      }
-      lucide.createIcons();
+      return html;
     }
 
     function handlePlannerGridClick(e) {
+      if (Date.now() - plannerDragEndedAt < 300) return;
       const block = e.target.closest("[data-event]");
       if (block) { openEventModal(block.dataset.event); return; }
 
+      const monthDay = e.target.closest("[data-monthday]");
+      if (monthDay) {
+        // Month cell → open that day
+        setPlannerDate(monthDay.dataset.monthday);
+        state.plannerView = "day";
+        renderPlanner(true);
+        return;
+      }
+
       const head = e.target.closest("[data-dayhead]");
-      if (head) { state.plannerDate = head.dataset.dayhead; renderPlanner(); return; }
+      if (head) { setPlannerDate(head.dataset.dayhead); renderPlanner(); return; }
 
       const col = e.target.closest("[data-daycol]");
       if (col) {
@@ -1719,31 +1976,141 @@
       }
     }
 
-    function renderEventCategoryPicker(selectedId) {
+    function handleMiniMonthClick(e) {
+      const day = e.target.closest("[data-miniday]");
+      if (!day) return;
+      setPlannerDate(day.dataset.miniday);
+      renderPlanner(state.plannerView !== "month");
+    }
+
+    /* ---- Add / edit block modal ---- */
+    // Attachment changes are staged until Save: add = new files, remove = ids of saved attachments
+    let eventModalPending = { add: [], remove: new Set() };
+    let eventGroupTouched = false;
+
+    function defaultGroupFor(calendarId) {
+      // The first calendar is the job-search time-blocking one; others default to "no group"
+      return calendarId === state.planner.calendars[0]?.id ? (state.planner.categories[0]?.id || "") : "";
+    }
+
+    function renderEventCategoryPicker(selectedId, touched = false) {
+      if (touched) eventGroupTouched = true;
       document.getElementById("event-cat").value = selectedId || "";
-      const options = [...state.planner.categories, { id: "", name: "No group", color: NO_GROUP_COLOR }];
+      const cal = getCalendar(document.getElementById("event-calendar").value);
+      const options = [...state.planner.categories, { id: "", name: "No group (calendar colour)", color: cal ? cal.color : NO_GROUP_COLOR }];
       document.getElementById("event-cat-picker").innerHTML = options.map(c => {
         const active = (selectedId || "") === c.id;
         return `
-          <button type="button" onclick="renderEventCategoryPicker('${esc(c.id)}')" class="px-2.5 py-1 rounded-full border text-[11px] font-semibold flex items-center gap-1.5 transition ${active ? "ring-2 ring-offset-1 ring-indigo-500" : "hover:bg-slate-50"}"
+          <button type="button" onclick="renderEventCategoryPicker('${esc(c.id)}', true)" class="px-2.5 py-1 rounded-full border text-[11px] font-semibold flex items-center gap-1.5 transition ${active ? "ring-2 ring-offset-1 ring-indigo-500" : "hover:bg-slate-50"}"
             style="border-color:${esc(c.color)};background:${active ? hexToRgba(c.color, 0.2) : "#fff"}">
             <span class="w-2.5 h-2.5 rounded-full" style="background:${esc(c.color)}"></span>${esc(c.name)}
           </button>`;
       }).join("");
     }
 
+    function handleEventCalendarChange() {
+      const calId = document.getElementById("event-calendar").value;
+      const current = document.getElementById("event-cat").value;
+      renderEventCategoryPicker(eventGroupTouched || document.getElementById("event-id").value ? current : defaultGroupFor(calId));
+    }
+
+    function currentModalEvent() {
+      const id = document.getElementById("event-id").value;
+      return id ? state.planner.events.find(e => e.id === id) : null;
+    }
+
+    function renderEventAttachments() {
+      const ev = currentModalEvent();
+      const saved = (ev ? ev.attachments || [] : []).filter(a => !eventModalPending.remove.has(a.id));
+      const rows = [...saved.map(a => ({ ...a, staged: false })), ...eventModalPending.add.map(a => ({ ...a, staged: true }))];
+      document.getElementById("event-attachments").innerHTML = rows.length === 0
+        ? `<p class="text-slate-400 italic">No attachments. Add an invite, ticket, agenda or job description.</p>`
+        : rows.map(a => `
+          <div class="flex items-center gap-2 bg-slate-50 border border-slate-200 rounded-lg px-2.5 py-1.5">
+            <i data-lucide="file" class="w-3.5 h-3.5 text-slate-400 flex-shrink-0"></i>
+            <button type="button" onclick="viewEventAttachment('${esc(a.id)}')" class="truncate text-left font-semibold text-indigo-700 hover:underline flex-1 min-w-0">${esc(a.name)}</button>
+            <span class="text-[10px] text-slate-400 flex-shrink-0">${formatBytes(a.size || 0)}${a.staged ? ' · <span class="text-amber-600">unsaved</span>' : ""}</span>
+            <button type="button" onclick="removeEventAttachment('${esc(a.id)}')" class="p-0.5 text-slate-400 hover:text-rose-600 flex-shrink-0" title="Remove"><i data-lucide="x" class="w-3.5 h-3.5"></i></button>
+          </div>`).join("");
+      lucide.createIcons();
+    }
+
+    function handleEventAttachmentUpload(event) {
+      const files = [...event.target.files];
+      event.target.value = "";
+      files.forEach((file, i) => {
+        if (file.size > MAX_ATTACHMENT_BYTES) {
+          showToast(`${file.name} is larger than 25 MB and was skipped.`);
+          return;
+        }
+        eventModalPending.add.push({ id: `att-${Date.now()}-${i}`, name: file.name, size: file.size, type: file.type, blob: file });
+      });
+      renderEventAttachments();
+    }
+
+    function removeEventAttachment(attId) {
+      const before = eventModalPending.add.length;
+      eventModalPending.add = eventModalPending.add.filter(a => a.id !== attId);
+      if (eventModalPending.add.length === before) eventModalPending.remove.add(attId);
+      renderEventAttachments();
+    }
+
+    // PDFs, images and text open in the preview; other files (e.g. .ics, .docx) download
+    function openFileBlob(blob, name) {
+      const type = blob.type || "";
+      if (type === "application/pdf" || type.startsWith("image/") || type.startsWith("text/") || /\.pdf$/i.test(name)) {
+        openPdfModal({ title: name, blob });
+        return;
+      }
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = name;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      setTimeout(() => URL.revokeObjectURL(url), 1000);
+    }
+
+    async function viewEventAttachment(attId) {
+      const staged = eventModalPending.add.find(a => a.id === attId);
+      if (staged) { openFileBlob(staged.blob, staged.name); return; }
+      const ev = currentModalEvent();
+      const att = ev && (ev.attachments || []).find(a => a.id === attId);
+      if (!att) return;
+      try {
+        const record = await FileStore.get(`evt:${ev.id}:${attId}`);
+        if (!record) { showToast("File not found in this browser's storage."); return; }
+        openFileBlob(record.blob, att.name);
+      } catch (e) {
+        console.error(e);
+        showToast("Could not open the attachment.");
+      }
+    }
+
     function openEventModal(id = null, defaults = {}) {
       const ev = id ? state.planner.events.find(e => e.id === id) : null;
-      const baseDate = defaults.date || state.plannerDate || todayISO();
+      eventModalPending = { add: [], remove: new Set() };
+      eventGroupTouched = false;
+
       document.getElementById("modal-event-title").innerHTML = `<i data-lucide="${ev ? "calendar-check" : "calendar-plus"}" class="w-4 h-4 text-sky-400"></i> ${ev ? "Edit Block" : "Add Block"}`;
       document.getElementById("event-id").value = ev ? ev.id : "";
       document.getElementById("event-title").value = ev ? ev.title : "";
-      document.getElementById("event-date").value = ev ? ev.date : baseDate;
+      setDateField("event-date", ev ? ev.date : (defaults.date || state.plannerDate || todayISO()));
       document.getElementById("event-start").value = ev ? ev.start : (defaults.start || "09:00");
       document.getElementById("event-end").value = ev ? ev.end : (defaults.end || "10:00");
+      document.getElementById("event-location").value = ev ? (ev.location || "") : "";
       document.getElementById("event-notes").value = ev ? (ev.notes || "") : "";
       document.getElementById("btn-event-delete").classList.toggle("hidden", !ev);
-      renderEventCategoryPicker(ev ? ev.catId : (state.planner.categories[0]?.id || ""));
+
+      const calSelect = document.getElementById("event-calendar");
+      calSelect.innerHTML = state.planner.calendars.map(c => `<option value="${esc(c.id)}">${esc(c.name)}</option>`).join("");
+      calSelect.value = ev ? ev.calendarId : (state.lastCalendarId && getCalendar(state.lastCalendarId) ? state.lastCalendarId : state.planner.calendars[0].id);
+      renderEventCategoryPicker(ev ? ev.catId : defaultGroupFor(calSelect.value));
+      renderEventAttachments();
+      updateEventDurationLabel();
+      closeTimeMenu();
+
       document.getElementById("modal-event").classList.remove("hidden");
       lucide.createIcons();
       setTimeout(() => document.getElementById("event-title").focus(), 50);
@@ -1751,60 +2118,108 @@
 
     function closeEventModal() {
       document.getElementById("modal-event").classList.add("hidden");
+      closeTimeMenu();
+      eventModalPending = { add: [], remove: new Set() };
     }
 
-    function handleEventFormSubmit(e) {
+    async function handleEventFormSubmit(e) {
       e.preventDefault();
-      const id = document.getElementById("event-id").value;
-      const start = document.getElementById("event-start").value;
-      const end = document.getElementById("event-end").value;
+      const startInput = document.getElementById("event-start");
+      const endInput = document.getElementById("event-end");
+      const start = normalizeTime(startInput.value);
+      const end = normalizeTime(endInput.value, true);
+      if (!start || !end) {
+        showToast("Use 24-hour times, e.g. 09:00 or 17:30.");
+        return;
+      }
       if (timeToMin(end) <= timeToMin(start)) {
         showToast("End time must be after the start time.");
         return;
       }
+      const date = readDateField("event-date", { required: true });
+      if (!date) return;
+
+      const existing = currentModalEvent();
+      const id = existing ? existing.id : "evt-" + Date.now();
+      const attachments = (existing ? existing.attachments || [] : []).filter(a => !eventModalPending.remove.has(a.id));
+      try {
+        for (const a of eventModalPending.add) {
+          await FileStore.put(`evt:${id}:${a.id}`, { name: a.name, blob: a.blob, savedAt: Date.now() });
+          attachments.push({ id: a.id, name: a.name, size: a.size, type: a.type });
+        }
+        for (const attId of eventModalPending.remove) await FileStore.del(`evt:${id}:${attId}`);
+      } catch (err) {
+        console.error(err);
+        showToast("Could not save the attachments in this browser.");
+        return;
+      }
+
       const data = {
-        id: id || "evt-" + Date.now(),
+        ...(existing || {}),
+        id,
         title: document.getElementById("event-title").value.trim(),
+        calendarId: document.getElementById("event-calendar").value,
         catId: document.getElementById("event-cat").value,
-        date: document.getElementById("event-date").value,
+        date,
         start,
         end,
-        notes: document.getElementById("event-notes").value
+        location: document.getElementById("event-location").value.trim(),
+        notes: document.getElementById("event-notes").value,
+        attachments
       };
-      const index = state.planner.events.findIndex(ev => ev.id === id);
-      if (index !== -1) state.planner.events[index] = data; else state.planner.events.push(data);
-      state.plannerDate = data.date;
+      if (existing) Object.assign(existing, data); else state.planner.events.push(data);
+      state.lastCalendarId = data.calendarId;
+      setPlannerDate(data.date);
       saveState();
       closeEventModal();
       renderPlanner();
     }
 
-    function deleteEventFromModal() {
-      const id = document.getElementById("event-id").value;
-      state.planner.events = state.planner.events.filter(e => e.id !== id);
+    async function deleteEventFromModal() {
+      const ev = currentModalEvent();
+      if (!ev) return;
+      state.planner.events = state.planner.events.filter(e => e.id !== ev.id);
       saveState();
       closeEventModal();
       renderPlanner();
+      try {
+        await Promise.all((ev.attachments || []).map(a => FileStore.del(`evt:${ev.id}:${a.id}`)));
+      } catch (e) {
+        console.warn("Could not delete attachments:", e);
+      }
     }
 
-    function addCategoryRow(cat = { id: "", name: "", color: "#6366f1" }) {
+    /* ---- Groups & calendars editor (same modal: colour + name per row) ---- */
+    let colorListMode = "groups";
+
+    function addCategoryRow(item = { id: "", name: "", color: "#6366f1" }) {
       const row = document.createElement("div");
       row.className = "category-row flex items-center gap-2";
-      row.dataset.id = cat.id;
+      row.dataset.id = item.id;
       row.innerHTML = `
-        <input type="color" value="${esc(cat.color)}" class="cat-color w-9 h-9 p-0.5 border border-slate-200 rounded-lg cursor-pointer flex-shrink-0">
-        <input type="text" value="${esc(cat.name)}" placeholder="Group name" class="cat-name flex-1 p-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-indigo-500">
-        <button type="button" class="p-2 text-slate-400 hover:text-rose-600" title="Delete group"><i data-lucide="trash-2" class="w-4 h-4"></i></button>`;
+        <input type="color" value="${esc(item.color)}" class="cat-color w-9 h-9 p-0.5 border border-slate-200 rounded-lg cursor-pointer flex-shrink-0">
+        <input type="text" value="${esc(item.name)}" placeholder="${colorListMode === "groups" ? "Group name" : "Calendar name"}" class="cat-name flex-1 p-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-indigo-500">
+        <button type="button" class="p-2 text-slate-400 hover:text-rose-600" title="Delete"><i data-lucide="trash-2" class="w-4 h-4"></i></button>`;
       row.querySelector("button").onclick = () => row.remove();
       document.getElementById("category-rows").appendChild(row);
       lucide.createIcons();
     }
 
-    function openCategoryModal() {
+    function openColorListModal(mode) {
+      colorListMode = mode;
+      const isGroups = mode === "groups";
+      document.getElementById("color-list-title").innerText = isGroups ? "Planner Groups" : "Calendars";
+      document.getElementById("color-list-add-label").innerText = isGroups ? "Add Group" : "Add Calendar";
+      document.getElementById("color-list-desc").innerText = isGroups
+        ? "Groups say what kind of time a block is (e.g. Break, Look for job). Blocks in a deleted group use their calendar's colour."
+        : "Calendars separate areas of your life, like Personal or Events, and can be shown or hidden. Blocks in a deleted calendar move to the first one.";
       document.getElementById("category-rows").innerHTML = "";
-      state.planner.categories.forEach(c => addCategoryRow(c));
+      (isGroups ? state.planner.categories : state.planner.calendars).forEach(item => addCategoryRow(item));
       document.getElementById("modal-categories").classList.remove("hidden");
     }
+
+    function openCategoryModal() { openColorListModal("groups"); }
+    function openCalendarModal() { openColorListModal("calendars"); }
 
     function closeCategoryModal() {
       document.getElementById("modal-categories").classList.add("hidden");
@@ -1812,17 +2227,352 @@
 
     function handleCategoryFormSubmit(e) {
       e.preventDefault();
-      const categories = [];
+      const isGroups = colorListMode === "groups";
+      const prefix = isGroups ? "cat" : "cal";
+      const items = [];
       document.querySelectorAll("#category-rows .category-row").forEach((row, i) => {
         const name = row.querySelector(".cat-name").value.trim();
         if (!name) return;
-        categories.push({ id: row.dataset.id || `cat-${Date.now()}-${i}`, name, color: row.querySelector(".cat-color").value });
+        const id = row.dataset.id || `${prefix}-${Date.now()}-${i}`;
+        const item = { id, name, color: row.querySelector(".cat-color").value };
+        if (!isGroups) item.visible = getCalendar(id)?.visible !== false;
+        items.push(item);
       });
-      state.planner.categories = categories;
+
+      if (isGroups) {
+        state.planner.categories = items;
+      } else {
+        if (items.length === 0) {
+          showToast("Keep at least one calendar.");
+          return;
+        }
+        state.planner.calendars = items;
+        ensurePlannerShape(); // re-home blocks whose calendar was deleted
+      }
       saveState();
       closeCategoryModal();
       renderPlanner();
-      showToast("Planner groups saved!");
+      showToast(isGroups ? "Planner groups saved!" : "Calendars saved!");
+    }
+
+    /* ==========================================================================
+       DATE FIELDS (DD/MM/YYYY)
+       Native date inputs follow the browser's locale (often MM/DD/YYYY), so each date
+       field is a DD/MM/YYYY text box plus a hidden native picker that holds the ISO value.
+       ========================================================================== */
+    function formatDateDMY(iso) {
+      if (!/^\d{4}-\d{2}-\d{2}$/.test(iso || "")) return iso || "";
+      const [y, m, d] = iso.split("-");
+      return `${d}/${m}/${y}`;
+    }
+
+    // "28/10/2026", "28-10-26", "2026-10-28" → "2026-10-28"; invalid → null
+    function parseDateDMY(text) {
+      const v = String(text || "").trim();
+      let y, m, d;
+      let match = v.match(/^(\d{4})-(\d{1,2})-(\d{1,2})$/);
+      if (match) { [, y, m, d] = match.map(Number); }
+      else {
+        match = v.match(/^(\d{1,2})[\/\-. ](\d{1,2})[\/\-. ](\d{2}|\d{4})$/);
+        if (!match) return null;
+        [, d, m, y] = match.map(Number);
+        if (y < 100) y += 2000;
+      }
+      const date = new Date(y, m - 1, d);
+      if (date.getFullYear() !== y || date.getMonth() !== m - 1 || date.getDate() !== d) return null;
+      return toISODate(date);
+    }
+
+    function setDateField(id, iso) {
+      document.getElementById(id).value = iso || "";
+      document.getElementById(`${id}-display`).value = formatDateDMY(iso || "");
+    }
+
+    function initDateFields() {
+      document.querySelectorAll("[data-date-for]").forEach(display => {
+        const hidden = document.getElementById(display.dataset.dateFor);
+        const sync = () => {
+          if (!display.value.trim()) { hidden.value = ""; return; }
+          const iso = parseDateDMY(display.value);
+          if (iso) { hidden.value = iso; display.value = formatDateDMY(iso); }
+        };
+        display.addEventListener("blur", sync);
+        display.addEventListener("change", sync);
+        hidden.addEventListener("change", () => { display.value = formatDateDMY(hidden.value); });
+      });
+      document.querySelectorAll("[data-date-picker]").forEach(btn => {
+        btn.addEventListener("click", () => {
+          const hidden = document.getElementById(btn.dataset.datePicker);
+          try { hidden.showPicker(); } catch (e) { document.getElementById(`${btn.dataset.datePicker}-display`).focus(); }
+        });
+      });
+    }
+
+    // Returns the ISO date of a DD/MM/YYYY field, or null (and a toast) when it is invalid
+    function readDateField(id, { required = false, label = "date" } = {}) {
+      const text = document.getElementById(`${id}-display`).value.trim();
+      if (!text) {
+        if (required) showToast(`Please enter a ${label} (DD/MM/YYYY).`);
+        return required ? null : "";
+      }
+      const iso = parseDateDMY(text);
+      if (!iso) showToast(`"${text}" is not a valid ${label}. Use DD/MM/YYYY.`);
+      return iso;
+    }
+
+    /* ==========================================================================
+       TIME MENUS (Google Calendar style, 24h)
+       Start: every 15 minutes. End: 15-minute steps for the first hour, then every
+       30 minutes, each labelled with the resulting duration.
+       ========================================================================== */
+    function formatDuration(min) {
+      if (min < 60) return `${min} mins`;
+      const hrs = Math.round(min / 60 * 100) / 100;
+      return `${hrs} hr${hrs === 1 ? "" : "s"}`;
+    }
+
+    let timeMenuState = { kind: null, index: -1, options: [], prevStart: null };
+
+    function timeMenuOptions(kind) {
+      if (kind === "start") {
+        return Array.from({ length: 96 }, (_, i) => ({ value: minToTime(i * 15), label: minToTime(i * 15) }));
+      }
+      const start = timeToMin(normalizeTime(document.getElementById("event-start").value) || "09:00");
+      const options = [];
+      for (let m = start + 15; m <= 24 * 60; m += (m - start < 60 ? 15 : 30)) {
+        options.push({ value: minToTime(m), label: `${minToTime(m)}`, hint: formatDuration(m - start) });
+      }
+      return options;
+    }
+
+    function openTimeMenu(kind) {
+      closeTimeMenu();
+      const input = document.getElementById(`event-${kind}`);
+      const current = normalizeTime(input.value, kind === "end");
+      const options = timeMenuOptions(kind);
+      // Highlight the current value, or the first option at/after it
+      let index = options.findIndex(o => o.value === current);
+      if (index === -1 && current) index = options.findIndex(o => timeToMin(o.value) >= timeToMin(current));
+      timeMenuState = { kind, index, options, prevStart: normalizeTime(document.getElementById("event-start").value) };
+
+      const menu = document.getElementById(`event-${kind}-menu`);
+      menu.innerHTML = options.map((o, i) => `
+        <button type="button" data-time-index="${i}" class="w-full text-left px-3 py-1.5 font-mono text-[12px] flex items-center justify-between gap-2 hover:bg-indigo-50 ${i === index ? "bg-indigo-100 text-indigo-900 font-semibold" : "text-slate-700"}">
+          <span>${o.label}</span>${o.hint ? `<span class="font-sans text-[10px] text-slate-400">(${o.hint})</span>` : ""}
+        </button>`).join("");
+      menu.classList.remove("hidden");
+      const active = menu.querySelector(`[data-time-index="${Math.max(0, index)}"]`);
+      if (active) menu.scrollTop = active.offsetTop - menu.clientHeight / 2 + active.offsetHeight / 2;
+    }
+
+    function closeTimeMenu() {
+      document.querySelectorAll(".time-menu").forEach(m => m.classList.add("hidden"));
+      timeMenuState.kind = null;
+    }
+
+    function chooseTime(kind, value) {
+      document.getElementById(`event-${kind}`).value = value;
+      closeTimeMenu();
+      handleTimeChanged(kind);
+    }
+
+    // Moving the start keeps the block's length, like Google Calendar
+    function handleTimeChanged(kind, prevStart = timeMenuState.prevStart) {
+      const startInput = document.getElementById("event-start");
+      const endInput = document.getElementById("event-end");
+      const start = normalizeTime(startInput.value);
+      if (kind === "start" && start && prevStart && prevStart !== start) {
+        const end = normalizeTime(endInput.value, true);
+        const duration = end ? timeToMin(end) - timeToMin(prevStart) : 60;
+        if (duration > 0) endInput.value = minToTime(Math.min(24 * 60, timeToMin(start) + duration));
+      }
+      timeMenuState.prevStart = start;
+      updateEventDurationLabel();
+    }
+
+    function updateEventDurationLabel() {
+      const start = normalizeTime(document.getElementById("event-start").value);
+      const end = normalizeTime(document.getElementById("event-end").value, true);
+      const label = document.getElementById("event-duration");
+      if (!start || !end) { label.innerHTML = `<span class="text-amber-600">Use 24-hour times, e.g. 09:00</span>`; return; }
+      const mins = timeToMin(end) - timeToMin(start);
+      label.innerHTML = mins > 0
+        ? `<i data-lucide="clock" class="w-3 h-3 inline -mt-0.5"></i> ${start} – ${end} <span class="font-semibold text-slate-700">(${formatDuration(mins)})</span>`
+        : `<span class="text-rose-600">End time must be after the start time</span>`;
+      lucide.createIcons();
+    }
+
+    function initTimeMenus() {
+      ["start", "end"].forEach(kind => {
+        const input = document.getElementById(`event-${kind}`);
+        const menu = document.getElementById(`event-${kind}-menu`);
+        input.addEventListener("focus", () => openTimeMenu(kind));
+        input.addEventListener("click", () => { if (timeMenuState.kind !== kind) openTimeMenu(kind); });
+        input.addEventListener("input", updateEventDurationLabel);
+        input.addEventListener("blur", () => {
+          setTimeout(() => { if (document.activeElement !== input) closeTimeMenu(); }, 150);
+          const t = normalizeTime(input.value, kind === "end");
+          if (t) input.value = t;
+          handleTimeChanged(kind);
+        });
+        input.addEventListener("keydown", e => {
+          if (timeMenuState.kind !== kind) return;
+          const { options } = timeMenuState;
+          if (e.key === "ArrowDown" || e.key === "ArrowUp") {
+            e.preventDefault();
+            const step = e.key === "ArrowDown" ? 1 : -1;
+            timeMenuState.index = Math.max(0, Math.min(options.length - 1, timeMenuState.index + step));
+            input.value = options[timeMenuState.index].value;
+            menu.querySelectorAll("[data-time-index]").forEach((b, i) => {
+              b.classList.toggle("bg-indigo-100", i === timeMenuState.index);
+              if (i === timeMenuState.index) b.scrollIntoView({ block: "nearest" });
+            });
+            updateEventDurationLabel();
+          } else if (e.key === "Enter") {
+            e.preventDefault();
+            chooseTime(kind, normalizeTime(input.value, kind === "end") || input.value);
+          } else if (e.key === "Escape" || e.key === "Tab") {
+            closeTimeMenu();
+          }
+        });
+        // mousedown (not click) so the input doesn't blur and close the menu first
+        menu.addEventListener("mousedown", e => {
+          const btn = e.target.closest("[data-time-index]");
+          e.preventDefault();
+          if (btn) chooseTime(kind, timeMenuState.options[Number(btn.dataset.timeIndex)].value);
+        });
+      });
+    }
+
+    /* ==========================================================================
+       DRAG TO RESCHEDULE
+       Day/week: drag a block to another time or day (15-minute snap); drag its bottom
+       edge to change the end time. Month: drag a bar onto another day (time kept).
+       ========================================================================== */
+    const SNAP_MIN = 15;
+    let plannerDrag = null;
+    let plannerDragEndedAt = 0;
+
+    function snapMinutes(min) { return Math.round(min / SNAP_MIN) * SNAP_MIN; }
+
+    function initPlannerDrag() {
+      const grid = document.getElementById("planner-grid");
+
+      grid.addEventListener("pointerdown", e => {
+        if (e.button !== 0) return;
+        const block = e.target.closest("[data-event][data-timed]");
+        if (!block) return;
+        const ev = state.planner.events.find(x => x.id === block.dataset.event);
+        if (!ev) return;
+        plannerDrag = {
+          ev, block, pointerId: e.pointerId,
+          mode: e.target.closest("[data-resize]") ? "resize" : "move",
+          startX: e.clientX, startY: e.clientY, started: false,
+          grabOffsetMin: (e.clientY - block.getBoundingClientRect().top) / HOUR_PX * 60,
+          duration: Math.max(SNAP_MIN, timeToMin(ev.end) - timeToMin(ev.start)),
+          col: block.closest("[data-daycol]"),
+          target: null
+        };
+      });
+
+      window.addEventListener("pointermove", e => {
+        const drag = plannerDrag;
+        if (!drag || e.pointerId !== drag.pointerId) return;
+        if (!drag.started) {
+          if (Math.hypot(e.clientX - drag.startX, e.clientY - drag.startY) < 5) return;
+          drag.started = true;
+          drag.block.classList.add("opacity-30");
+          document.body.classList.add("select-none");
+          drag.preview = document.createElement("div");
+          drag.preview.className = "absolute left-0.5 right-0.5 z-30 rounded-md px-1.5 py-0.5 text-[11px] font-semibold shadow-lg pointer-events-none border-2 border-dashed";
+          drag.preview.style.borderColor = eventColor(drag.ev);
+          drag.preview.style.background = hexToRgba(eventColor(drag.ev), 0.35);
+        }
+        e.preventDefault();
+
+        // Auto-scroll near the top/bottom edge of the calendar
+        const scroll = document.getElementById("planner-scroll");
+        const sr = scroll.getBoundingClientRect();
+        if (e.clientY > sr.bottom - 30) scroll.scrollTop += 12;
+        else if (e.clientY < sr.top + 70) scroll.scrollTop -= 12;
+
+        const under = document.elementFromPoint(e.clientX, e.clientY);
+        const col = drag.mode === "move" ? (under && under.closest("[data-daycol]")) || drag.target?.col || drag.col : drag.col;
+        const rect = col.getBoundingClientRect();
+        const pointerMin = PLANNER_START_HOUR * 60 + (e.clientY - rect.top) / HOUR_PX * 60;
+        let start, end;
+        if (drag.mode === "move") {
+          start = Math.max(0, Math.min(24 * 60 - drag.duration, snapMinutes(pointerMin - drag.grabOffsetMin)));
+          end = start + drag.duration;
+        } else {
+          start = timeToMin(drag.ev.start);
+          end = Math.max(start + SNAP_MIN, Math.min(24 * 60, snapMinutes(pointerMin)));
+        }
+        drag.target = { col, date: col.dataset.daycol, start, end };
+
+        const visStart = Math.max(start, PLANNER_START_HOUR * 60);
+        drag.preview.style.top = `${(visStart - PLANNER_START_HOUR * 60) / 60 * HOUR_PX}px`;
+        drag.preview.style.height = `${Math.max(18, (end - visStart) / 60 * HOUR_PX - 2)}px`;
+        drag.preview.innerHTML = `<span class="font-mono">${minToTime(start)}–${minToTime(end)}</span> <span class="font-sans font-normal text-slate-700">(${formatDuration(end - start)})</span>`;
+        if (drag.preview.parentElement !== col) col.appendChild(drag.preview);
+      }, { passive: false });
+
+      const finish = e => {
+        const drag = plannerDrag;
+        if (!drag || e.pointerId !== drag.pointerId) return;
+        plannerDrag = null;
+        document.body.classList.remove("select-none");
+        if (!drag.started) return; // plain click → handled by the click listener (opens the block)
+        plannerDragEndedAt = Date.now();
+        if (e.type === "pointercancel" || !drag.target) { renderPlanner(); return; }
+        const { date, start, end } = drag.target;
+        const changed = date !== drag.ev.date || minToTime(start) !== drag.ev.start || minToTime(end) !== drag.ev.end;
+        if (changed) {
+          drag.ev.date = date;
+          drag.ev.start = minToTime(start);
+          drag.ev.end = minToTime(end);
+          setPlannerDate(date);
+          saveState();
+          showToast(`${drag.ev.title}: ${formatDateDMY(date)}, ${drag.ev.start}–${drag.ev.end}`);
+        }
+        renderPlanner();
+      };
+      window.addEventListener("pointerup", finish);
+      window.addEventListener("pointercancel", finish);
+
+      // Month view: native drag & drop of bars between days
+      grid.addEventListener("dragstart", e => {
+        const bar = e.target.closest && e.target.closest("[data-month-event]");
+        if (!bar) return;
+        e.dataTransfer.setData("text/plain", bar.dataset.monthEvent);
+        e.dataTransfer.effectAllowed = "move";
+        setTimeout(() => bar.classList.add("opacity-30"), 0);
+      });
+      grid.addEventListener("dragover", e => {
+        const cell = e.target.closest && e.target.closest("[data-monthday]");
+        if (!cell) return;
+        e.preventDefault();
+        if (!cell.classList.contains("drop-active")) {
+          grid.querySelectorAll(".drop-active").forEach(el => el.classList.remove("drop-active"));
+          cell.classList.add("drop-active");
+        }
+      });
+      grid.addEventListener("dragend", () => {
+        grid.querySelectorAll(".drop-active, .opacity-30").forEach(el => el.classList.remove("drop-active", "opacity-30"));
+      });
+      grid.addEventListener("drop", e => {
+        const cell = e.target.closest && e.target.closest("[data-monthday]");
+        if (!cell) return;
+        e.preventDefault();
+        plannerDragEndedAt = Date.now();
+        const ev = state.planner.events.find(x => x.id === e.dataTransfer.getData("text/plain"));
+        if (ev && ev.date !== cell.dataset.monthday) {
+          ev.date = cell.dataset.monthday;
+          saveState();
+          showToast(`${ev.title} moved to ${formatDateDMY(ev.date)}`);
+        }
+        renderPlanner();
+      });
     }
 
     /* ==========================================================================
@@ -2650,7 +3400,7 @@
           <td class="py-2.5 px-4">${renderLangBadge(job.lang)}</td>
           <td class="py-2.5 px-4 text-slate-500">${esc(job.source || 'LinkedIn')}</td>
           <td class="py-2.5 px-4">${renderStatusBadge(job.status)}</td>
-          <td class="py-2.5 px-4 text-slate-500">${esc(job.appliedDate || '-')}</td>
+          <td class="py-2.5 px-4 text-slate-500">${esc(formatDateDMY(job.appliedDate) || '-')}</td>
           <td class="py-2.5 px-4 text-right">
             <button onclick="openJobModal('${job.id}')" class="text-indigo-600 hover:text-indigo-800 font-semibold text-[11px]">View</button>
           </td>
@@ -2756,7 +3506,7 @@
           <td class="py-2.5 px-3 whitespace-nowrap">
             <span class="bg-blue-50 text-blue-700 px-2 py-0.5 rounded text-[11px] font-semibold border border-blue-200/50">${esc(job.source || 'LinkedIn')}</span>
           </td>
-          <td class="py-2.5 px-3 text-slate-500 whitespace-nowrap">${esc(job.appliedDate) || '<span class="text-slate-300">m/d/yyyy</span>'}</td>
+          <td class="py-2.5 px-3 text-slate-500 whitespace-nowrap">${esc(formatDateDMY(job.appliedDate)) || '<span class="text-slate-300">dd/mm/yyyy</span>'}</td>
           <td class="py-2.5 px-3 whitespace-nowrap">
             ${job.linkedinUrl ? `<a href="${esc(job.linkedinUrl)}" target="_blank" rel="noopener" class="text-blue-600 hover:underline flex items-center gap-1 font-medium"><i data-lucide="linkedin" class="w-3.5 h-3.5"></i> LinkedIn</a>` : '<span class="text-slate-300">-</span>'}
           </td>
@@ -2807,7 +3557,7 @@
             <h4 class="font-semibold text-indigo-700 text-xs leading-snug hover:underline">${esc(job.title)}</h4>
             ${job.priority || job.linkedinMatch ? `<div class="flex flex-wrap gap-1">${job.priority ? renderPriorityBadge(job.priority) : ''}${job.linkedinMatch ? renderMatchBadge(job.linkedinMatch) : ''}</div>` : ''}
             <div class="flex items-center justify-between pt-2 border-t border-slate-100 text-[11px] text-slate-500">
-              <span>${esc(job.appliedDate || 'Not applied')}</span>
+              <span>${esc(formatDateDMY(job.appliedDate) || 'Not applied')}</span>
               <div class="flex items-center space-x-1">
                 ${renderLangBadge(job.lang)}
               </div>
@@ -3012,7 +3762,7 @@
         document.getElementById("job-match-input").value = job.linkedinMatch || '';
         document.getElementById("job-linkedin-input").value = job.linkedinUrl || '';
         document.getElementById("job-careersite-input").value = job.careerSiteUrl || '';
-        document.getElementById("job-date-input").value = job.appliedDate || '';
+        setDateField("job-date-input", job.appliedDate || '');
         document.getElementById("job-salary-input").value = job.salary || '';
         document.getElementById("job-task-cv").checked = job.tasks?.cv || false;
         document.getElementById("job-task-cl").checked = job.tasks?.cl || false;
@@ -3024,7 +3774,7 @@
       } else {
         document.getElementById("modal-job-title").innerHTML = `<i data-lucide="plus-circle" class="w-4 h-4 text-indigo-400"></i> Add New Application`;
         document.getElementById("job-id").value = '';
-        document.getElementById("job-date-input").value = new Date().toISOString().split('T')[0];
+        setDateField("job-date-input", todayISO());
       }
 
       ["cv", "cl"].forEach(kind => {
@@ -3120,6 +3870,8 @@
       e.preventDefault();
       const id = document.getElementById("job-id").value;
       const existing = id ? state.applications.find(a => a.id === id) : null;
+      const appliedDate = readDateField("job-date-input", { label: "applied date" });
+      if (appliedDate === null) return;
 
       const jobData = {
         ...(existing || {}),
@@ -3134,7 +3886,7 @@
         linkedinMatch: document.getElementById("job-match-input").value,
         linkedinUrl: document.getElementById("job-linkedin-input").value,
         careerSiteUrl: document.getElementById("job-careersite-input").value,
-        appliedDate: document.getElementById("job-date-input").value,
+        appliedDate,
         salary: document.getElementById("job-salary-input").value,
         tasks: {
           cv: document.getElementById("job-task-cv").checked,
@@ -3319,7 +4071,8 @@
       const errorBox = document.getElementById("pdf-modal-error");
 
       if (blob) {
-        pdfModalUrl = URL.createObjectURL(blob.type === "application/pdf" ? blob : new Blob([blob], { type: "application/pdf" }));
+        const viewable = blob.type === "application/pdf" || (blob.type || "").startsWith("image/") || (blob.type || "").startsWith("text/");
+        pdfModalUrl = URL.createObjectURL(viewable ? blob : new Blob([blob], { type: "application/pdf" }));
         frame.src = pdfModalUrl;
         openLink.href = pdfModalUrl;
         frame.classList.remove("hidden");
@@ -3563,7 +4316,7 @@
         <tr class="hover:bg-slate-50/80 transition">
           <td class="py-2.5 px-4 font-bold text-slate-800">${esc(job.company)}</td>
           <td class="py-2.5 px-4">${renderJobTitleLink(job)}</td>
-          <td class="py-2.5 px-4 text-slate-500 whitespace-nowrap">${esc(job.appliedDate || '-')}</td>
+          <td class="py-2.5 px-4 text-slate-500 whitespace-nowrap">${esc(formatDateDMY(job.appliedDate) || '-')}</td>
           <td class="py-2.5 px-4">${cell(job, "cv")}</td>
           <td class="py-2.5 px-4">${cell(job, "cl")}</td>
         </tr>`).join("");
@@ -3768,6 +4521,7 @@
           if (Array.isArray(imported.scoutColumns)) state.scoutColumns = imported.scoutColumns;
           if (imported.companyMeta) state.companyMeta = imported.companyMeta;
           if (imported.planner) state.planner = imported.planner;
+          ensurePlannerShape();
           if (imported.files) {
             for (const [key, record] of Object.entries(imported.files)) {
               const blob = await (await fetch(record.dataUrl)).blob();
@@ -3802,7 +4556,13 @@
        11. INITIALIZATION
        ========================================================================== */
     window.onload = function() {
+      ensurePlannerShape();
       document.getElementById("planner-grid").addEventListener("click", handlePlannerGridClick);
+      document.getElementById("mini-month-grid").addEventListener("click", handleMiniMonthClick);
+      // 24-hour time pickers: suggestions every 15 minutes, typed values tidied on blur ("930" → "09:30")
+      initTimeMenus();
+      initDateFields();
+      initPlannerDrag();
       initIndustryInteractions();
       ["cv", "cl"].forEach(kind => {
         document.getElementById(`job-${kind}-latex`).addEventListener("input", () => refreshJobDocUI(kind));
