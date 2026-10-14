@@ -8,7 +8,7 @@ const net = require("net");
 
 const MAX_INPUT_CHARS = 15000;
 const DEFAULT_MODEL = "gemini-3.5-flash";
-const DEFAULT_FALLBACK_MODELS = "gemini-2.5-flash,gemini-2.5-flash-lite";
+const DEFAULT_FALLBACK_MODELS = "gemini-3.5-flash-lite,gemini-flash-latest";
 const PAGE_TIMEOUT_MS = 10000;
 const GEMINI_TIMEOUT_MS = 20000;
 const MAX_REDIRECTS = 4;
@@ -234,7 +234,8 @@ async function callGemini(model, apiKey, text) {
     let detail = "";
     try { detail = ((await response.json()).error || {}).message || ""; } catch (err) { /* keep generic */ }
     const e = new HttpError(502, `Gemini (${model}) failed with status ${response.status}${detail ? `: ${detail}` : "."}`);
-    e.retryable = RETRYABLE.includes(response.status);
+    // 404 = model retired by Google; move on to the next model instead of failing
+    e.retryable = RETRYABLE.includes(response.status) || response.status === 404;
     throw e;
   }
   const data = await response.json().catch(() => null);

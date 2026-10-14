@@ -16,10 +16,19 @@ The app is a single static page ([index.html](index.html)) with two small server
 
 ## Architecture
 
-- **Frontend**: `index.html` — vanilla JS, Tailwind CSS, Chart.js, Lucide icons, and PDF.js, all
+- **Frontend**: `index.html` — vanilla JS, Tailwind CSS, Lucide icons, and PDF.js, all
   loaded from CDNs. No build step, no framework.
 - **Backend**: `api/extract-job.js` and `api/compile-latex.js` — Vercel serverless functions.
 - **Persistence**: browser `localStorage` + IndexedDB only (see below). There is no database in this phase.
+
+## Phone / install as an app
+
+The app is responsive and installable (PWA): open the deployed URL on your phone and use
+**Add to Home Screen** (Safari share menu on iPhone, browser menu → *Install app* on Android). It
+then opens full-screen with its own icon. [manifest.webmanifest](manifest.webmanifest) and
+[sw.js](sw.js) handle this; the service worker loads the page from the network first (so new
+deploys show up right away) and falls back to a cached copy when offline. `/api/` calls are never
+cached. Data is still per device/browser — see *Data persistence* below.
 
 ## Local development
 
@@ -33,7 +42,7 @@ the serverless API route locally (`npx vercel` works too, no global install requ
 2. Edit `.env`:
    ```
    GEMINI_API_KEY=your-real-key-here
-   GEMINI_MODEL=gemini-2.0-flash
+   GEMINI_MODEL=gemini-3.5-flash
    ```
 3. Run the dev server (serves `index.html` and `/api/extract-job` together):
    ```
@@ -54,8 +63,8 @@ and automatically fall back to the built-in rule-based parser.
 | Variable         | Required | Description                                                                 |
 |-------------------|----------|-------------------------------------------------------------------------------|
 | `GEMINI_API_KEY`  | Yes      | Your Gemini API key. Used server-side only, never sent to the browser.        |
-| `GEMINI_MODEL`    | No       | Gemini model name to call (e.g. `gemini-2.0-flash`). Defaults to a built-in model if unset. |
-| `GEMINI_FALLBACK_MODELS` | No | Comma-separated models tried when the main one is busy (503/429). Defaults to `gemini-2.5-flash,gemini-2.5-flash-lite`. |
+| `GEMINI_MODEL`    | No       | Gemini model name to call (e.g. `gemini-3.5-flash`). Defaults to a built-in model if unset. |
+| `GEMINI_FALLBACK_MODELS` | No | Comma-separated models tried when the main one is busy (503/429). Defaults to `gemini-3.5-flash-lite,gemini-flash-latest`. Also used when a model has been retired (404). |
 
 Never commit a real `.env` file — it's excluded via `.gitignore`. `.env.example` contains only
 placeholder variable names.
@@ -67,7 +76,7 @@ placeholder variable names.
    output directory overrides are needed — it's a zero-config static + serverless-function project.
 3. Under **Project Settings → Environment Variables**, add:
    - `GEMINI_API_KEY` — your Gemini API key
-   - `GEMINI_MODEL` — optional, e.g. `gemini-2.0-flash`
+   - `GEMINI_MODEL` — optional, e.g. `gemini-3.5-flash`
 4. Deploy. The app will be served at your Vercel URL, and the AI extractor will call
    `/api/extract-job` on the same domain.
 
