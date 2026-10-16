@@ -109,7 +109,9 @@ async function fetchPage(startUrl) {
       continue;
     }
     if (!response.ok) {
-      throw new HttpError(502, `The site refused the request (HTTP ${response.status}). It probably blocks bots — save the page as PDF and upload it instead.`);
+      throw new HttpError(502, response.status === 429
+        ? "The site is rate-limiting automated requests right now (HTTP 429). Try again in a minute, or paste the job text / upload a PDF instead."
+        : `The site refused the request (HTTP ${response.status}). It probably blocks bots — save the page as PDF and upload it instead.`);
     }
     return await response.text();
   }
@@ -180,10 +182,29 @@ function jobPostingFields(jp) {
   };
 }
 
+// LinkedIn often answers 429 to cloud-server IPs, so retry the guest endpoint once
+// and then fall back to the public job page, which carries the same description.
+async function fetchLinkedIn(jobId) {
+  const candidates = [
+    `https://www.linkedin.com/jobs-guest/jobs/api/jobPosting/${jobId}`,
+    `https://www.linkedin.com/jobs-guest/jobs/api/jobPosting/${jobId}`,
+    `https://www.linkedin.com/jobs/view/${jobId}/`
+  ];
+  let lastError;
+  for (let i = 0; i < candidates.length; i++) {
+    if (i > 0) await new Promise(resolve => setTimeout(resolve, 1200));
+    try {
+      return await fetchPage(new URL(candidates[i]));
+    } catch (err) {
+      lastError = err;
+    }
+  }
+  throw lastError;
+}
+
 async function readPage(url) {
   const jobId = linkedinJobId(url);
-  const pageUrl = jobId ? new URL(`https://www.linkedin.com/jobs-guest/jobs/api/jobPosting/${jobId}`) : url;
-  const html = await fetchPage(pageUrl);
+  const html = jobId ? await fetchLinkedIn(jobId) : await fetchPage(url);
   const jp = findJobPosting(html);
   const structured = jp ? jobPostingFields(jp) : null;
   const header = [
