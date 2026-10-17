@@ -212,8 +212,9 @@
           </div>
         </aside>
 
-        <div class="lg:col-span-3 bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
-          <div id="planner-scroll" class="overflow-auto max-h-[72vh]">
+        <!-- Sized to the viewport (not stretched to the sidebar) so the grid always fills the card -->
+        <div class="lg:col-span-3 self-start lg:sticky lg:top-20 bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+          <div id="planner-scroll" class="overflow-auto h-[calc(100dvh-16rem)] min-h-[22rem] md:h-[calc(100dvh-12rem)]">
             <div id="planner-grid"></div>
           </div>
         </div>
@@ -1974,7 +1975,8 @@
       const rangeEnd = PLANNER_END_HOUR * 60;
       let html = `<div class="${state.plannerView === "week" ? "min-w-[760px]" : ""}">`;
 
-      html += `<div class="flex sticky top-0 z-20 bg-white border-b border-slate-200"><div class="w-14 flex-shrink-0"></div>`;
+      // The hour column stays pinned (sticky left) while the days scroll sideways
+      html += `<div class="flex sticky top-0 z-30 bg-white border-b border-slate-200"><div class="w-14 flex-shrink-0 sticky left-0 z-10 bg-white"></div>`;
       days.forEach(d => {
         const date = parseISODate(d);
         const isToday = d === today;
@@ -1988,7 +1990,7 @@
       html += `</div>`;
 
       html += `<div class="flex">`;
-      html += `<div class="w-14 flex-shrink-0 relative" style="height:${totalHeight}px">`;
+      html += `<div class="w-14 flex-shrink-0 sticky left-0 z-20 bg-white border-r border-slate-100" style="height:${totalHeight}px">`;
       for (let h = PLANNER_START_HOUR + 1; h < PLANNER_END_HOUR; h++) {
         html += `<span class="absolute right-2 text-[10px] text-slate-400 font-mono" style="top:${(h - PLANNER_START_HOUR) * HOUR_PX - 7}px">${pad2(h)}:00</span>`;
       }
@@ -3889,24 +3891,47 @@
       lucide.createIcons();
     }
 
+    // One size for every pill on the phone cards, so dropdowns and badges line up
+    const CARD_CHIP = "inline-flex items-center gap-1 h-7 px-2.5 rounded-full border text-[11px] font-semibold whitespace-nowrap";
+
+    // Looks like a pill, but an invisible native <select> sits on top: phones still open their own
+    // picker, and the select keeps its 16px font so iOS doesn't zoom in on tap
+    function cardSelectChip({ label, tone, title, onchange, options, current }) {
+      return `
+        <label class="relative ${CARD_CHIP} ${tone}" title="${title}">
+          ${label}<i data-lucide="chevron-down" class="w-3 h-3 opacity-60"></i>
+          <select onchange="${onchange}" aria-label="${title}" class="absolute inset-0 w-full h-full opacity-0 cursor-pointer">
+            ${options.map(([v, text]) => `<option value="${v}" ${current === v ? "selected" : ""}>${text}</option>`).join("")}
+          </select>
+        </label>`;
+    }
+
     // Phone version of the table: the same controls, stacked into one card per application
     function renderApplicationCards(jobs) {
-      document.getElementById("applications-cards").innerHTML = jobs.map(job => `
-        <div class="p-3 space-y-2">
+      document.getElementById("applications-cards").innerHTML = jobs.map(job => {
+        const status = job.status || "Applied";
+        const priority = job.priority || "";
+        const meta = [esc(job.city || ""), esc(formatDateDMY(job.appliedDate) || "")].filter(Boolean);
+        return `
+        <div class="px-4 py-3.5 space-y-2.5">
           <div class="flex items-start gap-2">
             <div class="min-w-0 flex-1">
-              ${renderJobTitleLink(job)}
-              <div class="flex flex-wrap items-center gap-x-1.5 gap-y-1 mt-0.5 text-[11px] text-slate-500">${renderCompanyLink(job.company)}${job.city ? ` · ${esc(job.city)}` : ""}${job.appliedDate ? ` · ${esc(formatDateDMY(job.appliedDate))}` : ""}</div>
+              <div class="text-sm leading-snug">${renderJobTitleLink(job)}</div>
+              <div class="flex flex-wrap items-center gap-x-1.5 mt-1 text-xs text-slate-500">${renderCompanyLink(job.company)}${meta.map(m => `<span class="text-slate-300">·</span><span>${m}</span>`).join("")}</div>
             </div>
-            ${renderPlanApplyButton(job)}
-            <button onclick="deleteJob('${job.id}')" class="p-1.5 text-slate-300 hover:text-rose-600 rounded flex-shrink-0" title="Delete application"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
+            <div class="flex items-center gap-0.5 flex-shrink-0 -mr-1">
+              ${renderPlanApplyButton(job)}
+              <button onclick="deleteJob('${job.id}')" class="p-1.5 text-slate-300 hover:text-rose-600 rounded" title="Delete application"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
+            </div>
           </div>
           <div class="flex flex-wrap items-center gap-1.5">
-            ${renderStatusSelectDropdown(job)}${renderPrioritySelectDropdown(job)}
-            ${job.linkedinMatch ? renderMatchBadge(job.linkedinMatch) : ""}
-            <span class="whitespace-nowrap">${renderPlatformBadge(job)}</span>
+            ${cardSelectChip({ label: esc(STATUS_LABELS[status] || status), tone: STATUS_STYLES[status] || STATUS_STYLES.Wishlist, title: "Status", onchange: `updateJobStatus('${job.id}', this.value)`, options: Object.entries(STATUS_LABELS), current: status })}
+            ${cardSelectChip({ label: priority ? `${esc(priority)} priority` : "Priority", tone: priority ? PRIORITY_SELECT_STYLES[priority] : "bg-white border-dashed border-slate-300 text-slate-400", title: "Apply priority", onchange: `updateJobPriority('${job.id}', this)`, options: [["", "–"], ["High", "High"], ["Medium", "Medium"], ["Low", "Low"]], current: priority })}
+            ${job.linkedinMatch ? renderMatchBadge(job.linkedinMatch, false, CARD_CHIP) : ""}
+            ${renderPlatformBadge(job, CARD_CHIP)}
           </div>
-        </div>`).join("") || `<p class="py-8 text-center text-slate-400 italic">No applications match your filter.</p>`;
+        </div>`;
+      }).join("") || `<p class="py-8 text-center text-slate-400 italic">No applications match your filter.</p>`;
     }
 
     function renderKanbanView(jobs) {
@@ -4014,12 +4039,12 @@
     // Older records stored the posting link as linkedinUrl
     function getPostingUrl(job) { return job.postingUrl || job.linkedinUrl || ""; }
 
-    function renderPlatformBadge(job) {
+    function renderPlatformBadge(job, size = "inline-flex items-center gap-1 px-2 py-0.5 rounded text-[11px] font-semibold border") {
       const label = PLATFORM_LABELS[job.source] || job.source || "LinkedIn";
       const icon = job.source === "Linkedin" ? LINKEDIN_ICON
         : `<i data-lucide="${job.source === "Career Site" ? "building-2" : "briefcase"}" class="w-3 h-3"></i>`;
       const url = getPostingUrl(job);
-      const cls = "inline-flex items-center gap-1 bg-blue-50 text-blue-700 px-2 py-0.5 rounded text-[11px] font-semibold border border-blue-200/50";
+      const cls = `${size} bg-blue-50 text-blue-700 border-blue-200/50`;
       return url
         ? `<a href="${esc(url)}" target="_blank" rel="noopener" title="Open job posting" class="${cls} hover:bg-blue-100 hover:underline">${icon}${esc(label)}<i data-lucide="external-link" class="w-2.5 h-2.5 opacity-60"></i></a>`
         : `<span class="${cls}">${icon}${esc(label)}</span>`;
@@ -4046,7 +4071,7 @@
       return `<span class="${map[priority] || map.Low} border px-2 py-0.5 rounded-full text-[10px] font-bold">${esc(priority)}${short ? "" : " priority"}</span>`;
     }
 
-    function renderMatchBadge(match, short = false) {
+    function renderMatchBadge(match, short = false, size = "border px-2 py-0.5 rounded-full text-[10px] font-bold") {
       if (!match) return '<span class="text-slate-300">-</span>';
       const map = {
         Top: 'bg-emerald-600 text-white border-emerald-700',
@@ -4054,39 +4079,35 @@
         Medium: 'bg-sky-100 text-sky-800 border-sky-200',
         Low: 'bg-slate-100 text-slate-600 border-slate-200'
       };
-      return `<span class="${map[match] || map.Low} border px-2 py-0.5 rounded-full text-[10px] font-bold">${esc(match)}${short ? "" : " match"}</span>`;
+      return `<span class="${map[match] || map.Low} ${size}">${esc(match)}${short ? "" : " match"}</span>`;
     }
 
+    const STATUS_STYLES = {
+      Applied: 'bg-amber-100 text-amber-900 border-amber-300',
+      'In Review': 'bg-blue-100 text-blue-900 border-blue-300',
+      Screening: 'bg-indigo-100 text-indigo-900 border-indigo-300',
+      Interview: 'bg-purple-100 text-purple-900 border-purple-300',
+      Offer: 'bg-emerald-100 text-emerald-900 border-emerald-300',
+      Rejected: 'bg-rose-100 text-rose-800 border-rose-200',
+      Ghosted: 'bg-slate-200 text-slate-700 border-slate-300',
+      Withdrawn: 'bg-slate-100 text-slate-600 border-slate-300',
+      Closed: 'bg-stone-100 text-stone-500 border-stone-300 line-through',
+      Wishlist: 'bg-slate-100 text-slate-800 border-slate-300'
+    };
+    const STATUS_LABELS = {
+      Wishlist: "Wishlist", Applied: "Applied", "In Review": "In Review", Screening: "Screening", Interview: "Interview",
+      Offer: "Offer / Hired", Rejected: "Rejected", Ghosted: "Ghosted", Withdrawn: "Withdrawn", Closed: "Closed"
+    };
+
     function renderStatusBadge(status) {
-      const map = {
-        Applied: 'bg-amber-100 text-amber-900 border-amber-300',
-        'In Review': 'bg-blue-100 text-blue-900 border-blue-300',
-        Screening: 'bg-indigo-100 text-indigo-900 border-indigo-300',
-        Interview: 'bg-purple-100 text-purple-900 border-purple-300',
-        Offer: 'bg-emerald-100 text-emerald-900 border-emerald-300',
-        Rejected: 'bg-rose-100 text-rose-800 border-rose-200',
-        Ghosted: 'bg-slate-200 text-slate-700 border-slate-300',
-        Withdrawn: 'bg-slate-100 text-slate-600 border-slate-300',
-        Closed: 'bg-stone-100 text-stone-500 border-stone-300 line-through',
-        Wishlist: 'bg-slate-100 text-slate-800 border-slate-300'
-      };
-      const cls = map[status] || 'bg-slate-100 text-slate-700';
+      const cls = STATUS_STYLES[status] || 'bg-slate-100 text-slate-700';
       return `<span class="${cls} border px-2 py-0.5 rounded-full text-[11px] font-semibold">${esc(status)}</span>`;
     }
 
     function renderStatusSelectDropdown(job) {
       return `
         <select onchange="updateJobStatus('${job.id}', this.value)" class="text-[11px] font-semibold bg-amber-50 border border-amber-200 rounded-lg px-2 py-1 focus:ring-1 focus:ring-amber-500">
-          <option value="Wishlist" ${job.status === 'Wishlist' ? 'selected' : ''}>Wishlist</option>
-          <option value="Applied" ${job.status === 'Applied' ? 'selected' : ''}>Applied</option>
-          <option value="In Review" ${job.status === 'In Review' ? 'selected' : ''}>In Review</option>
-          <option value="Screening" ${job.status === 'Screening' ? 'selected' : ''}>Screening</option>
-          <option value="Interview" ${job.status === 'Interview' ? 'selected' : ''}>Interview</option>
-          <option value="Offer" ${job.status === 'Offer' ? 'selected' : ''}>Offer / Hired</option>
-          <option value="Rejected" ${job.status === 'Rejected' ? 'selected' : ''}>Rejected</option>
-          <option value="Ghosted" ${job.status === 'Ghosted' ? 'selected' : ''}>Ghosted</option>
-          <option value="Withdrawn" ${job.status === 'Withdrawn' ? 'selected' : ''}>Withdrawn</option>
-          <option value="Closed" ${job.status === 'Closed' ? 'selected' : ''}>Closed</option>
+          ${Object.entries(STATUS_LABELS).map(([v, label]) => `<option value="${v}" ${job.status === v ? 'selected' : ''}>${label}</option>`).join("")}
         </select>
       `;
     }
