@@ -718,7 +718,7 @@
         <h3 id="modal-job-title" class="text-sm font-bold flex items-center gap-2">
           <i data-lucide="plus-circle" class="w-4 h-4 text-indigo-400"></i> Add New Application
         </h3>
-        <button onclick="closeJobModal()" class="text-slate-400 hover:text-white">
+        <button onclick="requestCloseJobModal()" class="text-slate-400 hover:text-white">
           <i data-lucide="x" class="w-5 h-5"></i>
         </button>
       </div>
@@ -939,10 +939,11 @@
           <textarea id="job-notes-input" rows="3" placeholder="Notes about interviewer names, questions asked, or follow-up dates..." class="w-full p-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-indigo-500"></textarea>
         </div>
 
-        <div class="pt-3 border-t border-slate-100 flex flex-wrap justify-end gap-2">
-          <button type="button" onclick="closeJobModal()" class="px-4 py-2 border border-slate-200 text-slate-600 rounded-lg hover:bg-slate-100">Cancel</button>
+        <!-- Sticky so the actions stay visible without scrolling to the bottom -->
+        <div class="sticky bottom-0 z-10 -mx-6 -mb-6 px-6 py-3 bg-white border-t border-slate-100 flex flex-wrap justify-end gap-2">
+          <button type="button" onclick="requestCloseJobModal()" class="px-4 py-2 border border-slate-200 text-slate-600 rounded-lg hover:bg-slate-100">Cancel</button>
           <!-- Plain save comes first in the DOM so Enter in a field doesn't start planning -->
-          <button type="submit" class="order-last px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg font-semibold shadow">Save Application</button>
+          <button type="submit" id="btn-job-save" class="order-last px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg font-semibold shadow">Save Application</button>
           <button type="submit" value="plan" title="Save, then pick when to apply (adds a block to the planner)" class="px-4 py-2 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-200 rounded-lg font-semibold flex items-center gap-1.5"><i data-lucide="calendar-plus" class="w-3.5 h-3.5"></i> Save &amp; Plan</button>
         </div>
       </form>
@@ -1023,6 +1024,22 @@
       <div class="flex items-center justify-center gap-2 pt-2">
         <button id="btn-confirm-cancel" onclick="closeConfirmModal()" class="w-1/2 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold rounded-lg text-xs">Cancel</button>
         <button id="btn-confirm-action" class="w-1/2 py-2 bg-rose-600 hover:bg-rose-700 text-white font-semibold rounded-lg text-xs shadow">Confirm</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- UNSAVED CHANGES PROMPT (closing the application modal with edits) -->
+  <div id="modal-unsaved" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[60] flex items-center justify-center p-4 hidden">
+    <div class="bg-white rounded-2xl max-w-sm w-full p-6 shadow-2xl border border-slate-100 space-y-4 text-center">
+      <div class="w-12 h-12 bg-amber-100 text-amber-600 rounded-full flex items-center justify-center mx-auto">
+        <i data-lucide="save" class="w-6 h-6"></i>
+      </div>
+      <h3 class="text-base font-bold text-slate-900">Save your changes?</h3>
+      <p class="text-xs text-slate-500 leading-relaxed">You edited this application but haven't saved it. If you close now, your edits (including CV and cover letter text) will be lost.</p>
+      <div class="flex flex-col gap-2 pt-2">
+        <button onclick="saveFromUnsavedPrompt()" class="py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold rounded-lg text-xs shadow">Save Application</button>
+        <button onclick="discardJobChanges()" class="py-2 bg-rose-50 hover:bg-rose-100 text-rose-700 font-semibold rounded-lg text-xs">Discard changes</button>
+        <button onclick="closeUnsavedPrompt()" class="py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold rounded-lg text-xs">Keep editing</button>
       </div>
     </div>
   </div>
@@ -1877,6 +1894,7 @@
       const scroll = document.getElementById("planner-scroll");
       scroll.classList.toggle("max-h-[72vh]", view !== "month");
       document.getElementById("planner-grid").innerHTML = view === "month" ? monthViewHTML() : timeGridHTML(days);
+      plannerRenderedToday = todayISO();
 
       if (scrollToNow && view !== "month") {
         const now = new Date();
@@ -1884,6 +1902,18 @@
         scroll.scrollTop = (anchorHour - PLANNER_START_HOUR) * HOUR_PX;
       }
       lucide.createIcons();
+    }
+
+    // Keep the red "now" line moving while the planner stays open; re-render when the day rolls over
+    let plannerRenderedToday = null;
+    function tickPlannerClock() {
+      if (document.getElementById("view-planner").classList.contains("hidden") || plannerDrag) return;
+      if (plannerRenderedToday !== todayISO()) { renderPlanner(); return; }
+      const line = document.querySelector("#planner-grid [data-nowline]");
+      if (!line) return;
+      const now = new Date();
+      const nowMin = now.getHours() * 60 + now.getMinutes();
+      line.style.top = `${(nowMin - PLANNER_START_HOUR * 60) / 60 * HOUR_PX}px`;
     }
 
     function minutesOf(e) { return Math.max(0, timeToMin(e.end) - timeToMin(e.start)); }
@@ -2057,7 +2087,7 @@
           const now = new Date();
           const nowMin = now.getHours() * 60 + now.getMinutes();
           if (nowMin >= rangeStart && nowMin <= rangeEnd) {
-            html += `<div class="absolute left-0 right-0 z-10 pointer-events-none" style="top:${(nowMin - rangeStart) / 60 * HOUR_PX}px"><div class="h-0.5 bg-rose-500"></div><div class="absolute -left-1 -top-1 w-2.5 h-2.5 rounded-full bg-rose-500"></div></div>`;
+            html += `<div data-nowline class="absolute left-0 right-0 z-10 pointer-events-none" style="top:${(nowMin - rangeStart) / 60 * HOUR_PX}px"><div class="h-0.5 bg-rose-500"></div><div class="absolute -left-1 -top-1 w-2.5 h-2.5 rounded-full bg-rose-500"></div></div>`;
           }
         }
         html += `</div>`;
@@ -4040,7 +4070,7 @@
         `${jobs.length} job${jobs.length === 1 ? "" : "s"} · ${applied} applied · ${industries.length ? industries.join(", ") : "No industry yet"}`;
       document.getElementById("company-overview-rows").innerHTML = jobs.map(job => `
         <tr class="hover:bg-slate-50">
-          <td class="py-2 pr-3"><span class="flex items-center gap-2"><span class="w-1.5 h-1.5 rounded-full bg-slate-400 flex-shrink-0"></span>${renderJobTitleLink(job, true)}${renderPlanApplyButton(job)}</span></td>
+          <td class="py-2 pr-3"><span class="flex items-center gap-2"><span class="w-1.5 h-1.5 rounded-full bg-slate-400 flex-shrink-0"></span><span class="min-w-0">${renderJobTitleLink(job, true)}</span><span class="ml-auto">${renderPlanApplyButton(job)}</span></span></td>
           <td class="py-2 pr-3 whitespace-nowrap">${renderStatusBadge(job.status)}</td>
           <td class="py-2 pr-3 whitespace-nowrap">${renderPlatformBadge(job)}</td>
           <td class="py-2 pr-3 whitespace-nowrap">${job.careerSiteUrl
@@ -4389,7 +4419,41 @@
 
       refreshLinkButtons();
       modal.classList.remove("hidden");
+      modal.firstElementChild.scrollTop = 0;
+      jobFormSnapshot = snapshotJobForm();
       lucide.createIcons();
+    }
+
+    // Unsaved-changes guard: compare the form against how it looked when it was opened
+    let jobFormSnapshot = null;
+    function snapshotJobForm() {
+      return JSON.stringify([...document.getElementById("form-job").elements]
+        .filter(el => el.id && el.type !== "file" && el.type !== "submit" && el.type !== "button")
+        .map(el => [el.id, el.type === "checkbox" ? el.checked : el.value]));
+    }
+
+    function jobFormIsDirty() {
+      if (document.getElementById("modal-job").classList.contains("hidden")) return false;
+      return Object.keys(jobModalPending).length > 0 || snapshotJobForm() !== jobFormSnapshot;
+    }
+
+    function requestCloseJobModal() {
+      if (jobFormIsDirty()) document.getElementById("modal-unsaved").classList.remove("hidden");
+      else closeJobModal();
+    }
+
+    function closeUnsavedPrompt() {
+      document.getElementById("modal-unsaved").classList.add("hidden");
+    }
+
+    function discardJobChanges() {
+      closeUnsavedPrompt();
+      closeJobModal();
+    }
+
+    function saveFromUnsavedPrompt() {
+      closeUnsavedPrompt();
+      document.getElementById("form-job").requestSubmit(document.getElementById("btn-job-save"));
     }
 
     // Accepts links typed without a scheme ("careers.company.com/...") but never non-web schemes
@@ -4428,6 +4492,7 @@
     function closeJobModal() {
       document.getElementById("modal-job").classList.add("hidden");
       jobModalPending = {};
+      jobFormSnapshot = null;
     }
 
     function handleJobDocUpload(kind, event) {
@@ -5283,7 +5348,13 @@
       initTimeMenus();
       initDateFields();
       initPlannerDrag();
+      setInterval(tickPlannerClock, 30000);
+      document.addEventListener("visibilitychange", () => { if (!document.hidden) tickPlannerClock(); });
       initIndustryInteractions();
+      // Warn before leaving/reloading the page with an unsaved application open
+      window.addEventListener("beforeunload", e => {
+        if (jobFormIsDirty()) { e.preventDefault(); e.returnValue = ""; }
+      });
       document.addEventListener("click", e => {
         const link = e.target.closest("[data-company-overview]");
         if (link) openCompanyOverview(link.dataset.companyOverview);
