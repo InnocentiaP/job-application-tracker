@@ -3946,7 +3946,7 @@
           <td class="py-2.5 px-2 whitespace-nowrap"><span class="flex items-center justify-between gap-3">${renderJobTitleLink(job, true)}${renderPlanApplyButton(job)}</span></td>
           <td class="py-2.5 px-2 whitespace-nowrap">${renderStatusSelectDropdown(job)}</td>
           <td class="py-2.5 px-2 whitespace-nowrap">${renderPrioritySelectDropdown(job)}</td>
-          <td class="py-2.5 px-2 whitespace-nowrap">${renderMatchBadge(job.linkedinMatch, true)}</td>
+          <td class="py-2.5 px-2 whitespace-nowrap">${renderMatchSelectDropdown(job)}</td>
           <td class="py-2.5 px-2 whitespace-nowrap">${renderLangBadge(job.lang)}</td>
           <td class="py-2.5 px-2 text-slate-500 whitespace-nowrap">${esc(formatDateDMY(job.appliedDate)) || '<span class="text-slate-300">dd/mm/yyyy</span>'}</td>
           <td class="py-2.5 px-2 whitespace-nowrap">
@@ -4071,7 +4071,7 @@
       document.getElementById("company-overview-rows").innerHTML = jobs.map(job => `
         <tr class="hover:bg-slate-50">
           <td class="py-2 pr-3"><span class="flex items-center gap-2"><span class="w-1.5 h-1.5 rounded-full bg-slate-400 flex-shrink-0"></span><span class="min-w-0">${renderJobTitleLink(job, true)}</span><span class="ml-auto">${renderPlanApplyButton(job)}</span></span></td>
-          <td class="py-2 pr-3 whitespace-nowrap">${renderStatusBadge(job.status)}</td>
+          <td class="py-2 pr-3 whitespace-nowrap">${renderStatusSelectDropdown(job)}</td>
           <td class="py-2 pr-3 whitespace-nowrap">${renderPlatformBadge(job)}</td>
           <td class="py-2 pr-3 whitespace-nowrap">${job.careerSiteUrl
             ? `<a href="${esc(job.careerSiteUrl)}" target="_blank" rel="noopener" class="text-indigo-600 hover:underline inline-flex items-center gap-1 text-[11px] font-semibold"><i data-lucide="external-link" class="w-3 h-3"></i> Career Site</a>`
@@ -4271,6 +4271,33 @@
       select.className = `${PRIORITY_SELECT_BASE} ${PRIORITY_SELECT_STYLES[job.priority]}`;
     }
 
+    const MATCH_SELECT_STYLES = {
+      Top: "bg-emerald-600 border-emerald-700 text-white",
+      High: "bg-emerald-50 border-emerald-200 text-emerald-800",
+      Medium: "bg-sky-50 border-sky-200 text-sky-800",
+      Low: "bg-slate-50 border-slate-200 text-slate-600",
+      "": "bg-white border-slate-200 text-slate-400"
+    };
+
+    function renderMatchSelectDropdown(job) {
+      const current = job.linkedinMatch || "";
+      const opts = [["", "–"], ["Top", "Top"], ["High", "High"], ["Medium", "Medium"], ["Low", "Low"]];
+      return `
+        <select onchange="updateJobMatch('${job.id}', this)" title="LinkedIn job match" class="${PRIORITY_SELECT_BASE} ${MATCH_SELECT_STYLES[current] || MATCH_SELECT_STYLES.Low}">
+          ${opts.map(([v, label]) => `<option value="${v}" ${current === v ? 'selected' : ''}>${label}</option>`).join("")}
+        </select>
+      `;
+    }
+
+    function updateJobMatch(id, select) {
+      const job = state.applications.find(a => a.id === id);
+      if (!job) return;
+      job.linkedinMatch = select.value;
+      saveState();
+      renderApplications();
+      renderDashboard();
+    }
+
     function updateJobStatus(id, newStatus) {
       const job = state.applications.find(a => a.id === id);
       if (job) {
@@ -4279,6 +4306,8 @@
         renderApplications();
         renderDashboard();
         renderIndustryHub();
+        // Status changed from the company overview popup: refresh its "applied" count and rows
+        if (overviewCompany && !document.getElementById("modal-company").classList.contains("hidden")) openCompanyOverview(overviewCompany);
       }
     }
 
