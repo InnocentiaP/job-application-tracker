@@ -376,7 +376,7 @@
         <div class="flex flex-wrap items-center gap-2 w-full md:w-auto">
 
           <!-- Status Filter -->
-          <select id="filter-status" onchange="renderApplications()" class="basis-[calc(50%-0.25rem)] md:basis-auto min-w-0 text-xs bg-slate-50 border border-slate-200 rounded-lg px-2.5 py-1.5 focus:outline-none focus:ring-2 focus:ring-indigo-500">
+          <select id="filter-status" onchange="renderApplications()" class="toolbar-filter md:hidden basis-[calc(50%-0.25rem)] md:basis-auto min-w-0 text-xs bg-slate-50 border border-slate-200 rounded-lg px-2.5 py-1.5 focus:outline-none focus:ring-2 focus:ring-indigo-500">
             <option value="ALL">All Statuses</option>
             <option value="Wishlist">Wishlist / To Apply</option>
             <option value="Drafted">Drafted / Not Sent</option>
@@ -392,7 +392,7 @@
           </select>
 
           <!-- Apply Priority Filter -->
-          <select id="filter-priority" onchange="renderApplications()" class="basis-[calc(50%-0.25rem)] md:basis-auto min-w-0 text-xs bg-slate-50 border border-slate-200 rounded-lg px-2.5 py-1.5 focus:outline-none focus:ring-2 focus:ring-indigo-500">
+          <select id="filter-priority" onchange="renderApplications()" class="toolbar-filter md:hidden basis-[calc(50%-0.25rem)] md:basis-auto min-w-0 text-xs bg-slate-50 border border-slate-200 rounded-lg px-2.5 py-1.5 focus:outline-none focus:ring-2 focus:ring-indigo-500">
             <option value="ALL">All Priorities</option>
             <option value="High">High Priority</option>
             <option value="Medium">Medium Priority</option>
@@ -400,7 +400,7 @@
           </select>
 
           <!-- Source Platform Filter -->
-          <select id="filter-source" onchange="renderApplications()" class="basis-[calc(50%-0.25rem)] md:basis-auto min-w-0 text-xs bg-slate-50 border border-slate-200 rounded-lg px-2.5 py-1.5 focus:outline-none focus:ring-2 focus:ring-indigo-500">
+          <select id="filter-source" onchange="renderApplications()" class="toolbar-filter md:hidden basis-[calc(50%-0.25rem)] md:basis-auto min-w-0 text-xs bg-slate-50 border border-slate-200 rounded-lg px-2.5 py-1.5 focus:outline-none focus:ring-2 focus:ring-indigo-500">
             <option value="ALL">All Platforms</option>
             <option value="Linkedin">LinkedIn</option>
             <option value="Indeed">Indeed</option>
@@ -410,9 +410,14 @@
           </select>
 
           <!-- City Filter -->
-          <select id="filter-city" onchange="renderApplications()" class="basis-[calc(50%-0.25rem)] md:basis-auto min-w-0 text-xs bg-slate-50 border border-slate-200 rounded-lg px-2.5 py-1.5 focus:outline-none focus:ring-2 focus:ring-indigo-500">
+          <select id="filter-city" onchange="renderApplications()" class="toolbar-filter md:hidden basis-[calc(50%-0.25rem)] md:basis-auto min-w-0 text-xs bg-slate-50 border border-slate-200 rounded-lg px-2.5 py-1.5 focus:outline-none focus:ring-2 focus:ring-indigo-500">
             <option value="ALL">All Locations</option>
           </select>
+
+          <!-- Shown while any column header filter is active, so hidden rows are never a mystery -->
+          <button id="btn-clear-col-filters" onclick="clearAllColumnFilters()" title="Show all rows again" class="hidden text-xs font-semibold bg-amber-50 border border-amber-200 text-amber-800 hover:bg-amber-100 rounded-lg px-2.5 py-1.5 flex items-center gap-1.5">
+            <i data-lucide="filter" class="w-3.5 h-3.5"></i><span id="clear-col-filters-label"></span><i data-lucide="x" class="w-3.5 h-3.5"></i>
+          </button>
 
           <!-- Toggle View Mode (Table vs Kanban) -->
           <div class="flex items-center bg-slate-100 p-0.5 rounded-lg border border-slate-200 ml-auto md:ml-0">
@@ -431,20 +436,7 @@
         <div class="hidden md:block overflow-x-auto">
           <table class="w-full text-left text-xs">
             <thead class="bg-amber-900/90 text-white font-semibold uppercase tracking-wider text-[11px] border-b border-amber-950">
-              <tr>
-                <th class="py-3 px-2 sticky left-0 z-20 bg-amber-900 border-r border-amber-950 w-8"><span class="sr-only">Delete</span></th>
-                <th class="py-3 px-2 whitespace-nowrap">Platform</th>
-                <th class="py-3 px-2 whitespace-nowrap">Career Site</th>
-                <th class="py-3 px-2 whitespace-nowrap">Location</th>
-                <th class="py-3 px-2 whitespace-nowrap">Company</th>
-                <th class="py-3 px-2 whitespace-nowrap">Job Title</th>
-                <th class="py-3 px-2 whitespace-nowrap">Status</th>
-                <th class="py-3 px-2 whitespace-nowrap">Priority</th>
-                <th class="py-3 px-2 whitespace-nowrap" title="LinkedIn job match">Match</th>
-                <th class="py-3 px-2 whitespace-nowrap">EN/NL</th>
-                <th class="py-3 px-2 whitespace-nowrap">Applied</th>
-                <th class="py-3 px-2 whitespace-nowrap">Docs & Tasks</th>
-              </tr>
+              <tr id="applications-thead-row"><!-- Column headers with sort / filter menus, rendered by renderTableHeader() --></tr>
             </thead>
             <tbody id="applications-tbody" class="divide-y divide-slate-100">
               <!-- Applications rendered dynamically -->
@@ -726,23 +718,6 @@
       <form id="form-job" onsubmit="handleJobFormSubmit(event)" class="p-6 space-y-4 text-xs">
         <input type="hidden" id="job-id">
 
-        <!-- AI Extractor inside the form: pasted text / uploaded file (+ the links below) fill the empty fields -->
-        <details id="job-ai-panel" class="bg-amber-50/60 border border-amber-200 rounded-xl">
-          <summary class="px-3 py-2 cursor-pointer select-none font-semibold text-amber-800 flex items-center gap-1.5"><i data-lucide="sparkles" class="w-3.5 h-3.5"></i> AI Extractor <span class="font-normal text-amber-700/80">— paste the job text or upload a PDF to fill the form</span></summary>
-          <div class="px-3 pb-3 space-y-2">
-            <textarea id="job-ai-text" rows="5" placeholder="Paste the job description here (from LinkedIn, Indeed, Glassdoor, a career site...). Leave empty to read the Job Posting / Career Site link below instead." class="w-full p-2 border border-amber-200 bg-white rounded-lg font-mono text-[11px] focus:ring-2 focus:ring-amber-400"></textarea>
-            <div class="flex flex-wrap items-center gap-2">
-              <button type="button" id="btn-job-ai-parse" onclick="autofillJobFromAI()" class="px-3 py-1.5 bg-amber-500 hover:bg-amber-600 text-white rounded-lg font-semibold flex items-center gap-1.5"><i data-lucide="wand2" class="w-3.5 h-3.5"></i> Extract &amp; Fill</button>
-              <label class="px-3 py-1.5 bg-white hover:bg-amber-100 text-amber-800 border border-amber-200 rounded-lg font-semibold flex items-center gap-1.5 cursor-pointer">
-                <i data-lucide="upload" class="w-3.5 h-3.5"></i> Upload PDF / HTML / TXT
-                <input type="file" id="job-ai-file" accept=".pdf,.html,.htm,.txt" class="hidden" onchange="handleJobAIFileUpload(event)">
-              </label>
-              <span id="job-ai-file-name" class="text-[11px] text-amber-700 truncate max-w-[220px]"></span>
-            </div>
-            <p class="text-[10px] text-slate-500">Only empty fields are filled, so nothing you have already typed gets overwritten.</p>
-          </div>
-        </details>
-
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div>
             <label class="block font-semibold text-slate-700 mb-1">Company Name *</label>
@@ -908,6 +883,9 @@
                 <button type="button" id="job-cv-compile-btn" onclick="compileJobLatex('cv')" class="px-3 py-1.5 bg-slate-900 hover:bg-slate-700 text-white rounded-lg font-semibold flex items-center gap-1.5">
                   <i data-lucide="play" class="w-3.5 h-3.5"></i> Compile &amp; Preview
                 </button>
+                <button type="button" onclick="downloadJobLatex('cv')" title="Download the LaTeX main text as a .tex file" class="px-3 py-1.5 bg-white hover:bg-slate-50 text-slate-700 border border-slate-200 rounded-lg font-semibold flex items-center gap-1.5">
+                  <i data-lucide="download" class="w-3.5 h-3.5"></i> Download .tex
+                </button>
                 <button type="button" id="job-cv-compiled-view" onclick="viewJobDoc('cv-compiled')" class="text-indigo-600 hover:underline font-semibold hidden">View last compiled PDF</button>
                 <span id="job-cv-compiled-label" class="text-slate-400"></span>
               </div>
@@ -944,6 +922,9 @@
               <div class="flex flex-wrap items-center gap-2">
                 <button type="button" id="job-cl-compile-btn" onclick="compileJobLatex('cl')" class="px-3 py-1.5 bg-slate-900 hover:bg-slate-700 text-white rounded-lg font-semibold flex items-center gap-1.5">
                   <i data-lucide="play" class="w-3.5 h-3.5"></i> Compile &amp; Preview
+                </button>
+                <button type="button" onclick="downloadJobLatex('cl')" title="Download the LaTeX main text as a .tex file" class="px-3 py-1.5 bg-white hover:bg-slate-50 text-slate-700 border border-slate-200 rounded-lg font-semibold flex items-center gap-1.5">
+                  <i data-lucide="download" class="w-3.5 h-3.5"></i> Download .tex
                 </button>
                 <button type="button" id="job-cl-compiled-view" onclick="viewJobDoc('cl-compiled')" class="text-indigo-600 hover:underline font-semibold hidden">View last compiled PDF</button>
                 <span id="job-cl-compiled-label" class="text-slate-400"></span>
@@ -3877,6 +3858,11 @@
        ========================================================================== */
     function setViewMode(mode) {
       state.currentViewMode = mode;
+      const desktopTable = mode === 'table' && window.matchMedia("(min-width: 768px)").matches;
+      document.querySelectorAll(".toolbar-filter").forEach(sel => {
+        sel.classList.toggle("md:hidden", mode === 'table');
+        if (desktopTable) sel.value = "ALL"; // the header filters replace these here; don't leave an invisible filter on
+      });
       const btnTable = document.getElementById("btn-view-table");
       const btnKanban = document.getElementById("btn-view-kanban");
       const tableCont = document.getElementById("container-table-view");
@@ -3911,8 +3897,10 @@
         const matchesPriority = priorityFilter === 'ALL' || job.priority === priorityFilter;
         const matchesSource = sourceFilter === 'ALL' || job.source === sourceFilter;
         const matchesCity = cityFilter === 'ALL' || job.city === cityFilter;
-        return matchesSearch && matchesStatus && matchesPriority && matchesSource && matchesCity;
+        return matchesSearch && matchesStatus && matchesPriority && matchesSource && matchesCity && passesColumnFilters(job);
       });
+      sortByTableColumn(filtered);
+      refreshClearColumnFiltersButton();
 
       if (state.currentViewMode === 'table') {
         renderTableView(filtered);
@@ -3939,6 +3927,7 @@
     function renderTableView(jobs) {
       const tbody = document.getElementById("applications-tbody");
       tbody.innerHTML = "";
+      renderTableHeader();
       renderApplicationCards(jobs);
 
       if (jobs.length === 0) {
@@ -3980,6 +3969,199 @@
       });
       lucide.createIcons();
     }
+
+    /* Applications table: spreadsheet-style sort & filter menu in every column header.
+       Filters store the values that are switched OFF, so new values (new applications) show up by default. */
+    const TABLE_COLUMNS = [
+      { key: "source", label: "Platform", value: j => j.source || "Linkedin", text: v => PLATFORM_LABELS[v] || v },
+      { key: "careerSite", label: "Career Site", value: j => j.careerSiteUrl ? "yes" : "", text: v => v ? "Has link" : "(No link)" },
+      { key: "city", label: "Location", value: j => j.city || "" },
+      { key: "company", label: "Company", value: j => j.company || "" },
+      { key: "title", label: "Job Title", value: j => j.title || "" },
+      { key: "status", label: "Status", value: j => j.status || "", text: v => STATUS_LABELS[v] || v, rank: v => Object.keys(STATUS_LABELS).indexOf(v), sortLabels: ["Wishlist → Closed", "Closed → Wishlist"] },
+      { key: "priority", label: "Priority", value: j => j.priority || "", rank: v => PRIORITY_RANK[v], sortLabels: ["High → Low", "Low → High"] },
+      { key: "match", label: "Match", title: "LinkedIn job match", value: j => j.linkedinMatch || "", rank: v => MATCH_RANK[v], sortLabels: ["Top → Low", "Low → Top"] },
+      { key: "lang", label: "EN/NL", value: j => j.lang || "" },
+      { key: "applied", label: "Applied", value: j => j.appliedDate || "", text: v => formatDateDMY(v), sortLabels: ["Oldest first", "Newest first"] },
+      { key: "docs", label: "Docs & Tasks", value: j => ["cv", "cl", "prep"].filter(t => j.tasks?.[t]).length, noFilter: true, sortLabels: ["Fewest done first", "Most done first"] }
+    ];
+    const appTable = { sort: { key: null, dir: 1 }, hidden: {} };
+    let openColumnKey = null;
+
+    function columnValueText(col, v) {
+      if (v === "") return "(Blanks)";
+      return col.text ? col.text(v) : String(v);
+    }
+
+    function compareColumnValues(col, a, b) {
+      if (col.rank) return (col.rank(a) ?? 99) - (col.rank(b) ?? 99);
+      if (typeof a === "number" && typeof b === "number") return a - b;
+      return String(a).localeCompare(String(b), undefined, { sensitivity: "base", numeric: true });
+    }
+
+    function passesColumnFilters(job) {
+      return TABLE_COLUMNS.every(col => !appTable.hidden[col.key]?.has(String(col.value(job))));
+    }
+
+    // Sorts in place; blanks always go last, like in a spreadsheet
+    function sortByTableColumn(jobs) {
+      const col = TABLE_COLUMNS.find(c => c.key === appTable.sort.key);
+      if (!col) return;
+      const dir = appTable.sort.dir;
+      const keyed = jobs.map(j => [j, col.value(j)]);
+      keyed.sort(([, a], [, b]) => (a === "") - (b === "") || dir * compareColumnValues(col, a, b));
+      keyed.forEach(([j], i) => { jobs[i] = j; });
+    }
+
+    function renderTableHeader() {
+      document.getElementById("applications-thead-row").innerHTML =
+        `<th class="py-3 px-2 sticky left-0 z-20 bg-amber-900 border-r border-amber-950 w-8"><span class="sr-only">Delete</span></th>` +
+        TABLE_COLUMNS.map(col => {
+          const sorted = appTable.sort.key === col.key;
+          const filtered = Boolean(appTable.hidden[col.key]);
+          const icons = [
+            sorted ? `<i data-lucide="${appTable.sort.dir === 1 ? "arrow-up" : "arrow-down"}" class="w-3 h-3"></i>` : "",
+            filtered ? `<i data-lucide="filter" class="w-3 h-3"></i>` : "",
+            !sorted && !filtered ? `<i data-lucide="chevron-down" class="w-3 h-3 opacity-50 group-hover/col:opacity-100"></i>` : ""
+          ].join("");
+          return `
+            <th class="py-1.5 px-1 whitespace-nowrap">
+              <button type="button" data-col-menu-btn onclick="openColumnMenu('${col.key}', this)" title="${esc(col.title ? `${col.title}: sort / filter` : "Sort / filter")}"
+                class="group/col w-full flex items-center justify-between gap-1.5 px-1 py-1.5 rounded uppercase tracking-wider hover:bg-amber-950/40 ${sorted || filtered ? "text-amber-200" : ""}">
+                <span>${esc(col.label)}</span><span class="flex items-center gap-0.5">${icons}</span>
+              </button>
+            </th>`;
+        }).join("");
+    }
+
+    function openColumnMenu(key, btn) {
+      if (openColumnKey === key) {
+        closeColumnMenu();
+        return;
+      }
+      let menu = document.getElementById("col-menu");
+      if (!menu) {
+        menu = document.createElement("div");
+        menu.id = "col-menu";
+        menu.className = "hidden fixed z-50 w-64 bg-white text-slate-700 text-xs rounded-xl border border-slate-200 shadow-xl";
+        document.body.appendChild(menu);
+      }
+      openColumnKey = key;
+      renderColumnMenu();
+      menu.classList.remove("hidden");
+      const r = btn.getBoundingClientRect();
+      menu.style.top = `${r.bottom + 4}px`;
+      menu.style.left = `${Math.max(8, Math.min(r.left, window.innerWidth - menu.offsetWidth - 8))}px`;
+      document.getElementById("col-menu-search")?.focus();
+    }
+
+    function closeColumnMenu() {
+      openColumnKey = null;
+      document.getElementById("col-menu")?.classList.add("hidden");
+    }
+
+    function renderColumnMenu() {
+      const col = TABLE_COLUMNS.find(c => c.key === openColumnKey);
+      const menu = document.getElementById("col-menu");
+      const [ascLabel, descLabel] = col.sortLabels || ["Sort A → Z", "Sort Z → A"];
+      const isSorted = appTable.sort.key === col.key;
+      const sortBtn = (dir, label, icon) => `
+        <button type="button" onclick="setTableSort('${col.key}', ${dir})" class="w-full flex items-center gap-2 px-2.5 py-1.5 rounded-lg hover:bg-slate-100 ${isSorted && appTable.sort.dir === dir ? "bg-indigo-50 text-indigo-700 font-semibold" : ""}">
+          <i data-lucide="${icon}" class="w-3.5 h-3.5"></i>${esc(label)}
+        </button>`;
+      let html = `
+        <div class="p-1.5">
+          ${sortBtn(1, ascLabel, "arrow-up")}
+          ${sortBtn(-1, descLabel, "arrow-down")}
+          ${isSorted ? `<button type="button" onclick="setTableSort(null)" class="w-full flex items-center gap-2 px-2.5 py-1.5 rounded-lg hover:bg-slate-100 text-slate-500"><i data-lucide="x" class="w-3.5 h-3.5"></i>Clear sort</button>` : ""}
+        </div>`;
+
+      if (!col.noFilter) {
+        const counts = new Map();
+        state.applications.forEach(j => {
+          const v = String(col.value(j));
+          counts.set(v, (counts.get(v) || 0) + 1);
+        });
+        const values = [...counts.keys()].sort((a, b) => (a === "") - (b === "") || compareColumnValues(col, a, b));
+        const hidden = appTable.hidden[col.key] || new Set();
+        html += `
+          <div class="border-t border-slate-100 p-2 space-y-1.5">
+            <div class="flex items-center justify-between px-1">
+              <span class="font-semibold text-slate-400 text-[10px] uppercase tracking-wider">Filter</span>
+              ${hidden.size ? `<button type="button" onclick="clearColumnFilter('${col.key}')" class="text-indigo-600 hover:underline font-semibold">Clear filter</button>` : ""}
+            </div>
+            ${values.length > 8 ? `<input type="search" id="col-menu-search" oninput="filterColumnMenuList(this.value)" placeholder="Search values..." class="w-full px-2 py-1 border border-slate-200 rounded-lg focus:ring-2 focus:ring-indigo-500">` : ""}
+            <label class="flex items-center gap-2 px-1.5 py-1 rounded hover:bg-slate-50 cursor-pointer font-semibold">
+              <input type="checkbox" id="col-menu-all" ${hidden.size ? "" : "checked"} onchange="setAllColumnValues(this.checked)"> (Select all)
+            </label>
+            <div id="col-menu-values" class="max-h-56 overflow-y-auto border-t border-slate-100 pt-1">
+              ${values.map(v => `
+                <label data-text="${esc(columnValueText(col, v).toLowerCase())}" class="flex items-center gap-2 px-1.5 py-1 rounded hover:bg-slate-50 cursor-pointer">
+                  <input type="checkbox" value="${esc(v)}" ${hidden.has(v) ? "" : "checked"} onchange="toggleColumnValue(this)">
+                  <span class="flex-1 truncate ${v === "" ? "italic text-slate-400" : ""}">${esc(columnValueText(col, v))}</span>
+                  <span class="text-slate-400">${counts.get(v)}</span>
+                </label>`).join("")}
+            </div>
+          </div>`;
+      }
+      menu.innerHTML = html;
+      lucide.createIcons();
+    }
+
+    function filterColumnMenuList(query) {
+      const q = query.trim().toLowerCase();
+      document.querySelectorAll("#col-menu-values label").forEach(el => el.classList.toggle("hidden", !el.dataset.text.includes(q)));
+    }
+
+    function setTableSort(key, dir = 1) {
+      appTable.sort = { key, dir };
+      closeColumnMenu();
+      renderApplications();
+    }
+
+    function toggleColumnValue(checkbox) {
+      const set = appTable.hidden[openColumnKey] || new Set();
+      if (checkbox.checked) set.delete(checkbox.value);
+      else set.add(checkbox.value);
+      if (set.size) appTable.hidden[openColumnKey] = set;
+      else delete appTable.hidden[openColumnKey];
+      document.getElementById("col-menu-all").checked = !set.size;
+      renderApplications();
+    }
+
+    function setAllColumnValues(checked) {
+      const boxes = [...document.querySelectorAll("#col-menu-values input[type=checkbox]")];
+      boxes.forEach(cb => { cb.checked = checked; });
+      if (checked) delete appTable.hidden[openColumnKey];
+      else appTable.hidden[openColumnKey] = new Set(boxes.map(cb => cb.value));
+      renderApplications();
+    }
+
+    function clearColumnFilter(key) {
+      delete appTable.hidden[key];
+      renderColumnMenu();
+      renderApplications();
+    }
+
+    function clearAllColumnFilters() {
+      appTable.hidden = {};
+      if (openColumnKey) renderColumnMenu();
+      renderApplications();
+    }
+
+    function refreshClearColumnFiltersButton() {
+      const n = Object.keys(appTable.hidden).length;
+      document.getElementById("btn-clear-col-filters").classList.toggle("hidden", !n);
+      document.getElementById("clear-col-filters-label").innerText = `${n} column filter${n === 1 ? "" : "s"}`;
+    }
+
+    // Close the header menu on a click elsewhere, Escape, scrolling the page or resizing
+    document.addEventListener("mousedown", e => {
+      if (openColumnKey && !e.target.closest("#col-menu, [data-col-menu-btn]")) closeColumnMenu();
+    });
+    document.addEventListener("keydown", e => { if (e.key === "Escape" && openColumnKey) closeColumnMenu(); });
+    document.addEventListener("scroll", e => { if (openColumnKey && !e.target.closest?.("#col-menu")) closeColumnMenu(); }, true);
+    window.addEventListener("resize", () => { if (openColumnKey) closeColumnMenu(); });
 
     // One size for every pill on the phone cards, so dropdowns and badges line up
     const CARD_CHIP = "inline-flex items-center gap-1 h-7 px-2.5 rounded-full border text-[11px] font-semibold whitespace-nowrap";
@@ -4459,9 +4641,6 @@
         document.getElementById(`job-${kind}-details`).open = Boolean(job && (job[`${kind}File`] || job[`${kind}CompiledAt`] || (job[`${kind}Latex`] || '').trim()));
       });
 
-      document.getElementById("job-ai-panel").open = !job;
-      document.getElementById("job-ai-file-name").innerText = "";
-
       const legacy = getLegacyDoc(job && job.docId);
       const legacyEl = document.getElementById("job-legacy-doc");
       legacyEl.classList.toggle("hidden", !legacy);
@@ -4612,6 +4791,26 @@
         btn.innerHTML = `<i data-lucide="play" class="w-3.5 h-3.5"></i> Compile &amp; Preview`;
         lucide.createIcons();
       }
+    }
+
+    function downloadJobLatex(kind) {
+      const source = document.getElementById(`job-${kind}-latex`).value;
+      if (!source.trim()) {
+        showToast("Paste your LaTeX main text first.");
+        return;
+      }
+      const label = kind === "cv" ? "CV" : "Cover Letter";
+      const parts = [document.getElementById("job-company-input").value, document.getElementById("job-title-input").value, label]
+        .map(v => v.trim()).filter(Boolean);
+      const name = parts.join(" - ").replace(/[\\/:*?"<>|]+/g, "").replace(/\s+/g, " ");
+      const url = URL.createObjectURL(new Blob([source], { type: "application/x-tex" }));
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `${name}.tex`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      setTimeout(() => URL.revokeObjectURL(url), 1000);
     }
 
     async function handleJobFormSubmit(e) {
@@ -5068,56 +5267,6 @@
         btn.innerHTML = `<i data-lucide="sparkles" class="w-3 h-3"></i> Auto-fill`;
         lucide.createIcons();
       }
-    }
-
-    // "AI Extractor" panel in the application form: pasted text (or the links) → fills the empty fields
-    async function autofillJobFromAI() {
-      const MAX_INPUT_CHARS = 15000;
-      let text = document.getElementById("job-ai-text").value.trim();
-      const url = document.getElementById("job-posting-input").value.trim() || document.getElementById("job-careersite-input").value.trim();
-      if (!text && !url) {
-        showToast("Paste the job text, upload a file, or fill in a job link first.");
-        return;
-      }
-      if (text.length > MAX_INPUT_CHARS) text = text.substring(0, MAX_INPUT_CHARS);
-
-      const btn = document.getElementById("btn-job-ai-parse");
-      btn.disabled = true;
-      btn.innerHTML = `<i data-lucide="loader-2" class="w-3.5 h-3.5 animate-spin"></i> ${text ? "Extracting..." : "Reading the link..."}`;
-      lucide.createIcons();
-      try {
-        const parsed = await requestJobExtraction({ url, text });
-        fillJobFormFromExtraction(parsed, true);
-        showToast(parsed.via === "structured" ? "Filled from page data (Gemini unavailable)." : "Filled the empty fields with AI.");
-      } catch (err) {
-        console.warn("AI extraction failed:", err);
-        if (text) {
-          fillJobFormFromExtraction(fallbackRuleParser(text, url), true);
-          showToast(`Gemini failed (${err.message}) — filled a rough guess, please check the fields.`);
-        } else {
-          showToast(err.message);
-        }
-      } finally {
-        btn.disabled = false;
-        btn.innerHTML = `<i data-lucide="wand2" class="w-3.5 h-3.5"></i> Extract &amp; Fill`;
-        lucide.createIcons();
-      }
-    }
-
-    async function handleJobAIFileUpload(event) {
-      const file = event.target.files[0];
-      if (!file) return;
-      event.target.value = "";
-      document.getElementById("job-ai-file-name").innerText = file.name;
-      const { text, url } = await readJobFileText(file);
-      if (text === null) return;
-      document.getElementById("job-ai-text").value = text;
-      const postingInput = document.getElementById("job-posting-input");
-      if (url && !postingInput.value.trim()) {
-        postingInput.value = url;
-        handlePostingLinkInput();
-      }
-      autofillJobFromAI();
     }
 
     /* ==========================================================================
