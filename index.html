@@ -886,6 +886,10 @@
                 <button type="button" onclick="downloadJobLatex('cv')" title="Download the LaTeX main text as a .tex file" class="px-3 py-1.5 bg-white hover:bg-slate-50 text-slate-700 border border-slate-200 rounded-lg font-semibold flex items-center gap-1.5">
                   <i data-lucide="download" class="w-3.5 h-3.5"></i> Download .tex
                 </button>
+                <label title="Load a .tex file into the LaTeX main text (replaces what is there)" class="px-3 py-1.5 bg-white hover:bg-slate-50 text-slate-700 border border-slate-200 rounded-lg font-semibold flex items-center gap-1.5 cursor-pointer">
+                  <i data-lucide="file-up" class="w-3.5 h-3.5"></i> Upload .tex
+                  <input type="file" accept=".tex,text/x-tex,text/plain" class="hidden" onchange="uploadJobLatex('cv', event)">
+                </label>
                 <button type="button" id="job-cv-compiled-view" onclick="viewJobDoc('cv-compiled')" class="text-indigo-600 hover:underline font-semibold hidden">View last compiled PDF</button>
                 <span id="job-cv-compiled-label" class="text-slate-400"></span>
               </div>
@@ -926,6 +930,10 @@
                 <button type="button" onclick="downloadJobLatex('cl')" title="Download the LaTeX main text as a .tex file" class="px-3 py-1.5 bg-white hover:bg-slate-50 text-slate-700 border border-slate-200 rounded-lg font-semibold flex items-center gap-1.5">
                   <i data-lucide="download" class="w-3.5 h-3.5"></i> Download .tex
                 </button>
+                <label title="Load a .tex file into the LaTeX main text (replaces what is there)" class="px-3 py-1.5 bg-white hover:bg-slate-50 text-slate-700 border border-slate-200 rounded-lg font-semibold flex items-center gap-1.5 cursor-pointer">
+                  <i data-lucide="file-up" class="w-3.5 h-3.5"></i> Upload .tex
+                  <input type="file" accept=".tex,text/x-tex,text/plain" class="hidden" onchange="uploadJobLatex('cl', event)">
+                </label>
                 <button type="button" id="job-cl-compiled-view" onclick="viewJobDoc('cl-compiled')" class="text-indigo-600 hover:underline font-semibold hidden">View last compiled PDF</button>
                 <span id="job-cl-compiled-label" class="text-slate-400"></span>
               </div>
@@ -4791,6 +4799,17 @@
         btn.innerHTML = `<i data-lucide="play" class="w-3.5 h-3.5"></i> Compile &amp; Preview`;
         lucide.createIcons();
       }
+    }
+
+    async function uploadJobLatex(kind, event) {
+      const file = event.target.files[0];
+      event.target.value = "";
+      if (!file) return;
+      const textarea = document.getElementById(`job-${kind}-latex`);
+      if (textarea.value.trim() && !confirm(`Replace the current LaTeX main text with ${file.name}?`)) return;
+      textarea.value = await file.text();
+      refreshJobDocUI(kind);
+      showToast(`Loaded ${file.name}.`);
     }
 
     function downloadJobLatex(kind) {
