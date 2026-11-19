@@ -664,6 +664,61 @@
         <div id="template-list" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"></div>
       </div>
 
+      <!-- Master CV / cover letter: one evolving document with saved versions -->
+      <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm space-y-5">
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-100 pb-4">
+          <div>
+            <h2 class="text-base font-bold text-slate-900 flex items-center gap-2">
+              <i data-lucide="git-branch" class="w-5 h-5 text-violet-600"></i> Master Documents
+            </h2>
+            <p class="text-xs text-slate-500 mt-0.5">Your master CV and cover letter. Paste or upload the .tex, compile it, then save it as a version so you can always see which one is current, when it changed and what changed.</p>
+          </div>
+          <div class="flex bg-slate-100 p-1 rounded-lg text-xs font-semibold flex-shrink-0">
+            <button type="button" id="master-kind-cv" onclick="setMasterKind('cv')" class="px-3 py-1.5 rounded-md">Master CV</button>
+            <button type="button" id="master-kind-cl" onclick="setMasterKind('cl')" class="px-3 py-1.5 rounded-md">Master Cover Letter</button>
+          </div>
+        </div>
+
+        <div id="master-status" class="text-xs"></div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-5 gap-5 text-xs">
+          <!-- Editor -->
+          <div class="lg:col-span-3 space-y-3">
+            <div class="flex items-center justify-between gap-2">
+              <span class="font-semibold text-slate-700">LaTeX main text <span id="master-draft-state" class="font-normal"></span></span>
+              <select id="master-template" onchange="handleMasterDraftInput()" class="p-1 border border-slate-200 rounded-lg text-[11px] max-w-[60%]"></select>
+            </div>
+            <textarea id="master-latex" rows="16" spellcheck="false" oninput="handleMasterDraftInput()" placeholder="Paste your master main.tex here (full file or just the body), or use Upload .tex." class="w-full p-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-indigo-500 font-mono text-[11px] leading-relaxed"></textarea>
+            <input type="text" id="master-note" maxlength="200" placeholder="What changed in this version? (optional, e.g. added Erasmus thesis, new skills section)" class="w-full p-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-indigo-500">
+            <div class="flex flex-wrap items-center gap-2">
+              <button type="button" id="master-save-btn" onclick="saveMasterVersion()" class="px-3 py-1.5 bg-violet-600 hover:bg-violet-700 text-white rounded-lg font-semibold flex items-center gap-1.5 shadow-sm">
+                <i data-lucide="save" class="w-3.5 h-3.5"></i> Save as new version
+              </button>
+              <button type="button" id="master-compile-btn" onclick="compileMasterDraft()" class="px-3 py-1.5 bg-slate-900 hover:bg-slate-700 text-white rounded-lg font-semibold flex items-center gap-1.5">
+                <i data-lucide="play" class="w-3.5 h-3.5"></i> Compile &amp; Preview
+              </button>
+              <button type="button" onclick="diffMasterDraft()" title="Compare the editor with the current version" class="px-3 py-1.5 bg-white hover:bg-slate-50 text-slate-700 border border-slate-200 rounded-lg font-semibold flex items-center gap-1.5">
+                <i data-lucide="git-compare" class="w-3.5 h-3.5"></i> Compare with current
+              </button>
+              <label title="Load a .tex file into the editor (replaces what is there)" class="px-3 py-1.5 bg-white hover:bg-slate-50 text-slate-700 border border-slate-200 rounded-lg font-semibold flex items-center gap-1.5 cursor-pointer">
+                <i data-lucide="file-up" class="w-3.5 h-3.5"></i> Upload .tex
+                <input type="file" accept=".tex,text/x-tex,text/plain" class="hidden" onchange="uploadMasterLatex(event)">
+              </label>
+              <button type="button" onclick="downloadMasterDraft()" class="px-3 py-1.5 bg-white hover:bg-slate-50 text-slate-700 border border-slate-200 rounded-lg font-semibold flex items-center gap-1.5">
+                <i data-lucide="download" class="w-3.5 h-3.5"></i> Download .tex
+              </button>
+            </div>
+            <p class="text-[11px] text-slate-400">The editor is kept as a draft automatically. Only "Save as new version" adds it to the history. If you compiled the exact text first, the PDF is saved with the version.</p>
+          </div>
+
+          <!-- Version history -->
+          <div class="lg:col-span-2 space-y-2">
+            <h3 class="font-bold text-slate-800 flex items-center gap-1.5"><i data-lucide="history" class="w-4 h-4 text-slate-500"></i> Version history</h3>
+            <div id="master-versions" class="space-y-2 max-h-[34rem] overflow-y-auto pr-1"></div>
+          </div>
+        </div>
+      </div>
+
       <!-- Links saved with the old "Add Document Link" feature (only shown if there are any) -->
       <div id="legacy-docs-card" class="hidden bg-white p-6 rounded-2xl border border-slate-200 shadow-sm space-y-3">
         <div>
@@ -890,6 +945,9 @@
                   <i data-lucide="file-up" class="w-3.5 h-3.5"></i> Upload .tex
                   <input type="file" accept=".tex,text/x-tex,text/plain" class="hidden" onchange="uploadJobLatex('cv', event)">
                 </label>
+                <button type="button" onclick="insertMasterIntoJob('cv')" title="Fill the LaTeX main text with the current master CV version (replaces what is there)" class="px-3 py-1.5 bg-violet-50 hover:bg-violet-100 text-violet-700 border border-violet-200 rounded-lg font-semibold flex items-center gap-1.5">
+                  <i data-lucide="git-branch" class="w-3.5 h-3.5"></i> From master
+                </button>
                 <button type="button" id="job-cv-compiled-view" onclick="viewJobDoc('cv-compiled')" class="text-indigo-600 hover:underline font-semibold hidden">View last compiled PDF</button>
                 <span id="job-cv-compiled-label" class="text-slate-400"></span>
               </div>
@@ -934,6 +992,9 @@
                   <i data-lucide="file-up" class="w-3.5 h-3.5"></i> Upload .tex
                   <input type="file" accept=".tex,text/x-tex,text/plain" class="hidden" onchange="uploadJobLatex('cl', event)">
                 </label>
+                <button type="button" onclick="insertMasterIntoJob('cl')" title="Fill the LaTeX main text with the current master cover letter version (replaces what is there)" class="px-3 py-1.5 bg-violet-50 hover:bg-violet-100 text-violet-700 border border-violet-200 rounded-lg font-semibold flex items-center gap-1.5">
+                  <i data-lucide="git-branch" class="w-3.5 h-3.5"></i> From master
+                </button>
                 <button type="button" id="job-cl-compiled-view" onclick="viewJobDoc('cl-compiled')" class="text-indigo-600 hover:underline font-semibold hidden">View last compiled PDF</button>
                 <span id="job-cl-compiled-label" class="text-slate-400"></span>
               </div>
@@ -1290,6 +1351,22 @@
     </div>
   </div>
 
+  <!-- MODAL: TEXT DIFF (master document versions) -->
+  <div id="modal-diff" onclick="if (event.target === this) closeDiffModal()" class="fixed inset-0 bg-slate-900/70 backdrop-blur-sm z-[55] flex items-center justify-center p-4 hidden">
+    <div class="bg-white rounded-2xl max-w-4xl w-full max-h-[90vh] flex flex-col shadow-2xl border border-slate-100 overflow-hidden">
+      <div class="bg-slate-900 text-white px-5 py-3 flex items-center justify-between gap-3">
+        <div class="min-w-0">
+          <h3 id="diff-modal-title" class="text-sm font-bold truncate">Changes</h3>
+          <p id="diff-modal-summary" class="text-[11px] text-slate-400"></p>
+        </div>
+        <button onclick="closeDiffModal()" class="text-slate-400 hover:text-white flex-shrink-0">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+      </div>
+      <div id="diff-modal-body" class="flex-1 overflow-auto font-mono text-[11px] leading-relaxed bg-white"></div>
+    </div>
+  </div>
+
   <!-- MODAL 9: PDF PREVIEW / COMPILE LOG -->
   <div id="modal-pdf" class="fixed inset-0 bg-slate-900/70 backdrop-blur-sm z-[55] flex items-center justify-center p-4 hidden">
     <div class="bg-white rounded-2xl max-w-4xl w-full max-h-[94vh] flex flex-col shadow-2xl border border-slate-100 overflow-hidden">
@@ -1592,6 +1669,8 @@
       looseCompanies: getSavedState("job_tracker_loose_companies", []),
       templates: getSavedState("job_tracker_templates", null) || buildDefaultTemplates(),
       legacyDocs: getSavedState("job_tracker_docs", []),
+      // Master CV / cover letter versions: { versions: [{ id, kind, number, note, latex, templateId, savedAt, hasPdf }], drafts: { cv, cl } }
+      masterDocs: { versions: [], drafts: {}, ...getSavedState("job_tracker_master_docs", {}) },
       scoutColumns: getSavedState("job_tracker_scout_columns", DEFAULT_SCOUT_COLUMNS),
       companyMeta: getSavedState("job_tracker_company_meta", {}),
       planner: getSavedState("job_tracker_planner", DEFAULT_PLANNER),
@@ -1613,6 +1692,7 @@
         localStorage.setItem("job_tracker_loose_companies", JSON.stringify(state.looseCompanies));
         localStorage.setItem("job_tracker_templates", JSON.stringify(state.templates));
         localStorage.setItem("job_tracker_docs", JSON.stringify(state.legacyDocs));
+        localStorage.setItem("job_tracker_master_docs", JSON.stringify(state.masterDocs));
         localStorage.setItem("job_tracker_scout_columns", JSON.stringify(state.scoutColumns));
         localStorage.setItem("job_tracker_company_meta", JSON.stringify(state.companyMeta));
         localStorage.setItem("job_tracker_planner", JSON.stringify(state.planner));
@@ -1635,7 +1715,8 @@
     /* ==========================================================================
        FILE STORE (IndexedDB) — uploaded & compiled PDFs per application.
        localStorage is limited to ~5 MB of text, so binary files live here instead.
-       Keys: "<jobId>:cv-upload", "<jobId>:cv-compiled", "<jobId>:cl-upload", "<jobId>:cl-compiled"
+       Keys: "<jobId>:cv-upload", "<jobId>:cv-compiled", "<jobId>:cl-upload", "<jobId>:cl-compiled",
+             "master:<versionId>" for the compiled PDF of a master document version
        ========================================================================== */
     const FileStore = {
       _db: null,
@@ -4585,8 +4666,8 @@
         `<span class="text-[10px] text-slate-400">Nothing attached</span>`;
     }
 
-    function populateTemplateSelect(kind, selectedId) {
-      const select = document.getElementById(`job-${kind}-template`);
+    function populateTemplateSelect(kind, selectedId, selectId = `job-${kind}-template`) {
+      const select = document.getElementById(selectId);
       const type = kind === "cv" ? "CV" : "CL";
       const matching = state.templates.filter(t => t.type === type);
       const others = state.templates.filter(t => t.type !== type);
@@ -5294,6 +5375,7 @@
     function renderDocuments() {
       renderLegacyDocs();
       renderTemplateList();
+      renderMasterDocs();
       renderSentDocsArchive();
       lucide.createIcons();
     }
@@ -5475,6 +5557,431 @@
     }
 
     /* ==========================================================================
+       9b. MASTER DOCUMENTS: versioned master CV / cover letter
+       The editor is an auto-saved draft; "Save as new version" snapshots it.
+       ========================================================================== */
+    let masterKind = "cv";
+    let masterCompiled = null; // { kind, latex, templateId, blob }: last compile of the draft this session
+    let masterDraftTimer = null;
+    const MASTER_LABEL = { cv: "Master CV", cl: "Master Cover Letter" };
+    const MASTER_LABEL_LOWER = { cv: "master CV", cl: "master cover letter" };
+
+    function masterVersions(kind = masterKind) {
+      return state.masterDocs.versions.filter(v => v.kind === kind).sort((a, b) => b.number - a.number);
+    }
+
+    function latestMasterVersion(kind = masterKind) {
+      return masterVersions(kind)[0] || null;
+    }
+
+    function sameTex(a, b) {
+      return (a || "").replace(/\r\n/g, "\n").trimEnd() === (b || "").replace(/\r\n/g, "\n").trimEnd();
+    }
+
+    function masterTemplateName(id) {
+      const t = state.templates.find(x => x.id === id);
+      return t ? t.name : (id ? "deleted template" : "no template");
+    }
+
+    function setMasterKind(kind) {
+      flushMasterDraft();
+      masterKind = kind;
+      renderMasterDocs();
+      lucide.createIcons();
+    }
+
+    function renderMasterDocs() {
+      ["cv", "cl"].forEach(k => {
+        const btn = document.getElementById(`master-kind-${k}`);
+        btn.classList.toggle("bg-white", k === masterKind);
+        btn.classList.toggle("shadow-sm", k === masterKind);
+        btn.classList.toggle("text-slate-900", k === masterKind);
+        btn.classList.toggle("text-slate-500", k !== masterKind);
+      });
+
+      // Load the editor only when switching document (re-renders must not reset the cursor)
+      const textarea = document.getElementById("master-latex");
+      const latest = latestMasterVersion();
+      const draft = state.masterDocs.drafts[masterKind];
+      if (textarea.dataset.kind !== masterKind) {
+        textarea.dataset.kind = masterKind;
+        textarea.value = draft ? draft.latex : (latest ? latest.latex : "");
+        document.getElementById("master-note").value = "";
+      }
+      const templateId = draft ? draft.templateId : (latest ? latest.templateId : undefined);
+      populateTemplateSelect(masterKind, templateId, "master-template");
+
+      renderMasterStatus();
+      renderMasterVersionList();
+    }
+
+    function renderMasterStatus() {
+      const latest = latestMasterVersion();
+      const status = document.getElementById("master-status");
+      status.innerHTML = latest
+        ? `<div class="flex flex-wrap items-center gap-2 bg-violet-50 border border-violet-100 text-violet-900 rounded-xl px-3 py-2">
+             <span class="px-2 py-0.5 rounded-full bg-violet-600 text-white font-bold text-[11px]">v${latest.number}</span>
+             <span><span class="font-semibold">Current ${MASTER_LABEL_LOWER[masterKind]}</span>, saved ${esc(formatDateTime(latest.savedAt))}</span>
+             ${latest.note ? `<span class="text-violet-700">· ${esc(latest.note)}</span>` : ""}
+             <span class="ml-auto flex items-center gap-3">
+               ${latest.hasPdf ? `<button onclick="viewMasterPdf('${latest.id}')" class="font-semibold hover:underline flex items-center gap-1"><i data-lucide="file-check-2" class="w-3.5 h-3.5"></i> View PDF</button>` : ""}
+             </span>
+           </div>`
+        : `<div class="bg-slate-50 border border-dashed border-slate-300 text-slate-500 rounded-xl px-3 py-2">No ${MASTER_LABEL_LOWER[masterKind]} saved yet. Paste or upload your .tex below and click "Save as new version".</div>`;
+
+      const textarea = document.getElementById("master-latex");
+      const stateEl = document.getElementById("master-draft-state");
+      const templateId = document.getElementById("master-template").value;
+      if (!textarea.value.trim()) stateEl.innerHTML = "";
+      else if (latest && sameTex(textarea.value, latest.latex) && (latest.templateId || "") === templateId) stateEl.innerHTML = `<span class="text-emerald-600">· matches v${latest.number}</span>`;
+      else stateEl.innerHTML = `<span class="text-amber-600">· unsaved changes${latest ? ` since v${latest.number}` : ""}</span>`;
+    }
+
+    function renderMasterVersionList() {
+      const list = document.getElementById("master-versions");
+      const versions = masterVersions();
+      if (versions.length === 0) {
+        list.innerHTML = `<p class="text-slate-400 italic">No versions yet.</p>`;
+        return;
+      }
+      list.innerHTML = versions.map((v, i) => {
+        const previous = versions[i + 1];
+        const changes = previous ? diffStats(previous.latex, v.latex) : null;
+        return `
+          <div class="p-3 rounded-xl border ${i === 0 ? "border-violet-200 bg-violet-50/50" : "border-slate-200 bg-slate-50"} space-y-1.5">
+            <div class="flex items-center justify-between gap-2">
+              <span class="flex items-center gap-1.5">
+                <span class="font-bold text-slate-800">v${v.number}</span>
+                ${i === 0 ? `<span class="text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-violet-600 text-white">Current</span>` : ""}
+              </span>
+              <span class="text-[11px] text-slate-500">${esc(formatDateTime(v.savedAt))}</span>
+            </div>
+            ${v.note ? `<p class="text-slate-700">${esc(v.note)}</p>` : ""}
+            <p class="text-[11px] text-slate-400">${esc(masterTemplateName(v.templateId))}${changes ? ` · <span class="text-emerald-600">+${changes.added}</span> <span class="text-rose-500">−${changes.removed}</span> lines vs v${previous.number}` : " · first version"}</p>
+            <div class="flex flex-wrap items-center gap-x-3 gap-y-1 pt-1 text-[11px] font-semibold">
+              ${v.hasPdf
+                ? `<button onclick="viewMasterPdf('${v.id}')" class="text-emerald-700 hover:underline flex items-center gap-1"><i data-lucide="file-check-2" class="w-3 h-3"></i> PDF</button>`
+                : `<button onclick="compileMasterVersion('${v.id}')" class="text-slate-700 hover:underline flex items-center gap-1"><i data-lucide="play" class="w-3 h-3"></i> Compile PDF</button>`}
+              ${previous ? `<button onclick="diffMasterVersions('${previous.id}', '${v.id}')" class="text-indigo-600 hover:underline flex items-center gap-1"><i data-lucide="git-compare" class="w-3 h-3"></i> Changes</button>` : ""}
+              <button onclick="loadMasterVersion('${v.id}')" class="text-slate-600 hover:underline flex items-center gap-1"><i data-lucide="pencil" class="w-3 h-3"></i> Load</button>
+              <button onclick="downloadMasterVersion('${v.id}')" class="text-slate-600 hover:underline flex items-center gap-1"><i data-lucide="download" class="w-3 h-3"></i> .tex</button>
+              <button onclick="deleteMasterVersion('${v.id}')" class="ml-auto text-rose-500 hover:text-rose-700">Delete</button>
+            </div>
+          </div>`;
+      }).join("");
+    }
+
+    function handleMasterDraftInput() {
+      renderMasterStatus();
+      clearTimeout(masterDraftTimer);
+      masterDraftTimer = setTimeout(flushMasterDraft, 400);
+    }
+
+    function flushMasterDraft() {
+      clearTimeout(masterDraftTimer);
+      const textarea = document.getElementById("master-latex");
+      const kind = textarea.dataset.kind;
+      if (!kind) return;
+      state.masterDocs.drafts[kind] = { latex: textarea.value, templateId: document.getElementById("master-template").value };
+      saveState();
+    }
+
+    async function saveMasterVersion() {
+      const latex = document.getElementById("master-latex").value;
+      const templateId = document.getElementById("master-template").value;
+      if (!latex.trim()) {
+        showToast("Paste or upload your LaTeX first.");
+        return;
+      }
+      const latest = latestMasterVersion();
+      if (latest && sameTex(latex, latest.latex) && (latest.templateId || "") === templateId) {
+        showToast(`No changes since v${latest.number}.`);
+        return;
+      }
+      const version = {
+        id: "mv-" + Date.now(),
+        kind: masterKind,
+        number: (latest ? latest.number : 0) + 1,
+        note: document.getElementById("master-note").value.trim(),
+        latex,
+        templateId,
+        savedAt: Date.now(),
+        hasPdf: false
+      };
+      const compiled = masterCompiled && masterCompiled.kind === masterKind && masterCompiled.templateId === templateId && sameTex(masterCompiled.latex, latex) ? masterCompiled : null;
+      if (compiled) {
+        try {
+          await FileStore.put(`master:${version.id}`, { name: `${MASTER_LABEL[masterKind]} v${version.number}.pdf`, savedAt: version.savedAt, blob: compiled.blob });
+          version.hasPdf = true;
+        } catch (e) {
+          console.warn("Could not store the compiled PDF:", e);
+        }
+      }
+      state.masterDocs.versions.push(version);
+      document.getElementById("master-note").value = "";
+      flushMasterDraft();
+      renderMasterDocs();
+      lucide.createIcons();
+      showToast(`Saved ${MASTER_LABEL[masterKind]} v${version.number}${version.hasPdf ? " with PDF" : ""}.`);
+    }
+
+    async function compileMasterDraft() {
+      const latex = document.getElementById("master-latex").value;
+      if (!latex.trim()) {
+        showToast("Paste or upload your LaTeX first.");
+        return;
+      }
+      const templateId = document.getElementById("master-template").value;
+      const kind = masterKind;
+      await withMasterCompileButton(async () => {
+        try {
+          const { blob } = await compileLatex(latex, state.templates.find(t => t.id === templateId) || null);
+          masterCompiled = { kind, latex, templateId, blob };
+          openPdfModal({ title: `${MASTER_LABEL[kind]} preview (save as a new version to keep this PDF)`, blob });
+        } catch (err) {
+          openPdfModal({ title: `${MASTER_LABEL[kind]}: compile failed`, error: err.message, log: err.log, unresolved: err.unresolved });
+        }
+      });
+    }
+
+    async function withMasterCompileButton(fn) {
+      const btn = document.getElementById("master-compile-btn");
+      btn.disabled = true;
+      btn.innerHTML = `<i data-lucide="loader-2" class="w-3.5 h-3.5 animate-spin"></i> Compiling...`;
+      lucide.createIcons();
+      try {
+        await fn();
+      } finally {
+        btn.disabled = false;
+        btn.innerHTML = `<i data-lucide="play" class="w-3.5 h-3.5"></i> Compile &amp; Preview`;
+        lucide.createIcons();
+      }
+    }
+
+    // Compile an older version that was saved without a PDF, and attach the result to it
+    async function compileMasterVersion(id) {
+      const v = state.masterDocs.versions.find(x => x.id === id);
+      if (!v) return;
+      const label = `${MASTER_LABEL[v.kind]} v${v.number}`;
+      showToast(`Compiling ${label}...`);
+      await withMasterCompileButton(async () => {
+        try {
+          const { blob } = await compileLatex(v.latex, state.templates.find(t => t.id === v.templateId) || null);
+          await FileStore.put(`master:${v.id}`, { name: `${label}.pdf`, savedAt: Date.now(), blob });
+          v.hasPdf = true;
+          saveState();
+          renderMasterDocs();
+          lucide.createIcons();
+          openPdfModal({ title: label, blob });
+        } catch (err) {
+          openPdfModal({ title: `${label}: compile failed`, error: err.message, log: err.log, unresolved: err.unresolved });
+        }
+      });
+    }
+
+    async function viewMasterPdf(id) {
+      const v = state.masterDocs.versions.find(x => x.id === id);
+      if (!v) return;
+      try {
+        const record = await FileStore.get(`master:${id}`);
+        if (!record) {
+          v.hasPdf = false;
+          saveState();
+          renderMasterDocs();
+          lucide.createIcons();
+          showToast("PDF not found in this browser's storage. Compile it again.");
+          return;
+        }
+        openPdfModal({ title: `${MASTER_LABEL[v.kind]} v${v.number} (${formatDateTime(v.savedAt)})`, blob: record.blob });
+      } catch (e) {
+        console.error(e);
+        showToast("Could not open the stored PDF.");
+      }
+    }
+
+    function loadMasterVersion(id) {
+      const v = state.masterDocs.versions.find(x => x.id === id);
+      if (!v) return;
+      const textarea = document.getElementById("master-latex");
+      const load = () => {
+        textarea.value = v.latex;
+        populateTemplateSelect(v.kind, v.templateId, "master-template");
+        flushMasterDraft();
+        renderMasterStatus();
+        textarea.scrollTop = 0;
+        showToast(`Loaded v${v.number} into the editor.`);
+      };
+      const latest = latestMasterVersion();
+      const hasUnsaved = textarea.value.trim() && !(latest && sameTex(textarea.value, latest.latex)) && !sameTex(textarea.value, v.latex);
+      if (hasUnsaved) openConfirmModal(`Load v${v.number} into the editor?`, "Your unsaved changes in the editor will be replaced.", load);
+      else load();
+    }
+
+    function deleteMasterVersion(id) {
+      const v = state.masterDocs.versions.find(x => x.id === id);
+      if (!v) return;
+      openConfirmModal(`Delete ${MASTER_LABEL[v.kind]} v${v.number}?`, "Its LaTeX and PDF are removed from the history. Other version numbers stay the same.", async () => {
+        state.masterDocs.versions = state.masterDocs.versions.filter(x => x.id !== id);
+        saveState();
+        try { await FileStore.del(`master:${id}`); } catch (e) { console.warn(e); }
+        renderMasterDocs();
+        lucide.createIcons();
+      });
+    }
+
+    async function uploadMasterLatex(event) {
+      const file = event.target.files[0];
+      event.target.value = "";
+      if (!file) return;
+      const textarea = document.getElementById("master-latex");
+      const latest = latestMasterVersion();
+      const hasUnsaved = textarea.value.trim() && !(latest && sameTex(textarea.value, latest.latex));
+      if (hasUnsaved && !confirm(`Replace the unsaved text in the editor with ${file.name}?`)) return;
+      textarea.value = await file.text();
+      handleMasterDraftInput();
+      showToast(`Loaded ${file.name}. Save it as a new version to keep it.`);
+    }
+
+    function downloadTex(text, fileName) {
+      const url = URL.createObjectURL(new Blob([text], { type: "application/x-tex" }));
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = fileName.replace(/[\\/:*?"<>|]+/g, "");
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      setTimeout(() => URL.revokeObjectURL(url), 1000);
+    }
+
+    function downloadMasterDraft() {
+      const latex = document.getElementById("master-latex").value;
+      if (!latex.trim()) {
+        showToast("Nothing to download yet.");
+        return;
+      }
+      downloadTex(latex, `${MASTER_LABEL[masterKind]} (draft).tex`);
+    }
+
+    function downloadMasterVersion(id) {
+      const v = state.masterDocs.versions.find(x => x.id === id);
+      if (v) downloadTex(v.latex, `${MASTER_LABEL[v.kind]} v${v.number} (${new Date(v.savedAt).toISOString().slice(0, 10)}).tex`);
+    }
+
+    // Application form: start a job's CV / cover letter from the current master version
+    function insertMasterIntoJob(kind) {
+      const latest = latestMasterVersion(kind);
+      if (!latest) {
+        showToast(`No ${MASTER_LABEL_LOWER[kind]} saved yet. Add one in Doc Vault.`);
+        return;
+      }
+      const textarea = document.getElementById(`job-${kind}-latex`);
+      if (textarea.value.trim() && !sameTex(textarea.value, latest.latex) && !confirm(`Replace the current LaTeX main text with ${MASTER_LABEL[kind]} v${latest.number}?`)) return;
+      textarea.value = latest.latex;
+      if (latest.templateId && state.templates.some(t => t.id === latest.templateId)) {
+        document.getElementById(`job-${kind}-template`).value = latest.templateId;
+      }
+      refreshJobDocUI(kind);
+      showToast(`Inserted ${MASTER_LABEL[kind]} v${latest.number}.`);
+    }
+
+    /* Line diff (LCS after trimming the common start and end) */
+    function diffLines(oldText, newText) {
+      const a = (oldText || "").replace(/\r\n/g, "\n").split("\n");
+      const b = (newText || "").replace(/\r\n/g, "\n").split("\n");
+      let start = 0;
+      while (start < a.length && start < b.length && a[start] === b[start]) start++;
+      let endA = a.length, endB = b.length;
+      while (endA > start && endB > start && a[endA - 1] === b[endB - 1]) { endA--; endB--; }
+      const midA = a.slice(start, endA), midB = b.slice(start, endB);
+      const ops = a.slice(0, start).map(s => ({ t: " ", s }));
+      const n = midA.length, m = midB.length;
+      if (n * m > 4000000) {
+        // Too big for the table: show the middle as fully replaced
+        midA.forEach(s => ops.push({ t: "-", s }));
+        midB.forEach(s => ops.push({ t: "+", s }));
+      } else {
+        const dp = Array.from({ length: n + 1 }, () => new Uint32Array(m + 1));
+        for (let i = n - 1; i >= 0; i--) {
+          for (let j = m - 1; j >= 0; j--) {
+            dp[i][j] = midA[i] === midB[j] ? dp[i + 1][j + 1] + 1 : Math.max(dp[i + 1][j], dp[i][j + 1]);
+          }
+        }
+        let i = 0, j = 0;
+        while (i < n && j < m) {
+          if (midA[i] === midB[j]) { ops.push({ t: " ", s: midA[i] }); i++; j++; }
+          else if (dp[i + 1][j] >= dp[i][j + 1]) ops.push({ t: "-", s: midA[i++] });
+          else ops.push({ t: "+", s: midB[j++] });
+        }
+        while (i < n) ops.push({ t: "-", s: midA[i++] });
+        while (j < m) ops.push({ t: "+", s: midB[j++] });
+      }
+      a.slice(endA).forEach(s => ops.push({ t: " ", s }));
+      return ops;
+    }
+
+    function diffStats(oldText, newText) {
+      const ops = diffLines(oldText, newText);
+      return { added: ops.filter(o => o.t === "+").length, removed: ops.filter(o => o.t === "-").length };
+    }
+
+    function openDiffModal(title, oldText, newText) {
+      const ops = diffLines(oldText, newText);
+      const added = ops.filter(o => o.t === "+").length;
+      const removed = ops.filter(o => o.t === "-").length;
+      document.getElementById("diff-modal-title").innerText = title;
+      document.getElementById("diff-modal-summary").innerText = added || removed ? `+${added} added · −${removed} removed lines` : "No differences";
+
+      // Show changed lines with 3 lines of context; collapse the rest
+      const CONTEXT = 3;
+      const keep = ops.map(() => false);
+      ops.forEach((o, i) => {
+        if (o.t === " ") return;
+        for (let k = Math.max(0, i - CONTEXT); k <= Math.min(ops.length - 1, i + CONTEXT); k++) keep[k] = true;
+      });
+      let oldNo = 0, newNo = 0, skipped = 0;
+      const rows = [];
+      const flushSkipped = () => {
+        if (skipped) rows.push(`<div class="px-4 py-1 bg-slate-50 text-slate-400 italic border-y border-slate-100">⋯ ${skipped} unchanged line${skipped === 1 ? "" : "s"}</div>`);
+        skipped = 0;
+      };
+      ops.forEach((o, i) => {
+        if (o.t !== "+") oldNo++;
+        if (o.t !== "-") newNo++;
+        if (!keep[i]) { skipped++; return; }
+        flushSkipped();
+        const cls = o.t === "+" ? "bg-emerald-50 text-emerald-900" : o.t === "-" ? "bg-rose-50 text-rose-900" : "text-slate-600";
+        const no = o.t === "+" ? "" : oldNo;
+        const no2 = o.t === "-" ? "" : newNo;
+        rows.push(`<div class="flex ${cls}"><span class="w-10 flex-shrink-0 text-right pr-2 text-slate-300 select-none">${no}</span><span class="w-10 flex-shrink-0 text-right pr-2 text-slate-300 select-none">${no2}</span><span class="w-4 flex-shrink-0 select-none">${o.t === " " ? "" : o.t}</span><span class="whitespace-pre-wrap break-all pr-4">${esc(o.s) || " "}</span></div>`);
+      });
+      flushSkipped();
+      document.getElementById("diff-modal-body").innerHTML = added || removed
+        ? `<div class="py-2">${rows.join("")}</div>`
+        : `<p class="p-6 text-center text-slate-400 italic font-sans">The two texts are identical.</p>`;
+      document.getElementById("modal-diff").classList.remove("hidden");
+      lucide.createIcons();
+    }
+
+    function closeDiffModal() {
+      document.getElementById("modal-diff").classList.add("hidden");
+    }
+
+    function diffMasterVersions(oldId, newId) {
+      const a = state.masterDocs.versions.find(x => x.id === oldId);
+      const b = state.masterDocs.versions.find(x => x.id === newId);
+      if (a && b) openDiffModal(`${MASTER_LABEL[b.kind]}: v${a.number} → v${b.number}`, a.latex, b.latex);
+    }
+
+    function diffMasterDraft() {
+      const latest = latestMasterVersion();
+      if (!latest) {
+        showToast("No saved version to compare with yet.");
+        return;
+      }
+      openDiffModal(`${MASTER_LABEL[masterKind]}: v${latest.number} → editor (unsaved)`, latest.latex, document.getElementById("master-latex").value);
+    }
+
+    /* ==========================================================================
        10. BACKUP, CUSTOM MODALS & UTILITIES
        ========================================================================== */
     let confirmCallback = null;
@@ -5497,11 +6004,14 @@
     function promptClearAllData() {
       openConfirmModal(
         "Start Fresh / Wipe All Data?",
-        "This deletes ALL applications and their attached PDFs. Your industries, LaTeX templates and planner are kept. Export a JSON backup first if needed!",
+        "This deletes ALL applications and their attached PDFs. Your industries, LaTeX templates, master documents and planner are kept. Export a JSON backup first if needed!",
         async () => {
           state.applications = [];
           saveState();
-          try { await FileStore.clear(); } catch (e) { console.warn(e); }
+          try {
+            const keys = await FileStore.keys();
+            await Promise.all(keys.filter(k => !String(k).startsWith("master:")).map(k => FileStore.del(k)));
+          } catch (e) { console.warn(e); }
           renderApplications();
           renderDashboard();
           renderDocuments();
@@ -5540,6 +6050,7 @@
         looseCompanies: state.looseCompanies,
         templates: state.templates,
         documents: state.legacyDocs,
+        masterDocs: state.masterDocs,
         scoutColumns: state.scoutColumns,
         companyMeta: state.companyMeta,
         planner: state.planner,
@@ -5575,6 +6086,10 @@
           if (imported.looseCompanies) state.looseCompanies = imported.looseCompanies;
           if (imported.templates) state.templates = imported.templates;
           if (Array.isArray(imported.documents)) state.legacyDocs = imported.documents;
+          if (imported.masterDocs && Array.isArray(imported.masterDocs.versions)) {
+            state.masterDocs = { versions: [], drafts: {}, ...imported.masterDocs };
+            delete document.getElementById("master-latex").dataset.kind; // reload the editor from the imported draft
+          }
           if (Array.isArray(imported.scoutColumns)) state.scoutColumns = imported.scoutColumns;
           if (imported.companyMeta) state.companyMeta = imported.companyMeta;
           if (imported.planner) state.planner = imported.planner;
@@ -5636,7 +6151,9 @@
         document.getElementById(`job-${kind}-latex`).addEventListener("input", () => refreshJobDocUI(kind));
       });
       document.addEventListener("keydown", e => {
-        if (e.key === "Escape" && !document.getElementById("modal-pdf").classList.contains("hidden")) closePdfModal();
+        if (e.key !== "Escape") return;
+        if (!document.getElementById("modal-pdf").classList.contains("hidden")) closePdfModal();
+        else if (!document.getElementById("modal-diff").classList.contains("hidden")) closeDiffModal();
       });
       // Persist seeded templates on first run so later edits stick
       if (getSavedState("job_tracker_templates", null) === null) saveState();
