@@ -689,7 +689,10 @@
               <select id="master-template" onchange="handleMasterDraftInput()" class="p-1 border border-slate-200 rounded-lg text-[11px] max-w-[60%]"></select>
             </div>
             <textarea id="master-latex" rows="16" spellcheck="false" oninput="handleMasterDraftInput()" placeholder="Paste your master main.tex here (full file or just the body), or use Upload .tex." class="w-full p-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-indigo-500 font-mono text-[11px] leading-relaxed"></textarea>
-            <input type="text" id="master-note" maxlength="200" placeholder="What changed in this version? (optional, e.g. added Erasmus thesis, new skills section)" class="w-full p-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-indigo-500">
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-2">
+              <input type="text" id="master-name" maxlength="60" placeholder="Version name (optional, e.g. Consulting focus)" class="w-full p-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-indigo-500">
+              <input type="text" id="master-note" maxlength="200" placeholder="What changed? (optional, e.g. added Erasmus thesis, new skills section)" class="sm:col-span-2 w-full p-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-indigo-500">
+            </div>
             <div class="flex flex-wrap items-center gap-2">
               <button type="button" id="master-save-btn" onclick="saveMasterVersion()" class="px-3 py-1.5 bg-violet-600 hover:bg-violet-700 text-white rounded-lg font-semibold flex items-center gap-1.5 shadow-sm">
                 <i data-lucide="save" class="w-3.5 h-3.5"></i> Save as new version
@@ -5565,6 +5568,12 @@
     let masterDraftTimer = null;
     const MASTER_LABEL = { cv: "Master CV", cl: "Master Cover Letter" };
     const MASTER_LABEL_LOWER = { cv: "master CV", cl: "master cover letter" };
+    let masterEditingId = null; // version whose name/note is being edited inline
+
+    // "v3" or "v3 · Consulting focus"
+    function masterVersionLabel(v) {
+      return v.name ? `v${v.number} · ${v.name}` : `v${v.number}`;
+    }
 
     function masterVersions(kind = masterKind) {
       return state.masterDocs.versions.filter(v => v.kind === kind).sort((a, b) => b.number - a.number);
@@ -5606,7 +5615,9 @@
       if (textarea.dataset.kind !== masterKind) {
         textarea.dataset.kind = masterKind;
         textarea.value = draft ? draft.latex : (latest ? latest.latex : "");
+        document.getElementById("master-name").value = "";
         document.getElementById("master-note").value = "";
+        masterEditingId = null;
       }
       const templateId = draft ? draft.templateId : (latest ? latest.templateId : undefined);
       populateTemplateSelect(masterKind, templateId, "master-template");
@@ -5621,6 +5632,7 @@
       status.innerHTML = latest
         ? `<div class="flex flex-wrap items-center gap-2 bg-violet-50 border border-violet-100 text-violet-900 rounded-xl px-3 py-2">
              <span class="px-2 py-0.5 rounded-full bg-violet-600 text-white font-bold text-[11px]">v${latest.number}</span>
+             ${latest.name ? `<span class="font-bold">${esc(latest.name)}</span>` : ""}
              <span><span class="font-semibold">Current ${MASTER_LABEL_LOWER[masterKind]}</span>, saved ${esc(formatDateTime(latest.savedAt))}</span>
              ${latest.note ? `<span class="text-violet-700">· ${esc(latest.note)}</span>` : ""}
              <span class="ml-auto flex items-center gap-3">
@@ -5633,7 +5645,7 @@
       const stateEl = document.getElementById("master-draft-state");
       const templateId = document.getElementById("master-template").value;
       if (!textarea.value.trim()) stateEl.innerHTML = "";
-      else if (latest && sameTex(textarea.value, latest.latex) && (latest.templateId || "") === templateId) stateEl.innerHTML = `<span class="text-emerald-600">· matches v${latest.number}</span>`;
+      else if (latest && sameTex(textarea.value, latest.latex) && (latest.templateId || "") === templateId) stateEl.innerHTML = `<span class="text-emerald-600">· matches ${esc(masterVersionLabel(latest))}</span>`;
       else stateEl.innerHTML = `<span class="text-amber-600">· unsaved changes${latest ? ` since v${latest.number}` : ""}</span>`;
     }
 
@@ -5652,23 +5664,65 @@
             <div class="flex items-center justify-between gap-2">
               <span class="flex items-center gap-1.5">
                 <span class="font-bold text-slate-800">v${v.number}</span>
+                ${v.name && masterEditingId !== v.id ? `<span class="font-semibold text-slate-700 break-all">${esc(v.name)}</span>` : ""}
                 ${i === 0 ? `<span class="text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-violet-600 text-white">Current</span>` : ""}
               </span>
               <span class="text-[11px] text-slate-500">${esc(formatDateTime(v.savedAt))}</span>
             </div>
-            ${v.note ? `<p class="text-slate-700">${esc(v.note)}</p>` : ""}
+            ${masterEditingId === v.id ? `
+              <div class="space-y-1.5" data-master-edit="${v.id}">
+                <input type="text" maxlength="60" value="${esc(v.name || "")}" placeholder="Version name" class="master-edit-name w-full p-1.5 bg-white border border-slate-200 rounded-lg focus:ring-2 focus:ring-indigo-500" onkeydown="handleMasterEditKey(event, '${v.id}')">
+                <input type="text" maxlength="200" value="${esc(v.note || "")}" placeholder="What changed?" class="master-edit-note w-full p-1.5 bg-white border border-slate-200 rounded-lg focus:ring-2 focus:ring-indigo-500" onkeydown="handleMasterEditKey(event, '${v.id}')">
+                <div class="flex justify-end gap-2 text-[11px] font-semibold">
+                  <button onclick="cancelMasterEdit()" class="px-2 py-1 text-slate-500 hover:text-slate-800">Cancel</button>
+                  <button onclick="saveMasterEdit('${v.id}')" class="px-2.5 py-1 bg-violet-600 hover:bg-violet-700 text-white rounded-md">Save</button>
+                </div>
+              </div>` : (v.note ? `<p class="text-slate-700">${esc(v.note)}</p>` : "")}
             <p class="text-[11px] text-slate-400">${esc(masterTemplateName(v.templateId))}${changes ? ` · <span class="text-emerald-600">+${changes.added}</span> <span class="text-rose-500">−${changes.removed}</span> lines vs v${previous.number}` : " · first version"}</p>
             <div class="flex flex-wrap items-center gap-x-3 gap-y-1 pt-1 text-[11px] font-semibold">
               ${v.hasPdf
                 ? `<button onclick="viewMasterPdf('${v.id}')" class="text-emerald-700 hover:underline flex items-center gap-1"><i data-lucide="file-check-2" class="w-3 h-3"></i> PDF</button>`
                 : `<button onclick="compileMasterVersion('${v.id}')" class="text-slate-700 hover:underline flex items-center gap-1"><i data-lucide="play" class="w-3 h-3"></i> Compile PDF</button>`}
               ${previous ? `<button onclick="diffMasterVersions('${previous.id}', '${v.id}')" class="text-indigo-600 hover:underline flex items-center gap-1"><i data-lucide="git-compare" class="w-3 h-3"></i> Changes</button>` : ""}
-              <button onclick="loadMasterVersion('${v.id}')" class="text-slate-600 hover:underline flex items-center gap-1"><i data-lucide="pencil" class="w-3 h-3"></i> Load</button>
+              <button onclick="startMasterEdit('${v.id}')" class="text-slate-600 hover:underline flex items-center gap-1"><i data-lucide="tag" class="w-3 h-3"></i> Rename</button>
+              <button onclick="loadMasterVersion('${v.id}')" class="text-slate-600 hover:underline flex items-center gap-1"><i data-lucide="file-input" class="w-3 h-3"></i> Load</button>
               <button onclick="downloadMasterVersion('${v.id}')" class="text-slate-600 hover:underline flex items-center gap-1"><i data-lucide="download" class="w-3 h-3"></i> .tex</button>
               <button onclick="deleteMasterVersion('${v.id}')" class="ml-auto text-rose-500 hover:text-rose-700">Delete</button>
             </div>
           </div>`;
       }).join("");
+    }
+
+    function startMasterEdit(id) {
+      masterEditingId = id;
+      renderMasterVersionList();
+      lucide.createIcons();
+      const input = document.querySelector(`[data-master-edit="${id}"] .master-edit-name`);
+      if (input) { input.focus(); input.select(); }
+    }
+
+    function cancelMasterEdit() {
+      masterEditingId = null;
+      renderMasterVersionList();
+      lucide.createIcons();
+    }
+
+    function saveMasterEdit(id) {
+      const v = state.masterDocs.versions.find(x => x.id === id);
+      const box = document.querySelector(`[data-master-edit="${id}"]`);
+      if (!v || !box) return cancelMasterEdit();
+      v.name = box.querySelector(".master-edit-name").value.trim();
+      v.note = box.querySelector(".master-edit-note").value.trim();
+      masterEditingId = null;
+      saveState();
+      renderMasterDocs();
+      lucide.createIcons();
+      showToast(`Saved ${masterVersionLabel(v)}.`);
+    }
+
+    function handleMasterEditKey(event, id) {
+      if (event.key === "Enter") { event.preventDefault(); saveMasterEdit(id); }
+      if (event.key === "Escape") { event.preventDefault(); event.stopPropagation(); cancelMasterEdit(); }
     }
 
     function handleMasterDraftInput() {
@@ -5702,6 +5756,7 @@
         id: "mv-" + Date.now(),
         kind: masterKind,
         number: (latest ? latest.number : 0) + 1,
+        name: document.getElementById("master-name").value.trim(),
         note: document.getElementById("master-note").value.trim(),
         latex,
         templateId,
@@ -5711,18 +5766,19 @@
       const compiled = masterCompiled && masterCompiled.kind === masterKind && masterCompiled.templateId === templateId && sameTex(masterCompiled.latex, latex) ? masterCompiled : null;
       if (compiled) {
         try {
-          await FileStore.put(`master:${version.id}`, { name: `${MASTER_LABEL[masterKind]} v${version.number}.pdf`, savedAt: version.savedAt, blob: compiled.blob });
+          await FileStore.put(`master:${version.id}`, { name: `${MASTER_LABEL[masterKind]} ${masterVersionLabel(version)}.pdf`, savedAt: version.savedAt, blob: compiled.blob });
           version.hasPdf = true;
         } catch (e) {
           console.warn("Could not store the compiled PDF:", e);
         }
       }
       state.masterDocs.versions.push(version);
+      document.getElementById("master-name").value = "";
       document.getElementById("master-note").value = "";
       flushMasterDraft();
       renderMasterDocs();
       lucide.createIcons();
-      showToast(`Saved ${MASTER_LABEL[masterKind]} v${version.number}${version.hasPdf ? " with PDF" : ""}.`);
+      showToast(`Saved ${MASTER_LABEL[masterKind]} ${masterVersionLabel(version)}${version.hasPdf ? " with PDF" : ""}.`);
     }
 
     async function compileMasterDraft() {
@@ -5762,7 +5818,7 @@
     async function compileMasterVersion(id) {
       const v = state.masterDocs.versions.find(x => x.id === id);
       if (!v) return;
-      const label = `${MASTER_LABEL[v.kind]} v${v.number}`;
+      const label = `${MASTER_LABEL[v.kind]} ${masterVersionLabel(v)}`;
       showToast(`Compiling ${label}...`);
       await withMasterCompileButton(async () => {
         try {
@@ -5792,7 +5848,7 @@
           showToast("PDF not found in this browser's storage. Compile it again.");
           return;
         }
-        openPdfModal({ title: `${MASTER_LABEL[v.kind]} v${v.number} (${formatDateTime(v.savedAt)})`, blob: record.blob });
+        openPdfModal({ title: `${MASTER_LABEL[v.kind]} ${masterVersionLabel(v)} (${formatDateTime(v.savedAt)})`, blob: record.blob });
       } catch (e) {
         console.error(e);
         showToast("Could not open the stored PDF.");
@@ -5809,18 +5865,18 @@
         flushMasterDraft();
         renderMasterStatus();
         textarea.scrollTop = 0;
-        showToast(`Loaded v${v.number} into the editor.`);
+        showToast(`Loaded ${masterVersionLabel(v)} into the editor.`);
       };
       const latest = latestMasterVersion();
       const hasUnsaved = textarea.value.trim() && !(latest && sameTex(textarea.value, latest.latex)) && !sameTex(textarea.value, v.latex);
-      if (hasUnsaved) openConfirmModal(`Load v${v.number} into the editor?`, "Your unsaved changes in the editor will be replaced.", load);
+      if (hasUnsaved) openConfirmModal(`Load ${masterVersionLabel(v)} into the editor?`, "Your unsaved changes in the editor will be replaced.", load);
       else load();
     }
 
     function deleteMasterVersion(id) {
       const v = state.masterDocs.versions.find(x => x.id === id);
       if (!v) return;
-      openConfirmModal(`Delete ${MASTER_LABEL[v.kind]} v${v.number}?`, "Its LaTeX and PDF are removed from the history. Other version numbers stay the same.", async () => {
+      openConfirmModal(`Delete ${MASTER_LABEL[v.kind]} ${masterVersionLabel(v)}?`, "Its LaTeX and PDF are removed from the history. Other version numbers stay the same.", async () => {
         state.masterDocs.versions = state.masterDocs.versions.filter(x => x.id !== id);
         saveState();
         try { await FileStore.del(`master:${id}`); } catch (e) { console.warn(e); }
@@ -5864,7 +5920,7 @@
 
     function downloadMasterVersion(id) {
       const v = state.masterDocs.versions.find(x => x.id === id);
-      if (v) downloadTex(v.latex, `${MASTER_LABEL[v.kind]} v${v.number} (${new Date(v.savedAt).toISOString().slice(0, 10)}).tex`);
+      if (v) downloadTex(v.latex, `${MASTER_LABEL[v.kind]} ${masterVersionLabel(v)} (${new Date(v.savedAt).toISOString().slice(0, 10)}).tex`);
     }
 
     // Application form: start a job's CV / cover letter from the current master version
@@ -5875,13 +5931,13 @@
         return;
       }
       const textarea = document.getElementById(`job-${kind}-latex`);
-      if (textarea.value.trim() && !sameTex(textarea.value, latest.latex) && !confirm(`Replace the current LaTeX main text with ${MASTER_LABEL[kind]} v${latest.number}?`)) return;
+      if (textarea.value.trim() && !sameTex(textarea.value, latest.latex) && !confirm(`Replace the current LaTeX main text with ${MASTER_LABEL[kind]} ${masterVersionLabel(latest)}?`)) return;
       textarea.value = latest.latex;
       if (latest.templateId && state.templates.some(t => t.id === latest.templateId)) {
         document.getElementById(`job-${kind}-template`).value = latest.templateId;
       }
       refreshJobDocUI(kind);
-      showToast(`Inserted ${MASTER_LABEL[kind]} v${latest.number}.`);
+      showToast(`Inserted ${MASTER_LABEL[kind]} ${masterVersionLabel(latest)}.`);
     }
 
     /* Line diff (LCS after trimming the common start and end) */
@@ -5969,7 +6025,7 @@
     function diffMasterVersions(oldId, newId) {
       const a = state.masterDocs.versions.find(x => x.id === oldId);
       const b = state.masterDocs.versions.find(x => x.id === newId);
-      if (a && b) openDiffModal(`${MASTER_LABEL[b.kind]}: v${a.number} → v${b.number}`, a.latex, b.latex);
+      if (a && b) openDiffModal(`${MASTER_LABEL[b.kind]}: ${masterVersionLabel(a)} → ${masterVersionLabel(b)}`, a.latex, b.latex);
     }
 
     function diffMasterDraft() {
@@ -5978,7 +6034,7 @@
         showToast("No saved version to compare with yet.");
         return;
       }
-      openDiffModal(`${MASTER_LABEL[masterKind]}: v${latest.number} → editor (unsaved)`, latest.latex, document.getElementById("master-latex").value);
+      openDiffModal(`${MASTER_LABEL[masterKind]}: ${masterVersionLabel(latest)} → editor (unsaved)`, latest.latex, document.getElementById("master-latex").value);
     }
 
     /* ==========================================================================
