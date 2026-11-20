@@ -779,10 +779,13 @@
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div>
             <label class="block font-semibold text-slate-700 mb-1">Company Name *</label>
-            <input type="text" id="job-company-input" required placeholder="e.g. Accenture, Booking.com" class="w-full p-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-indigo-500">
+            <input type="text" id="job-company-input" required oninput="suggestJobNumber()" placeholder="e.g. Accenture, Booking.com" class="w-full p-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-indigo-500">
           </div>
           <div>
-            <label class="block font-semibold text-slate-700 mb-1">Job Title *</label>
+            <label class="flex items-center justify-between gap-2 font-semibold text-slate-700 mb-1">
+              <span>Job Title *</span>
+              <span id="job-number-hint" class="font-normal text-[11px] text-slate-400 truncate"></span>
+            </label>
             <input type="text" id="job-title-input" required placeholder="e.g. Data Scientist, Consultant" class="w-full p-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-indigo-500">
           </div>
         </div>
@@ -3658,6 +3661,7 @@
     function quickAddJobForCompany(companyName) {
       openJobModal();
       document.getElementById("job-company-input").value = companyName;
+      suggestJobNumber();
     }
 
     /* ==========================================================================
@@ -4690,12 +4694,53 @@
         : (matching[0]?.id || "");
     }
 
+    /* Job numbering: new applications get "<n>. " in front of the title, where n is
+       one higher than the highest number already used for that company (gaps are not refilled). */
+    const JOB_NUMBER_RE = /^\s*(\d+)\s*\.\s*/;
+    let jobNumberAuto = null; // the number this form filled in itself (so a company change can update it)
+
+    function nextJobNumber(company, excludeId = null) {
+      const n = normName(company);
+      const numbers = state.applications
+        .filter(a => a.id !== excludeId && normName(a.company) === n)
+        .map(a => (JOB_NUMBER_RE.exec(a.title || "") || [])[1])
+        .filter(Boolean)
+        .map(Number);
+      return { next: (numbers.length ? Math.max(...numbers) : 0) + 1, last: numbers.length ? Math.max(...numbers) : null };
+    }
+
+    // Called when the company changes or a posting fills the form (new applications only)
+    function suggestJobNumber() {
+      const hint = document.getElementById("job-number-hint");
+      const titleEl = document.getElementById("job-title-input");
+      const company = document.getElementById("job-company-input").value.trim();
+      if (document.getElementById("job-id").value) { hint.textContent = ""; return; }
+
+      const match = JOB_NUMBER_RE.exec(titleEl.value);
+      const ownPrefix = match && jobNumberAuto !== null && Number(match[1]) === jobNumberAuto;
+      if (!company) {
+        if (ownPrefix) titleEl.value = titleEl.value.slice(match[0].length);
+        jobNumberAuto = null;
+        hint.textContent = "";
+        return;
+      }
+
+      const { next, last } = nextJobNumber(company);
+      hint.textContent = last ? `Next # at ${company}: ${next} (last used: ${last})` : `First job at ${company}: #1`;
+      if (match && !ownPrefix) return; // a number typed by you: keep it
+      const rest = match ? titleEl.value.slice(match[0].length) : titleEl.value.replace(/^\s+/, "");
+      titleEl.value = `${next}. ${rest}`;
+      jobNumberAuto = next;
+    }
+
     function openJobModal(id = null) {
       closeCompanyOverview();
       const modal = document.getElementById("modal-job");
       const form = document.getElementById("form-job");
       form.reset();
       jobModalPending = {};
+      jobNumberAuto = null;
+      document.getElementById("job-number-hint").textContent = "";
       document.getElementById("job-posting-hint").classList.add("hidden");
 
       const job = id ? state.applications.find(a => a.id === id) : null;
@@ -5329,7 +5374,10 @@
         if (!value || (onlyEmpty && el.value.trim())) return;
         el.value = value;
       };
-      set("job-title-input", d.title);
+      const titleEl = document.getElementById("job-title-input");
+      const bareNumber = /^\s*(\d+)\s*\.\s*$/.exec(titleEl.value);
+      if (bareNumber && d.title) titleEl.value = JOB_NUMBER_RE.test(d.title) ? d.title : `${bareNumber[1]}. ${d.title}`;
+      else set("job-title-input", d.title);
       set("job-company-input", d.company);
       set("job-city-input", d.city);
       set("job-salary-input", d.salary);
@@ -5340,6 +5388,7 @@
       if (PLATFORM_LABELS[d.source]) document.getElementById("job-source-input").value = d.source;
       if (d.postingUrl) handlePostingLinkInput();
       refreshLinkButtons();
+      suggestJobNumber();
     }
 
     function saveAIExtractedJob() {
